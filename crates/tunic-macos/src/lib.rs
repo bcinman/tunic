@@ -16,7 +16,7 @@ use objc2_core_audio::{
 };
 use tunic_engine::{
     ActiveRoute, AudioPlatform, DeviceId, PlatformError, PlatformEvent, PlatformEventSink,
-    PlatformState,
+    PlatformState, ProcessedOutputFormat, ProcessedOutputSink,
 };
 
 use crate::devices::{
@@ -28,6 +28,7 @@ pub struct CoreAudioPlatform {
     route: Option<Route>,
     listener: Option<DefaultOutputListener>,
     bypassed: Arc<AtomicBool>,
+    output_sink: Option<Arc<dyn ProcessedOutputSink>>,
 }
 
 impl CoreAudioPlatform {
@@ -37,13 +38,11 @@ impl CoreAudioPlatform {
             route: None,
             listener: None,
             bypassed: Arc::new(AtomicBool::new(false)),
+            output_sink: None,
         }
     }
 
     fn build_default_route(&mut self) -> Result<PlatformState, PlatformError> {
-        if let Some(mut route) = self.route.take() {
-            route.stop()?;
-        }
         let output_id = default_output_id()?;
         let route = ActiveRoute {
             device_id: DeviceId::new(device_uid(output_id)?),
@@ -51,8 +50,23 @@ impl CoreAudioPlatform {
             sample_rate_hz: sample_rate(output_id)?,
             channels: channel_count(output_id)?,
         };
+        if let Some(output_sink) = &self.output_sink {
+            output_sink
+                .configure(ProcessedOutputFormat {
+                    sample_rate_hz: route.sample_rate_hz,
+                    channels: 2,
+                })
+                .map_err(|error| PlatformError::new(error.to_string()))?;
+        }
+        if let Some(mut previous_route) = self.route.take() {
+            previous_route.stop()?;
+        }
         let devices = list_output_devices()?;
-        self.route = Some(Route::start(output_id, Arc::clone(&self.bypassed))?);
+        self.route = Some(Route::start(
+            output_id,
+            Arc::clone(&self.bypassed),
+            self.output_sink.clone(),
+        )?);
         Ok(PlatformState { route, devices })
     }
 
@@ -73,7 +87,12 @@ impl Default for CoreAudioPlatform {
 }
 
 impl AudioPlatform for CoreAudioPlatform {
-    fn start(&mut self, events: PlatformEventSink) -> Result<PlatformState, PlatformError> {
+    fn start(
+        &mut self,
+        events: PlatformEventSink,
+        output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+    ) -> Result<PlatformState, PlatformError> {
+        self.output_sink = output_sink;
         self.listener = Some(DefaultOutputListener::new(events)?);
         match self.build_default_route() {
             Ok(state) => Ok(state),

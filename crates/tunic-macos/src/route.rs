@@ -32,7 +32,7 @@ use objc2_core_audio_types::{
 use objc2_core_foundation::CFDictionary;
 use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSObject, NSString, NSUUID};
 use tunic_dsp::PreparedGraph;
-use tunic_engine::PlatformError;
+use tunic_engine::{PlatformError, ProcessedOutputSink};
 
 use crate::devices::{device_uid, input_stream_count};
 use crate::{address, check_status};
@@ -83,13 +83,15 @@ impl Route {
     pub(crate) fn start(
         output_id: AudioObjectID,
         bypassed: Arc<AtomicBool>,
+        output_sink: Option<Arc<dyn ProcessedOutputSink>>,
     ) -> Result<Self, PlatformError> {
-        Self::start_inner(output_id, bypassed)
+        Self::start_inner(output_id, bypassed, output_sink)
     }
 
     fn start_inner(
         output_id: AudioObjectID,
         bypassed: Arc<AtomicBool>,
+        output_sink: Option<Arc<dyn ProcessedOutputSink>>,
     ) -> Result<Self, PlatformError> {
         let output_uid = device_uid(output_id)?;
         let excluded_process = current_process_object().into_iter().collect::<Vec<_>>();
@@ -178,6 +180,7 @@ impl Route {
                         &mut scratch[..],
                         &mut graph,
                         bypassed.load(Ordering::Relaxed),
+                        output_sink.as_deref(),
                     );
                 }));
             },
@@ -515,6 +518,7 @@ fn render_identity(
     scratch: &mut [f32],
     graph: &mut PreparedGraph,
     bypassed: bool,
+    output_sink: Option<&dyn ProcessedOutputSink>,
 ) {
     if input.is_null() || output.is_null() {
         return;
@@ -540,7 +544,11 @@ fn render_identity(
     if !bypassed {
         graph.process_interleaved_stereo(&mut scratch[..frames * 2]);
     }
-    write_stereo(&scratch[..frames * 2], output_buffers, frames);
+    if write_stereo(&scratch[..frames * 2], output_buffers, frames)
+        && let Some(output_sink) = output_sink
+    {
+        output_sink.write(&scratch[..frames * 2]);
+    }
 }
 
 fn writable_frames(buffers: &[AudioBuffer]) -> usize {
@@ -592,9 +600,9 @@ fn normalize_stereo(buffers: &[AudioBuffer], output: &mut [f32], limit: usize) -
     frames
 }
 
-fn write_stereo(samples: &[f32], buffers: &mut [AudioBuffer], frames: usize) {
+fn write_stereo(samples: &[f32], buffers: &mut [AudioBuffer], frames: usize) -> bool {
     let Some(first) = buffers.first_mut() else {
-        return;
+        return false;
     };
     if first.mNumberChannels >= 2 && !first.mData.is_null() {
         let channels = first.mNumberChannels as usize;
@@ -605,12 +613,17 @@ fn write_stereo(samples: &[f32], buffers: &mut [AudioBuffer], frames: usize) {
             destination[frame * channels] = samples[frame * 2];
             destination[frame * channels + 1] = samples[frame * 2 + 1];
         }
-        return;
+        return true;
+    }
+    if buffers.len() < 2
+        || buffers[0].mNumberChannels == 0
+        || buffers[1].mNumberChannels == 0
+        || buffers[0].mData.is_null()
+        || buffers[1].mData.is_null()
+    {
+        return false;
     }
     for (channel, buffer) in buffers.iter_mut().take(2).enumerate() {
-        if buffer.mData.is_null() {
-            continue;
-        }
         // SAFETY: writable_frames limited frames to this buffer's capacity.
         let destination =
             unsafe { std::slice::from_raw_parts_mut(buffer.mData.cast::<f32>(), frames) };
@@ -618,6 +631,7 @@ fn write_stereo(samples: &[f32], buffers: &mut [AudioBuffer], frames: usize) {
             destination[frame] = samples[frame * 2 + channel];
         }
     }
+    true
 }
 
 const fn size_of<T>() -> usize {

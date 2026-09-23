@@ -14,7 +14,7 @@ Product policy belongs in the engine. The CLI owns command input and output form
 ## Command surface
 
 ```console
-tunic start                          # Process audio and accept live commands
+tunic start [--capture <PATH>]       # Process audio; optionally capture Float32 WAV output
 tunic status                         # Print the current engine snapshot
 tunic watch                          # Stream snapshots, failures, and telemetry
 

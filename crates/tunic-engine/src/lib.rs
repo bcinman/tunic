@@ -7,6 +7,43 @@ use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ProcessedOutputFormat {
+    pub sample_rate_hz: f64,
+    pub channels: u32,
+}
+
+#[derive(Debug)]
+pub struct OutputSinkError(String);
+
+impl OutputSinkError {
+    #[must_use]
+    pub fn new(message: impl Into<String>) -> Self {
+        Self(message.into())
+    }
+}
+
+impl fmt::Display for OutputSinkError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(formatter)
+    }
+}
+
+impl std::error::Error for OutputSinkError {}
+
+/// Receives interleaved post-DSP samples from the active platform route.
+///
+/// `write` runs on the real-time audio thread and must not block or allocate.
+pub trait ProcessedOutputSink: Send + Sync + 'static {
+    fn configure(&self, format: ProcessedOutputFormat) -> Result<(), OutputSinkError>;
+    fn write(&self, interleaved_samples: &[f32]);
+}
+
+#[derive(Default)]
+pub struct EngineOptions {
+    pub processed_output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DeviceId(String);
 
@@ -98,7 +135,11 @@ impl fmt::Display for PlatformError {
 impl std::error::Error for PlatformError {}
 
 pub trait AudioPlatform: 'static {
-    fn start(&mut self, events: PlatformEventSink) -> Result<PlatformState, PlatformError>;
+    fn start(
+        &mut self,
+        events: PlatformEventSink,
+        output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+    ) -> Result<PlatformState, PlatformError>;
     fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError>;
     fn set_bypassed(&mut self, bypassed: bool);
     fn shutdown(&mut self) -> Result<(), PlatformError>;
@@ -135,7 +176,7 @@ pub struct EngineHandle {
 }
 
 impl Engine {
-    pub fn start<P, F>(platform: F) -> Result<EngineHandle, EngineError>
+    pub fn start<P, F>(options: EngineOptions, platform: F) -> Result<EngineHandle, EngineError>
     where
         P: AudioPlatform,
         F: FnOnce() -> P + Send + 'static,
@@ -148,7 +189,7 @@ impl Engine {
         let worker = thread::Builder::new()
             .name("tunic-engine".into())
             .spawn(move || {
-                run_engine(platform(), command_rx, worker_snapshot, startup_tx);
+                run_engine(platform(), options, command_rx, worker_snapshot, startup_tx);
             })
             .map_err(|error| EngineError(format!("failed to start engine thread: {error}")))?;
 
@@ -226,12 +267,13 @@ impl Drop for EngineHandle {
 
 fn run_engine(
     mut platform: impl AudioPlatform,
+    options: EngineOptions,
     commands: Receiver<Command>,
     snapshot: Arc<RwLock<EngineSnapshot>>,
     startup: mpsc::SyncSender<Result<(), PlatformError>>,
 ) {
     let (events, event_rx) = mpsc::channel();
-    match platform.start(events) {
+    match platform.start(events, options.processed_output_sink) {
         Ok(state) => {
             update_running_snapshot(&snapshot, state, false);
             let _ = startup.send(Ok(()));

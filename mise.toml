@@ -8,3 +8,9 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-targets --all-features
 """
+
+[tasks.cli]
+description = "run the tunic cli"
+run = """
+cargo run -p tunic-cli
+"""

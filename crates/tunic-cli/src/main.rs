@@ -1,6 +1,9 @@
 //! Tunic's headless reference client.
 
+mod capture;
+
 use std::io::{self, BufRead, Write};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
@@ -8,8 +11,13 @@ use std::thread;
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
-use tunic_engine::{Engine, EngineHandle, EngineSnapshot, EngineStatus, OutputDevice};
+use tunic_engine::{
+    Engine, EngineHandle, EngineOptions, EngineSnapshot, EngineStatus, OutputDevice,
+    ProcessedOutputSink,
+};
 use tunic_macos::CoreAudioPlatform;
+
+use crate::capture::WavCapture;
 
 #[derive(Debug, Parser)]
 #[command(name = "tunic", version, about = "Tunic's headless reference client")]
@@ -21,7 +29,11 @@ struct Cli {
 #[derive(Debug, Subcommand)]
 enum Command {
     /// Start processing system audio and open an interactive session.
-    Start,
+    Start {
+        /// Capture processed stereo output as a Float32 WAV file.
+        #[arg(long, value_name = "PATH")]
+        capture: Option<PathBuf>,
+    },
 }
 
 #[derive(Debug, Parser)]
@@ -65,13 +77,27 @@ fn main() {
 
 fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
-        Command::Start => start_session(),
+        Command::Start { capture } => start_session(capture),
     }
 }
 
-fn start_session() -> Result<(), Box<dyn std::error::Error>> {
-    let engine = Engine::start(CoreAudioPlatform::new)?;
+fn start_session(capture_path: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+    let capture = capture_path
+        .as_ref()
+        .map(|path| Arc::new(WavCapture::new(path)));
+    let output_sink = capture
+        .as_ref()
+        .map(|capture| Arc::clone(capture) as Arc<dyn ProcessedOutputSink>);
+    let engine = Engine::start(
+        EngineOptions {
+            processed_output_sink: output_sink,
+        },
+        CoreAudioPlatform::new,
+    )?;
     println!("Tunic is processing system audio. Type `help` for commands.");
+    if let Some(path) = capture_path {
+        println!("Capturing processed output to {}.", path.display());
+    }
     print_status(&engine.snapshot());
 
     let interrupted = Arc::new(AtomicBool::new(false));
@@ -97,7 +123,10 @@ fn start_session() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    engine.shutdown()?;
+    let shutdown = engine.shutdown();
+    let capture_result = capture.map_or(Ok(()), |capture| capture.finish());
+    shutdown?;
+    capture_result?;
     println!("Tunic stopped.");
     Ok(())
 }
