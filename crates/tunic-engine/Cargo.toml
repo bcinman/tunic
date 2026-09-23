@@ -3,8 +3,5 @@ name = "tunic-engine"
 version.workspace = true
 edition.workspace = true
 
-[dependencies]
-tunic-dsp.workspace = true
-
 [lints]
 workspace = true

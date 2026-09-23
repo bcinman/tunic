@@ -14,17 +14,25 @@ Product policy belongs in the engine. The CLI owns command input and output form
 ## Command surface
 
 ```console
-tunic run                            # Process audio and accept live commands
+tunic start                          # Process audio and accept live commands
 tunic status                         # Print the current engine snapshot
 tunic watch                          # Stream snapshots, failures, and telemetry
+
 tunic profile list                   # List profiles
+tunic profile info                   # Show profile details
+tunic profile import                 # Import a profile from a file in APO format
+tunic profile export                 # Export a profile to a file in APO format
 tunic profile create|rename|delete   # Manage profiles
 tunic profile select                 # Activate a profile
-tunic filter add|set|remove          # Preview live graph changes
-tunic configuration save|discard     # Commit or discard the preview
-tunic bypass on|off                  # Toggle processing
+
+tunic filter add|set|remove|reset    # Preview live graph changes for the current profile
+tunic profile save|discard           # Commit or discard the preview
+
+tunic bypass                         # Toggle processing
 tunic device list|show               # Inspect output devices and their settings
 tunic device set-profile             # Associate a profile with an output device
+
+tunic telemetry                      # Stream telemetry data
 ```
 
 The executable selects the platform automatically. It needs no public Rust API; it is a consumer of the engine and platform crates.

@@ -3,7 +3,14 @@ name = "tunic-cli"
 version.workspace = true
 edition.workspace = true
 
+[[bin]]
+name = "tunic"
+path = "src/main.rs"
+
 [dependencies]
+clap.workspace = true
+ctrlc.workspace = true
+shlex.workspace = true
 tunic-engine.workspace = true
 tunic-macos.workspace = true
 
