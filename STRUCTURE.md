@@ -1,14 +1,14 @@
-Workspace outline
+# Workspace Outline
 
-tunic-app
-tunic-engine
-tunic-dsp
-tunic-macos
-tunic-cli       optional diagnostic binary
+- `tunic-app`
+- `tunic-engine`
+- `tunic-dsp`
+- `tunic-macos`
+- `tunic-cli` (optional diagnostic binary)
 
-tunic-app
+## `tunic-app`
 
-Responsibility: GPUI application lifecycle and presentation.
+**Responsibility:** GPUI application lifecycle and presentation.
 
 - Owns the application-scoped engine handle.
 - Creates, closes, and reopens the normal application window.
@@ -17,21 +17,21 @@ Responsibility: GPUI application lifecycle and presentation.
 - Owns transient UI state and UI-only preferences.
 - Performs orderly engine shutdown only on explicit Quit.
 
-Rough public interface:
+### Rough public interface
 
+```rust
 pub struct AppConfig {
     pub data_directory: PathBuf,
 }
 
 pub fn run(config: AppConfig) -> Result<(), AppError>;
+```
 
 Everything else can remain internal GPUI entities, views, and actions.
 
----
+## `tunic-engine`
 
-tunic-engine
-
-Responsibility: Authoritative product state and non-real-time coordination.
+**Responsibility:** Authoritative product state and non-real-time coordination.
 
 - Owns profiles and per-device preferences.
 - Owns SQLite persistence.
@@ -41,8 +41,9 @@ Responsibility: Authoritative product state and non-real-time coordination.
 - Publishes immutable state snapshots and latest telemetry.
 - Defines the platform-audio contract implemented by macOS and future platforms.
 
-Rough public interface:
+### Rough public interface
 
+```rust
 pub struct Engine;
 pub struct EngineHandle;
 
@@ -82,9 +83,11 @@ impl EngineHandle {
 
     pub fn shutdown(&self) -> Result<(), ShutdownError>;
 }
+```
 
-Platform contract:
+### Platform contract
 
+```rust
 pub trait AudioPlatform: Send + 'static {
     fn start(&mut self, events: PlatformEventSink)
         -> Result<(), PlatformError>;
@@ -102,14 +105,13 @@ pub trait AudioPlatform: Send + 'static {
     fn retire_route(&mut self, route: RouteId);
     fn shutdown(&mut self) -> Result<(), PlatformError>;
 }
+```
 
 Commands, events, effects, and reducer details can remain private to the engine.
 
----
+## `tunic-dsp`
 
-tunic-dsp
-
-Responsibility: Portable audio-processing definitions and algorithms.
+**Responsibility:** Portable audio-processing definitions and algorithms.
 
 - Defines the versioned processing configuration.
 - Validates and canonicalizes configurations.
@@ -119,8 +121,9 @@ Responsibility: Portable audio-processing definitions and algorithms.
 - Contains mathematical, impulse-response, and frequency-response tests.
 - Knows nothing about devices, GPUI, profiles, persistence, or Core Audio.
 
-Rough public interface:
+### Rough public interface
 
+```rust
 pub struct Configuration;
 pub struct PreparedGraph;
 
@@ -144,12 +147,11 @@ impl PreparedGraph {
     pub fn reset(&mut self);
     pub fn latency_frames(&self) -> usize;
 }
+```
 
----
+## `tunic-macos`
 
-tunic-macos
-
-Responsibility: Core Audio integration and macOS real-time execution.
+**Responsibility:** Core Audio integration and macOS real-time execution.
 
 - Implements AudioPlatform.
 - Observes the system default output.
@@ -161,8 +163,9 @@ Responsibility: Core Audio integration and macOS real-time execution.
 - Guarantees ordered activation, handoff, retirement, and teardown.
 - Contains no profile, persistence, or UI policy.
 
-Rough public interface:
+### Rough public interface
 
+```rust
 pub struct CoreAudioPlatform;
 
 impl CoreAudioPlatform {
@@ -174,18 +177,19 @@ impl CoreAudioPlatform {
 impl AudioPlatform for CoreAudioPlatform {
     // Platform contract implementation
 }
+```
 
 The app wires it directly into the engine:
 
+```rust
 let platform = CoreAudioPlatform::new(audio_options)?;
 let engine = Engine::start(engine_options, platform)?;
 tunic_app::run_with_engine(engine)?;
+```
 
----
+## `tunic-cli` (optional)
 
-tunic-cli — optional
-
-Responsibility: Headless diagnostics and deterministic testing.
+**Responsibility:** Headless diagnostics and deterministic testing.
 
 - Runs the engine with either a fake platform or CoreAudioPlatform.
 - Injects commands and platform failures.
@@ -193,16 +197,19 @@ Responsibility: Headless diagnostics and deterministic testing.
 - Exercises restart, routing, and shutdown without GPUI.
 - Reuses production engine and audio code without going through the app.
 
-Rough interface:
+### Rough interface
 
+```console
 tunic-cli fake
 tunic-cli macos
 tunic-cli inspect
+```
 
 It likely needs no public Rust API; it is an executable consumer of the other crates.
 
-Dependency direction
+## Dependency Direction
 
+```text
 ┌───────────┐
 │ tunic-app │──────────────┐
 └─────┬─────┘              │
@@ -219,3 +226,4 @@ Dependency direction
 
 tunic-cli ──▶ tunic-engine
           └─▶ tunic-macos
+```
