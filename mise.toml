@@ -1,0 +1,10 @@
+[tools]
+rust = "nightly-2026-09-20"
+
+[tasks.check]
+description = "Format, lint, and test the workspace"
+run = """
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-targets --all-features
+"""

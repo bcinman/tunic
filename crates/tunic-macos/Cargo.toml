@@ -1,0 +1,11 @@
+[package]
+name = "tunic-macos"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tunic-dsp.workspace = true
+tunic-engine.workspace = true
+
+[lints]
+workspace = true

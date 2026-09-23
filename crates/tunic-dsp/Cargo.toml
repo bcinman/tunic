@@ -1,0 +1,7 @@
+[package]
+name = "tunic-dsp"
+version.workspace = true
+edition.workspace = true
+
+[lints]
+workspace = true
