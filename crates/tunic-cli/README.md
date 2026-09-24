@@ -23,8 +23,10 @@ status
 device list
 device show [DEVICE]
 bypass
-filter set --frequency <HZ> --gain <DB> --q <Q>
-filter clear
+filter add --frequency <HZ> --gain <DB> --q <Q>
+filter set <BAND> --frequency <HZ> --gain <DB> --q <Q>
+filter remove <BAND>
+filter reset
 help
 quit
 ```
@@ -42,7 +44,6 @@ tunic profile export                 # Export a profile to a file in APO format
 tunic profile create|rename|delete   # Manage profiles
 tunic profile select                 # Activate a profile
 
-tunic filter add|set|remove|reset    # Edit a multi-band processing graph
 tunic profile save|discard           # Commit or discard the preview
 
 tunic bypass                         # Toggle processing

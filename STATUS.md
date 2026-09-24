@@ -1,9 +1,9 @@
 # Project Status
 
-Tunic is currently a working macOS headless single-band equalizer prototype. It
-can capture system audio, apply a live peaking filter, and render it to the
+Tunic is currently a working macOS headless multi-band equalizer prototype. It
+can capture system audio, apply live peaking filters, and render it to the
 current default output device. It is not yet a graphical application or a
-complete multi-band equalizer.
+complete parametric equalizer.
 
 This file is the source of truth for implemented product capabilities. The
 crate READMEs and `STRUCTURE.md` also describe intended interfaces and future
@@ -22,15 +22,15 @@ architecture.
 - A non-real-time engine thread with immutable snapshots, bypass toggling, and
   orderly shutdown.
 - An allocation-free stereo DSP graph with zero reported latency.
-- One validated peaking filter with configurable frequency, gain, and Q,
-  including post-quantization stability checks.
+- An ordered cascade of validated peaking filters with configurable frequency,
+  gain, and Q, including post-quantization stability checks.
 - Live, real-time-safe graph replacement from the engine to the audio callback.
 - Equalizer revisions published in engine snapshots.
 - A headless interactive CLI with:
   - engine and route status;
   - output-device listing and inspection;
   - processing bypass;
-  - live peaking-filter set and clear commands;
+  - live peaking-filter add, set, remove, and reset commands;
   - optional post-DSP Float32 stereo WAV capture;
   - graceful quit and interrupt handling.
 - Filter history is cleared when bypass begins so stale ringing is not replayed
@@ -43,7 +43,7 @@ architecture.
 
 ## Not In Yet
 
-- Multiple simultaneous filters or filter types other than peaking EQ.
+- Filter types other than peaking EQ.
 - A versioned or serialized equalizer format.
 - Profiles, profile import/export, or per-device profile selection.
 - Persistent state or SQLite storage.
@@ -67,7 +67,7 @@ permanent exclusions from the product roadmap.
   proven through the headless client.
 - Supporting platforms other than macOS before the Core Audio path is stable.
 - Adding product-state features such as profiles and persistence before the
-  single-band processing path is proven and expanded.
+  processing path is proven.
 - Optimizing or polishing distribution before the end-to-end product behavior
   is complete.
 

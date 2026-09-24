@@ -96,7 +96,7 @@ impl PeakingFilter {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Equalizer {
-    peaking_filter: Option<PeakingFilter>,
+    peaking_filters: Vec<PeakingFilter>,
 }
 
 impl Equalizer {
@@ -108,13 +108,20 @@ impl Equalizer {
     #[must_use]
     pub fn with_peaking_filter(filter: PeakingFilter) -> Self {
         Self {
-            peaking_filter: Some(filter),
+            peaking_filters: vec![filter],
         }
     }
 
     #[must_use]
-    pub fn peaking_filter(&self) -> Option<PeakingFilter> {
-        self.peaking_filter
+    pub fn with_peaking_filters(filters: Vec<PeakingFilter>) -> Self {
+        Self {
+            peaking_filters: filters,
+        }
+    }
+
+    #[must_use]
+    pub fn peaking_filters(&self) -> &[PeakingFilter] {
+        &self.peaking_filters
     }
 }
 
@@ -138,7 +145,7 @@ impl std::error::Error for EqualizerError {}
 /// A processing graph prepared for a concrete audio stream.
 #[derive(Debug, Default)]
 pub struct PreparedGraph {
-    peaking_filter: Option<StereoBiquad>,
+    peaking_filters: Vec<StereoBiquad>,
 }
 
 impl PreparedGraph {
@@ -153,18 +160,20 @@ impl PreparedGraph {
                 "sample rate must be finite and greater than zero",
             ));
         }
-        let peaking_filter = equalizer
-            .peaking_filter()
+        let peaking_filters = equalizer
+            .peaking_filters()
+            .iter()
+            .copied()
             .map(|filter| StereoBiquad::peaking(filter, sample_rate_hz))
-            .transpose()?;
-        Ok(Self { peaking_filter })
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(Self { peaking_filters })
     }
 
     /// Process stereo audio in place without allocating.
     pub fn process(&mut self, left: &mut [f32], right: &mut [f32]) {
         debug_assert_eq!(left.len(), right.len());
-        if let Some(filter) = &mut self.peaking_filter {
-            for (left, right) in left.iter_mut().zip(right) {
+        for filter in &mut self.peaking_filters {
+            for (left, right) in left.iter_mut().zip(right.iter_mut()) {
                 *left = filter.left.process(*left);
                 *right = filter.right.process(*right);
             }
@@ -174,7 +183,7 @@ impl PreparedGraph {
     /// Process interleaved stereo frames in place without allocating.
     pub fn process_interleaved_stereo(&mut self, samples: &mut [f32]) {
         debug_assert_eq!(samples.len() % 2, 0);
-        if let Some(filter) = &mut self.peaking_filter {
+        for filter in &mut self.peaking_filters {
             for frame in samples.as_chunks_mut::<2>().0 {
                 frame[0] = filter.left.process(frame[0]);
                 frame[1] = filter.right.process(frame[1]);
@@ -183,7 +192,7 @@ impl PreparedGraph {
     }
 
     pub fn reset(&mut self) {
-        if let Some(filter) = &mut self.peaking_filter {
+        for filter in &mut self.peaking_filters {
             filter.left.reset();
             filter.right.reset();
         }
@@ -335,6 +344,34 @@ mod tests {
         let expected_gain = 10.0_f32.powf(6.0 / 20.0);
         assert!((left_rms / (1.0 / 2.0_f32.sqrt()) - expected_gain).abs() < 0.01);
         assert!((left_rms / right_rms - 4.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn multiple_peaking_filters_are_applied_as_an_ordered_cascade() {
+        const SAMPLE_RATE: usize = 48_000;
+        const FREQUENCY: f32 = 1_000.0;
+        let filters = [3.0, 6.0].map(|gain| {
+            PeakingFilter::new(
+                FrequencyHz::new(f64::from(FREQUENCY)).unwrap(),
+                GainDb::new(gain).unwrap(),
+                QualityFactor::new(1.0).unwrap(),
+            )
+        });
+        let equalizer = Equalizer::with_peaking_filters(filters.to_vec());
+        let mut graph = PreparedGraph::prepare(&equalizer, SAMPLE_RATE as f64).unwrap();
+        let mut samples = (0..SAMPLE_RATE)
+            .flat_map(|frame| {
+                let sample = (TAU * FREQUENCY * frame as f32 / SAMPLE_RATE as f32).sin();
+                [sample, sample]
+            })
+            .collect::<Vec<_>>();
+
+        graph.process_interleaved_stereo(&mut samples);
+
+        let settled = &samples[SAMPLE_RATE / 5 * 2..];
+        let measured_gain = channel_rms(settled, 0) / (1.0 / 2.0_f32.sqrt());
+        let expected_gain = 10.0_f32.powf(9.0 / 20.0);
+        assert!((measured_gain - expected_gain).abs() < 0.02);
     }
 
     #[test]

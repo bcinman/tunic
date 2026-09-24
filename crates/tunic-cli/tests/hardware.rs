@@ -11,6 +11,7 @@ const SAMPLE_RATE: u32 = 48_000;
 const LEFT_HZ: f32 = 997.0;
 const RIGHT_HZ: f32 = 7_999.0;
 const FILTER_GAIN_DB: f32 = 6.0;
+const BAND_GAIN_DB: f32 = FILTER_GAIN_DB / 2.0;
 
 #[test]
 #[ignore = "uses the current macOS output device"]
@@ -31,10 +32,16 @@ fn live_filter_changes_captured_audio() {
     let mut input = tunic.stdin.take().expect("capture Tunic stdin");
     writeln!(
         input,
-        "filter set --frequency {LEFT_HZ} --gain {FILTER_GAIN_DB} --q 4"
+        "filter add --frequency {LEFT_HZ} --gain {BAND_GAIN_DB} --q 4"
     )
-    .expect("configure peaking filter");
+    .expect("configure first peaking filter");
     wait_for_output(&mut output, "Applied equalizer revision 1");
+    writeln!(
+        input,
+        "filter add --frequency {LEFT_HZ} --gain {BAND_GAIN_DB} --q 4"
+    )
+    .expect("configure second peaking filter");
+    wait_for_output(&mut output, "Applied equalizer revision 2");
 
     let playback = Command::new("/usr/bin/afplay")
         .arg(&artifacts.probe)

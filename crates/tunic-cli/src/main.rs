@@ -76,8 +76,8 @@ enum DeviceCommand {
 
 #[derive(Debug, Subcommand)]
 enum FilterCommand {
-    /// Set the single peaking EQ band.
-    Set {
+    /// Add a peaking EQ band.
+    Add {
         /// Center frequency in hertz.
         #[arg(long)]
         frequency: f64,
@@ -88,8 +88,27 @@ enum FilterCommand {
         #[arg(long)]
         q: f64,
     },
-    /// Remove the EQ band and return to identity processing.
-    Clear,
+    /// Replace a peaking EQ band.
+    Set {
+        /// One-based band number shown by `status`.
+        band: usize,
+        /// Center frequency in hertz.
+        #[arg(long)]
+        frequency: f64,
+        /// Gain in decibels.
+        #[arg(long, allow_hyphen_values = true)]
+        gain: f64,
+        /// Quality factor.
+        #[arg(long)]
+        q: f64,
+    },
+    /// Remove a peaking EQ band.
+    Remove {
+        /// One-based band number shown by `status`.
+        band: usize,
+    },
+    /// Remove all EQ bands and return to identity processing.
+    Reset,
 }
 
 fn main() {
@@ -201,7 +220,8 @@ fn handle_line(engine: &EngineHandle, line: &str) -> Result<bool, Box<dyn std::e
             );
         }
         SessionCommand::Filter { command } => {
-            let equalizer = match equalizer_from_command(command) {
+            let snapshot = engine.snapshot();
+            let equalizer = match equalizer_from_command(&snapshot.equalizer, command) {
                 Ok(equalizer) => equalizer,
                 Err(error) => {
                     eprintln!("error: {error}");
@@ -221,17 +241,45 @@ fn handle_line(engine: &EngineHandle, line: &str) -> Result<bool, Box<dyn std::e
     Ok(false)
 }
 
-fn equalizer_from_command(command: FilterCommand) -> Result<Equalizer, tunic_dsp::EqualizerError> {
+fn equalizer_from_command(
+    current: &Equalizer,
+    command: FilterCommand,
+) -> Result<Equalizer, String> {
+    let mut filters = current.peaking_filters().to_vec();
     match command {
-        FilterCommand::Set { frequency, gain, q } => {
-            Ok(Equalizer::with_peaking_filter(PeakingFilter::new(
-                FrequencyHz::new(frequency)?,
-                GainDb::new(gain)?,
-                QualityFactor::new(q)?,
-            )))
+        FilterCommand::Add { frequency, gain, q } => {
+            filters.push(peaking_filter(frequency, gain, q)?);
         }
-        FilterCommand::Clear => Ok(Equalizer::identity()),
+        FilterCommand::Set {
+            band,
+            frequency,
+            gain,
+            q,
+        } => {
+            let filter = peaking_filter(frequency, gain, q)?;
+            let Some(existing) = band.checked_sub(1).and_then(|index| filters.get_mut(index))
+            else {
+                return Err(format!("filter band {band} does not exist"));
+            };
+            *existing = filter;
+        }
+        FilterCommand::Remove { band } => {
+            let Some(index) = band.checked_sub(1).filter(|&index| index < filters.len()) else {
+                return Err(format!("filter band {band} does not exist"));
+            };
+            filters.remove(index);
+        }
+        FilterCommand::Reset => filters.clear(),
     }
+    Ok(Equalizer::with_peaking_filters(filters))
+}
+
+fn peaking_filter(frequency: f64, gain: f64, q: f64) -> Result<PeakingFilter, String> {
+    Ok(PeakingFilter::new(
+        FrequencyHz::new(frequency).map_err(|error| error.to_string())?,
+        GainDb::new(gain).map_err(|error| error.to_string())?,
+        QualityFactor::new(q).map_err(|error| error.to_string())?,
+    ))
 }
 
 fn print_status(snapshot: &EngineSnapshot) {
@@ -258,19 +306,28 @@ fn print_status(snapshot: &EngineSnapshot) {
     } else {
         println!("Output: none");
     }
-    if let Some(filter) = snapshot.equalizer.peaking_filter() {
+    let filters = snapshot.equalizer.peaking_filters();
+    if filters.is_empty() {
         println!(
-            "Filter: peaking, {} Hz, {:+} dB, Q {} (revision {})",
-            filter.frequency().get(),
-            filter.gain().get(),
-            filter.quality_factor().get(),
+            "Equalizer: identity (revision {})",
             snapshot.equalizer_revision.get()
         );
     } else {
         println!(
-            "Filter: none (revision {})",
+            "Equalizer: {} {} (revision {})",
+            filters.len(),
+            if filters.len() == 1 { "band" } else { "bands" },
             snapshot.equalizer_revision.get()
         );
+        for (index, filter) in filters.iter().enumerate() {
+            println!(
+                "  {}: peaking, {} Hz, {:+} dB, Q {}",
+                index + 1,
+                filter.frequency().get(),
+                filter.gain().get(),
+                filter.quality_factor().get()
+            );
+        }
     }
 }
 
@@ -340,6 +397,7 @@ use clap::CommandFactory as _;
 mod tests {
     use super::{DeviceCommand, FilterCommand, SessionCli, SessionCommand, equalizer_from_command};
     use clap::Parser as _;
+    use tunic_dsp::Equalizer;
 
     #[test]
     fn interactive_device_name_preserves_spaces() {
@@ -356,13 +414,13 @@ mod tests {
 
     #[test]
     fn parses_peaking_filter_with_negative_gain() {
-        let words = shlex::split("filter set --frequency 1000 --gain -6 --q 1.25").unwrap();
+        let words = shlex::split("filter add --frequency 1000 --gain -6 --q 1.25").unwrap();
         let parsed = SessionCli::try_parse_from(words).unwrap();
 
         assert!(matches!(
             parsed.command,
             SessionCommand::Filter {
-                command: FilterCommand::Set {
+                command: FilterCommand::Add {
                     frequency: 1000.0,
                     gain: -6.0,
                     q: 1.25,
@@ -373,12 +431,74 @@ mod tests {
 
     #[test]
     fn rejects_invalid_filter_parameters_without_starting_the_engine() {
-        let result = equalizer_from_command(FilterCommand::Set {
-            frequency: 0.0,
-            gain: 6.0,
-            q: 1.0,
-        });
+        let result = equalizer_from_command(
+            &Equalizer::identity(),
+            FilterCommand::Add {
+                frequency: 0.0,
+                gain: 6.0,
+                q: 1.0,
+            },
+        );
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn add_set_remove_and_reset_build_an_ordered_equalizer() {
+        let first = equalizer_from_command(
+            &Equalizer::identity(),
+            FilterCommand::Add {
+                frequency: 100.0,
+                gain: 3.0,
+                q: 0.7,
+            },
+        )
+        .unwrap();
+        let second = equalizer_from_command(
+            &first,
+            FilterCommand::Add {
+                frequency: 1_000.0,
+                gain: -4.0,
+                q: 1.5,
+            },
+        )
+        .unwrap();
+        let changed = equalizer_from_command(
+            &second,
+            FilterCommand::Set {
+                band: 1,
+                frequency: 200.0,
+                gain: 6.0,
+                q: 1.0,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(changed.peaking_filters().len(), 2);
+        assert_eq!(changed.peaking_filters()[0].frequency().get(), 200.0);
+        assert_eq!(changed.peaking_filters()[1].frequency().get(), 1_000.0);
+
+        let removed = equalizer_from_command(&changed, FilterCommand::Remove { band: 1 }).unwrap();
+        assert_eq!(removed.peaking_filters().len(), 1);
+        assert_eq!(removed.peaking_filters()[0].frequency().get(), 1_000.0);
+
+        let reset = equalizer_from_command(&removed, FilterCommand::Reset).unwrap();
+        assert!(reset.peaking_filters().is_empty());
+    }
+
+    #[test]
+    fn rejects_zero_and_out_of_range_band_numbers() {
+        let equalizer = equalizer_from_command(
+            &Equalizer::identity(),
+            FilterCommand::Add {
+                frequency: 100.0,
+                gain: 3.0,
+                q: 1.0,
+            },
+        )
+        .unwrap();
+
+        assert!(equalizer_from_command(&equalizer, FilterCommand::Remove { band: 0 }).is_err());
+        assert!(equalizer_from_command(&equalizer, FilterCommand::Remove { band: 2 }).is_err());
     }
 }

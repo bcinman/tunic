@@ -453,11 +453,18 @@ mod tests {
             rebuild_sample_rate_hz: 48_000.0,
         })
         .unwrap();
-        let equalizer = Equalizer::with_peaking_filter(PeakingFilter::new(
-            FrequencyHz::new(1_000.0).unwrap(),
-            GainDb::new(6.0).unwrap(),
-            QualityFactor::new(1.0).unwrap(),
-        ));
+        let equalizer = Equalizer::with_peaking_filters(vec![
+            PeakingFilter::new(
+                FrequencyHz::new(100.0).unwrap(),
+                GainDb::new(3.0).unwrap(),
+                QualityFactor::new(0.7).unwrap(),
+            ),
+            PeakingFilter::new(
+                FrequencyHz::new(1_000.0).unwrap(),
+                GainDb::new(-6.0).unwrap(),
+                QualityFactor::new(1.5).unwrap(),
+            ),
+        ]);
 
         let revision = engine.set_equalizer(equalizer.clone()).unwrap();
 
