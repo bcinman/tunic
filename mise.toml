@@ -1,16 +1,31 @@
 [tools]
 rust = "nightly-2026-09-20"
 
+[tasks.fmt]
+description = "Check Rust formatting"
+run = "cargo fmt --all --check"
+
+[tasks.lint]
+description = "Lint all Rust targets"
+run = "cargo clippy --workspace --all-targets --all-features -- -D warnings"
+
+[tasks.test]
+description = "Test the Rust workspace"
+run = "cargo test --workspace --all-targets --all-features"
+
 [tasks.check]
-description = "Format, lint, and test the workspace"
-run = """
-cargo fmt --all --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo test --workspace --all-targets --all-features
-"""
+description = "Run all repository checks"
+depends = ["fmt", "lint", "test"]
 
 [tasks.cli]
-description = "run the tunic cli"
-run = """
-cargo run -p tunic-cli
-"""
+description = "Run the Tunic CLI"
+run = "cargo run -p tunic-cli --"
+
+[tasks.capture]
+description = "Run Tunic and capture processed output"
+run = "cargo run -p tunic-cli -- start --capture"
+
+[tasks.verify-audio]
+description = "Verify the production audio path on real hardware"
+depends = ["test"]
+run = "cargo test -p tunic-cli --test hardware -- --ignored --nocapture"
