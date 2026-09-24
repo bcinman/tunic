@@ -9,3 +9,4 @@
 - Use branded types when it makes sense to prevent invalid state.
 - You can add new dependencies to make your life easier, but ask the user before continuing. serde, itertools, are blessed. Use them when it makes sense.
 - Be concise in your responses. Avoid walls of text. Write clearly and avoid unnecessary jargon. If we need more details we'll ask for it.
+- If the oracle finds issues you must verify that they are valid before attempting a fix.
