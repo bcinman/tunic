@@ -13,8 +13,25 @@ Product policy belongs in the engine. The CLI owns command input and output form
 
 ## Command surface
 
+The currently implemented surface is:
+
 ```console
 tunic start [--capture <PATH>]       # Process audio; optionally capture Float32 WAV output
+
+# Inside the interactive session:
+status
+device list
+device show [DEVICE]
+bypass
+filter set --frequency <HZ> --gain <DB> --q <Q>
+filter clear
+help
+quit
+```
+
+The planned product surface also includes:
+
+```console
 tunic status                         # Print the current engine snapshot
 tunic watch                          # Stream snapshots, failures, and telemetry
 
@@ -25,7 +42,7 @@ tunic profile export                 # Export a profile to a file in APO format
 tunic profile create|rename|delete   # Manage profiles
 tunic profile select                 # Activate a profile
 
-tunic filter add|set|remove|reset    # Preview live graph changes for the current profile
+tunic filter add|set|remove|reset    # Edit a multi-band processing graph
 tunic profile save|discard           # Commit or discard the preview
 
 tunic bypass                         # Toggle processing

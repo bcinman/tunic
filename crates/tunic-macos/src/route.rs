@@ -4,7 +4,7 @@ use std::num::NonZeroUsize;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::ptr::NonNull;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 use std::thread;
 use std::time::Duration;
 
@@ -31,7 +31,7 @@ use objc2_core_audio_types::{
 };
 use objc2_core_foundation::CFDictionary;
 use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSObject, NSString, NSUUID};
-use tunic_dsp::PreparedGraph;
+use tunic_dsp::{Configuration, PreparedGraph};
 use tunic_engine::{PlatformError, ProcessedOutputSink};
 
 use crate::devices::{device_uid, input_stream_count};
@@ -55,6 +55,8 @@ pub(crate) struct Route {
     tap_id: AudioObjectID,
     started: bool,
     active: Arc<AtomicBool>,
+    sample_rate_hz: f64,
+    graph_updates: Arc<GraphExchange>,
     _block: IoBlock,
     _description: Retained<CATapDescription>,
 }
@@ -84,15 +86,20 @@ impl Route {
         output_id: AudioObjectID,
         bypassed: Arc<AtomicBool>,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+        configuration: &Configuration,
     ) -> Result<Self, PlatformError> {
-        Self::start_inner(output_id, bypassed, output_sink)
+        Self::start_inner(output_id, bypassed, output_sink, configuration)
     }
 
     fn start_inner(
         output_id: AudioObjectID,
         bypassed: Arc<AtomicBool>,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+        configuration: &Configuration,
     ) -> Result<Self, PlatformError> {
+        let sample_rate_hz = crate::devices::sample_rate(output_id)?;
+        let prepared_graph = PreparedGraph::prepare(configuration, sample_rate_hz)
+            .map_err(|error| PlatformError::new(error.to_string()))?;
         let output_uid = device_uid(output_id)?;
         let excluded_process = current_process_object().into_iter().collect::<Vec<_>>();
         let process_numbers = excluded_process
@@ -155,7 +162,9 @@ impl Route {
         let active = Arc::new(AtomicBool::new(true));
         let callback_active = Arc::clone(&active);
         let scratch = RefCell::new(Box::new([0.0_f32; SCRATCH_FRAME_CAPACITY * 2]));
-        let graph = RefCell::new(PreparedGraph::identity());
+        let graph = RefCell::new(prepared_graph);
+        let graph_updates = Arc::new(GraphExchange::new());
+        let callback_graph_updates = Arc::clone(&graph_updates);
         let block = RcBlock::new(
             move |_now: NonNull<AudioTimeStamp>,
                   input: NonNull<AudioBufferList>,
@@ -173,7 +182,8 @@ impl Route {
                     else {
                         return;
                     };
-                    render_identity(
+                    callback_graph_updates.install_latest(&mut graph);
+                    render_audio(
                         input.as_ptr(),
                         output.as_ptr(),
                         tap_buffers,
@@ -214,6 +224,8 @@ impl Route {
             tap_id,
             started: false,
             active,
+            sample_rate_hz,
+            graph_updates,
             _block: block,
             _description: description,
         };
@@ -226,6 +238,16 @@ impl Route {
         route.started = true;
 
         Ok(route)
+    }
+
+    pub(crate) fn set_configuration(
+        &self,
+        configuration: &Configuration,
+    ) -> Result<(), PlatformError> {
+        let graph = PreparedGraph::prepare(configuration, self.sample_rate_hz)
+            .map_err(|error| PlatformError::new(error.to_string()))?;
+        self.graph_updates.publish(graph);
+        Ok(())
     }
 
     pub(crate) fn stop(&mut self) -> Result<(), PlatformError> {
@@ -275,6 +297,88 @@ impl Route {
         }
 
         errors_to_result(errors)
+    }
+}
+
+struct GraphExchange {
+    pending: AtomicPtr<GraphNode>,
+    retired: AtomicPtr<GraphNode>,
+}
+
+impl GraphExchange {
+    fn new() -> Self {
+        Self {
+            pending: AtomicPtr::new(std::ptr::null_mut()),
+            retired: AtomicPtr::new(std::ptr::null_mut()),
+        }
+    }
+
+    /// Publish from the non-real-time engine thread.
+    fn publish(&self, graph: PreparedGraph) {
+        self.reclaim_retired();
+        let update = Box::into_raw(Box::new(GraphNode {
+            graph,
+            next: std::ptr::null_mut(),
+        }));
+        let superseded = self.pending.swap(update, Ordering::AcqRel);
+        if !superseded.is_null() {
+            // SAFETY: the producer won ownership of the pending node in the swap.
+            drop(unsafe { Box::from_raw(superseded) });
+        }
+        self.reclaim_retired();
+    }
+
+    /// Install on the real-time callback without locking, allocating, or freeing.
+    fn install_latest(&self, current: &mut PreparedGraph) {
+        let update = self.pending.swap(std::ptr::null_mut(), Ordering::AcqRel);
+        if update.is_null() {
+            return;
+        }
+        // SAFETY: the callback won ownership of the pending node in the swap.
+        let node = unsafe { &mut *update };
+        std::mem::swap(current, &mut node.graph);
+        let mut head = self.retired.load(Ordering::Acquire);
+        loop {
+            node.next = head;
+            match self.retired.compare_exchange_weak(
+                head,
+                update,
+                Ordering::Release,
+                Ordering::Acquire,
+            ) {
+                Ok(_) => return,
+                Err(actual) => head = actual,
+            }
+        }
+    }
+
+    fn reclaim_retired(&self) {
+        let retired = self.retired.swap(std::ptr::null_mut(), Ordering::AcqRel);
+        // SAFETY: the producer owns the detached retired list.
+        unsafe { drop_nodes(retired) };
+    }
+}
+
+impl Drop for GraphExchange {
+    fn drop(&mut self) {
+        // The IOProc block owns an Arc, so final drop cannot run during a callback.
+        unsafe {
+            drop_nodes(*self.pending.get_mut());
+            drop_nodes(*self.retired.get_mut());
+        }
+    }
+}
+
+struct GraphNode {
+    graph: PreparedGraph,
+    next: *mut GraphNode,
+}
+
+unsafe fn drop_nodes(mut node: *mut GraphNode) {
+    while !node.is_null() {
+        // SAFETY: the caller owns every node in this detached list.
+        let boxed = unsafe { Box::from_raw(node) };
+        node = boxed.next;
     }
 }
 
@@ -511,7 +615,7 @@ unsafe fn zero_output(list: *mut AudioBufferList) {
     }
 }
 
-fn render_identity(
+fn render_audio(
     input: *mut AudioBufferList,
     output: *mut AudioBufferList,
     tap_buffers: TapBufferRange,
@@ -640,11 +744,31 @@ const fn size_of<T>() -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::{TapBufferRange, normalize_stereo, validate_stream_format, write_stereo};
+    use super::{
+        GraphExchange, TapBufferRange, normalize_stereo, validate_stream_format, write_stereo,
+    };
     use objc2_core_audio_types::{
         AudioBuffer, AudioStreamBasicDescription, kAudioFormatFlagIsFloat,
         kAudioFormatFlagIsNonInterleaved, kAudioFormatLinearPCM,
     };
+    use tunic_dsp::{
+        Configuration, FrequencyHz, GainDb, PeakingFilter, PreparedGraph, QualityFactor,
+    };
+
+    #[test]
+    fn graph_exchange_installs_the_latest_pending_graph() {
+        let exchange = GraphExchange::new();
+        exchange.publish(peaking_graph(6.0));
+        exchange.publish(peaking_graph(-6.0));
+        let mut current = PreparedGraph::identity();
+        let mut impulse = [1.0_f32, 1.0];
+
+        exchange.install_latest(&mut current);
+        current.process_interleaved_stereo(&mut impulse);
+
+        assert!(impulse[0] < 1.0);
+        assert_eq!(impulse[0], impulse[1]);
+    }
 
     #[test]
     fn normalizes_asymmetric_planar_input_to_interleaved_stereo() {
@@ -746,5 +870,14 @@ mod tests {
             mBitsPerChannel: 32,
             mReserved: 0,
         }
+    }
+
+    fn peaking_graph(gain_db: f64) -> PreparedGraph {
+        let configuration = Configuration::with_peaking_filter(PeakingFilter::new(
+            FrequencyHz::new(1_000.0).unwrap(),
+            GainDb::new(gain_db).unwrap(),
+            QualityFactor::new(1.0).unwrap(),
+        ));
+        PreparedGraph::prepare(&configuration, 48_000.0).unwrap()
     }
 }

@@ -14,6 +14,7 @@ use objc2_core_audio::{
     AudioObjectRemovePropertyListenerBlock, kAudioHardwarePropertyDefaultOutputDevice,
     kAudioObjectPropertyElementMain, kAudioObjectPropertyScopeGlobal, kAudioObjectSystemObject,
 };
+use tunic_dsp::Configuration;
 use tunic_engine::{
     ActiveRoute, AudioPlatform, DeviceId, PlatformError, PlatformEvent, PlatformEventSink,
     PlatformState, ProcessedOutputFormat, ProcessedOutputSink,
@@ -29,6 +30,7 @@ pub struct CoreAudioPlatform {
     listener: Option<DefaultOutputListener>,
     bypassed: Arc<AtomicBool>,
     output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+    configuration: Configuration,
 }
 
 impl CoreAudioPlatform {
@@ -39,6 +41,7 @@ impl CoreAudioPlatform {
             listener: None,
             bypassed: Arc::new(AtomicBool::new(false)),
             output_sink: None,
+            configuration: Configuration::identity(),
         }
     }
 
@@ -66,6 +69,7 @@ impl CoreAudioPlatform {
             output_id,
             Arc::clone(&self.bypassed),
             self.output_sink.clone(),
+            &self.configuration,
         )?);
         Ok(PlatformState { route, devices })
     }
@@ -91,8 +95,10 @@ impl AudioPlatform for CoreAudioPlatform {
         &mut self,
         events: PlatformEventSink,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+        configuration: &Configuration,
     ) -> Result<PlatformState, PlatformError> {
         self.output_sink = output_sink;
+        self.configuration = configuration.clone();
         self.listener = Some(DefaultOutputListener::new(events)?);
         match self.build_default_route() {
             Ok(state) => Ok(state),
@@ -109,6 +115,16 @@ impl AudioPlatform for CoreAudioPlatform {
 
     fn set_bypassed(&mut self, bypassed: bool) {
         self.bypassed.store(bypassed, Ordering::Relaxed);
+    }
+
+    fn set_configuration(&mut self, configuration: &Configuration) -> Result<(), PlatformError> {
+        let route = self
+            .route
+            .as_ref()
+            .ok_or_else(|| PlatformError::new("no active output route"))?;
+        route.set_configuration(configuration)?;
+        self.configuration = configuration.clone();
+        Ok(())
     }
 
     fn shutdown(&mut self) -> Result<(), PlatformError> {

@@ -302,6 +302,7 @@ dependencies = [
  "clap",
  "ctrlc",
  "shlex",
+ "tunic-dsp",
  "tunic-engine",
  "tunic-macos",
 ]
@@ -313,6 +314,9 @@ version = "0.1.0"
 [[package]]
 name = "tunic-engine"
 version = "0.1.0"
+dependencies = [
+ "tunic-dsp",
+]
 
 [[package]]
 name = "tunic-macos"

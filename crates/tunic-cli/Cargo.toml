@@ -11,6 +11,7 @@ path = "src/main.rs"
 clap.workspace = true
 ctrlc.workspace = true
 shlex.workspace = true
+tunic-dsp.workspace = true
 tunic-engine.workspace = true
 tunic-macos.workspace = true
 

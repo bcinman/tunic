@@ -1,4 +1,5 @@
 # Repository guidance
+- Keep `STATUS.md` current when changes materially alter implemented capabilities, planned gaps, or non-goals.
 - Lint and check rust code with clippy
 - Use the tool versions managed by `mise.toml`; add new project tools and common commands to mise when appropriate.
 - Run `mise run check` after cross-component changes

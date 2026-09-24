@@ -7,6 +7,8 @@ use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
+use tunic_dsp::Configuration;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ProcessedOutputFormat {
     pub sample_rate_hz: f64,
@@ -39,9 +41,18 @@ pub trait ProcessedOutputSink: Send + Sync + 'static {
     fn write(&self, interleaved_samples: &[f32]);
 }
 
-#[derive(Default)]
 pub struct EngineOptions {
     pub processed_output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+    pub configuration: Configuration,
+}
+
+impl Default for EngineOptions {
+    fn default() -> Self {
+        Self {
+            processed_output_sink: None,
+            configuration: Configuration::identity(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -96,16 +107,40 @@ pub struct EngineSnapshot {
     pub bypassed: bool,
     pub route: Option<ActiveRoute>,
     pub devices: Vec<OutputDevice>,
+    pub configuration: Configuration,
+    pub configuration_revision: ConfigurationRevision,
 }
 
 impl EngineSnapshot {
-    fn starting() -> Self {
+    fn starting(configuration: Configuration) -> Self {
         Self {
             status: EngineStatus::Starting,
             bypassed: false,
             route: None,
             devices: Vec::new(),
+            configuration,
+            configuration_revision: ConfigurationRevision::INITIAL,
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ConfigurationRevision(u64);
+
+impl ConfigurationRevision {
+    const INITIAL: Self = Self(0);
+
+    #[must_use]
+    pub fn get(self) -> u64 {
+        self.0
+    }
+
+    fn next(self) -> Self {
+        Self(
+            self.0
+                .checked_add(1)
+                .expect("configuration revision overflow"),
+        )
     }
 }
 
@@ -139,9 +174,11 @@ pub trait AudioPlatform: 'static {
         &mut self,
         events: PlatformEventSink,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+        configuration: &Configuration,
     ) -> Result<PlatformState, PlatformError>;
     fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError>;
     fn set_bypassed(&mut self, bypassed: bool);
+    fn set_configuration(&mut self, configuration: &Configuration) -> Result<(), PlatformError>;
     fn shutdown(&mut self) -> Result<(), PlatformError>;
 }
 
@@ -164,6 +201,10 @@ impl std::error::Error for EngineError {}
 
 enum Command {
     ToggleBypass(Sender<bool>),
+    SetConfiguration(
+        Configuration,
+        Sender<Result<ConfigurationRevision, PlatformError>>,
+    ),
     Shutdown(Sender<Result<(), PlatformError>>),
 }
 
@@ -181,7 +222,9 @@ impl Engine {
         P: AudioPlatform,
         F: FnOnce() -> P + Send + 'static,
     {
-        let snapshot = Arc::new(RwLock::new(EngineSnapshot::starting()));
+        let snapshot = Arc::new(RwLock::new(EngineSnapshot::starting(
+            options.configuration.clone(),
+        )));
         let worker_snapshot = Arc::clone(&snapshot);
         let (commands, command_rx) = mpsc::channel();
         let (startup_tx, startup_rx) = mpsc::sync_channel(1);
@@ -232,6 +275,20 @@ impl EngineHandle {
             .map_err(|_| EngineError("engine stopped before applying bypass".into()))
     }
 
+    pub fn set_configuration(
+        &self,
+        configuration: Configuration,
+    ) -> Result<ConfigurationRevision, EngineError> {
+        let (result_tx, result_rx) = mpsc::channel();
+        self.commands
+            .send(Command::SetConfiguration(configuration, result_tx))
+            .map_err(|_| EngineError("engine is not running".into()))?;
+        result_rx
+            .recv()
+            .map_err(|_| EngineError("engine stopped before applying configuration".into()))?
+            .map_err(|error| EngineError(error.to_string()))
+    }
+
     pub fn shutdown(mut self) -> Result<(), EngineError> {
         self.shutdown_inner()
     }
@@ -273,9 +330,19 @@ fn run_engine(
     startup: mpsc::SyncSender<Result<(), PlatformError>>,
 ) {
     let (events, event_rx) = mpsc::channel();
-    match platform.start(events, options.processed_output_sink) {
+    match platform.start(
+        events,
+        options.processed_output_sink,
+        &options.configuration,
+    ) {
         Ok(state) => {
-            update_running_snapshot(&snapshot, state, false);
+            update_running_snapshot(
+                &snapshot,
+                state,
+                false,
+                options.configuration,
+                ConfigurationRevision::INITIAL,
+            );
             let _ = startup.send(Ok(()));
         }
         Err(error) => {
@@ -289,8 +356,18 @@ fn run_engine(
             match event {
                 PlatformEvent::DefaultOutputChanged => match platform.rebuild_default_route() {
                     Ok(state) => {
-                        let bypassed = read_snapshot(&snapshot).bypassed;
-                        update_running_snapshot(&snapshot, state, bypassed);
+                        let current = read_snapshot(&snapshot);
+                        let bypassed = current.bypassed;
+                        let configuration = current.configuration.clone();
+                        let configuration_revision = current.configuration_revision;
+                        drop(current);
+                        update_running_snapshot(
+                            &snapshot,
+                            state,
+                            bypassed,
+                            configuration,
+                            configuration_revision,
+                        );
                     }
                     Err(error) => {
                         let mut current = write_snapshot(&snapshot);
@@ -307,6 +384,15 @@ fn run_engine(
                 platform.set_bypassed(bypassed);
                 write_snapshot(&snapshot).bypassed = bypassed;
                 let _ = result.send(bypassed);
+            }
+            Ok(Command::SetConfiguration(configuration, result)) => {
+                let applied = platform.set_configuration(&configuration).map(|()| {
+                    let mut current = write_snapshot(&snapshot);
+                    current.configuration = configuration;
+                    current.configuration_revision = current.configuration_revision.next();
+                    current.configuration_revision
+                });
+                let _ = result.send(applied);
             }
             Ok(Command::Shutdown(result)) => {
                 let shutdown = platform.shutdown();
@@ -329,12 +415,16 @@ fn update_running_snapshot(
     snapshot: &RwLock<EngineSnapshot>,
     state: PlatformState,
     bypassed: bool,
+    configuration: Configuration,
+    configuration_revision: ConfigurationRevision,
 ) {
     *write_snapshot(snapshot) = EngineSnapshot {
         status: EngineStatus::Running,
         bypassed,
         route: Some(state.route),
         devices: state.devices,
+        configuration,
+        configuration_revision,
     };
 }
 
@@ -348,4 +438,108 @@ fn write_snapshot(
     snapshot: &RwLock<EngineSnapshot>,
 ) -> std::sync::RwLockWriteGuard<'_, EngineSnapshot> {
     snapshot.write().expect("engine snapshot lock poisoned")
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{Arc, Mutex};
+
+    use tunic_dsp::{Configuration, FrequencyHz, GainDb, PeakingFilter, QualityFactor};
+
+    use super::{
+        ActiveRoute, AudioPlatform, DeviceId, Engine, EngineOptions, PlatformError,
+        PlatformEventSink, PlatformState, ProcessedOutputSink,
+    };
+
+    #[test]
+    fn publishes_configuration_only_after_the_platform_accepts_it() {
+        let applied = Arc::new(Mutex::new(Vec::new()));
+        let platform_applied = Arc::clone(&applied);
+        let engine = Engine::start(EngineOptions::default(), move || FakePlatform {
+            applied: platform_applied,
+            reject_configuration: false,
+        })
+        .unwrap();
+        let configuration = Configuration::with_peaking_filter(PeakingFilter::new(
+            FrequencyHz::new(1_000.0).unwrap(),
+            GainDb::new(6.0).unwrap(),
+            QualityFactor::new(1.0).unwrap(),
+        ));
+
+        let revision = engine.set_configuration(configuration.clone()).unwrap();
+
+        assert_eq!(revision.get(), 1);
+        assert_eq!(engine.snapshot().configuration, configuration);
+        assert_eq!(applied.lock().unwrap().as_slice(), &[configuration]);
+        engine.shutdown().unwrap();
+    }
+
+    #[test]
+    fn preserves_the_snapshot_when_the_platform_rejects_a_configuration() {
+        let engine = Engine::start(EngineOptions::default(), || FakePlatform {
+            applied: Arc::new(Mutex::new(Vec::new())),
+            reject_configuration: true,
+        })
+        .unwrap();
+        let configuration = Configuration::with_peaking_filter(PeakingFilter::new(
+            FrequencyHz::new(1_000.0).unwrap(),
+            GainDb::new(6.0).unwrap(),
+            QualityFactor::new(1.0).unwrap(),
+        ));
+
+        assert!(engine.set_configuration(configuration).is_err());
+        let snapshot = engine.snapshot();
+        assert_eq!(snapshot.configuration, Configuration::identity());
+        assert_eq!(snapshot.configuration_revision.get(), 0);
+        engine.shutdown().unwrap();
+    }
+
+    struct FakePlatform {
+        applied: Arc<Mutex<Vec<Configuration>>>,
+        reject_configuration: bool,
+    }
+
+    impl AudioPlatform for FakePlatform {
+        fn start(
+            &mut self,
+            _events: PlatformEventSink,
+            _output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+            _configuration: &Configuration,
+        ) -> Result<PlatformState, PlatformError> {
+            Ok(platform_state())
+        }
+
+        fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError> {
+            Ok(platform_state())
+        }
+
+        fn set_bypassed(&mut self, _bypassed: bool) {}
+
+        fn set_configuration(
+            &mut self,
+            configuration: &Configuration,
+        ) -> Result<(), PlatformError> {
+            if self.reject_configuration {
+                return Err(PlatformError::new("configuration rejected"));
+            }
+            self.applied.lock().unwrap().push(configuration.clone());
+            Ok(())
+        }
+
+        fn shutdown(&mut self) -> Result<(), PlatformError> {
+            Ok(())
+        }
+    }
+
+    fn platform_state() -> PlatformState {
+        PlatformState {
+            route: ActiveRoute {
+                device_id: DeviceId::new("fake"),
+                device_name: "Fake Output".into(),
+                sample_rate_hz: 48_000.0,
+                channels: 2,
+            },
+            devices: Vec::new(),
+        }
+    }
 }

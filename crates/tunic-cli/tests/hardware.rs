@@ -9,11 +9,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 const SAMPLE_RATE: u32 = 48_000;
 const LEFT_HZ: f32 = 997.0;
-const RIGHT_HZ: f32 = 1_499.0;
+const RIGHT_HZ: f32 = 7_999.0;
+const FILTER_GAIN_DB: f32 = 6.0;
 
 #[test]
 #[ignore = "uses the current macOS output device"]
-fn captures_expected_stereo_probe_through_the_production_route() {
+fn live_filter_changes_captured_audio() {
     let artifacts = Artifacts::new();
     write_probe(&artifacts.probe);
 
@@ -26,7 +27,14 @@ fn captures_expected_stereo_probe_through_the_production_route() {
         .spawn()
         .expect("start Tunic");
     let mut output = BufReader::new(tunic.stdout.take().expect("capture Tunic stdout"));
-    wait_until_capturing(&mut output);
+    wait_for_output(&mut output, "Capturing processed output");
+    let mut input = tunic.stdin.take().expect("capture Tunic stdin");
+    writeln!(
+        input,
+        "filter set --frequency {LEFT_HZ} --gain {FILTER_GAIN_DB} --q 4"
+    )
+    .expect("configure peaking filter");
+    wait_for_output(&mut output, "Applied filter configuration revision 1");
 
     let playback = Command::new("/usr/bin/afplay")
         .arg(&artifacts.probe)
@@ -34,25 +42,20 @@ fn captures_expected_stereo_probe_through_the_production_route() {
         .expect("play stereo probe");
     assert!(playback.success(), "afplay failed with {playback}");
 
-    tunic
-        .stdin
-        .take()
-        .expect("capture Tunic stdin")
-        .write_all(b"quit\n")
-        .expect("stop Tunic");
+    input.write_all(b"quit\n").expect("stop Tunic");
     let status = tunic.wait().expect("wait for Tunic");
     assert!(status.success(), "Tunic failed with {status}");
 
     verify_capture(&artifacts.capture);
 }
 
-fn wait_until_capturing(output: &mut impl BufRead) {
+fn wait_for_output(output: &mut impl BufRead, expected: &str) {
     let mut line = String::new();
     loop {
         line.clear();
         let bytes = output.read_line(&mut line).expect("read Tunic startup");
         assert_ne!(bytes, 0, "Tunic stopped before capture started");
-        if line.contains("Capturing processed output") {
+        if line.contains(expected) {
             return;
         }
     }
@@ -65,7 +68,7 @@ fn write_probe(path: &Path) {
     write_wav_header(&mut file, data_bytes);
     for frame in 0..frames {
         let time = frame as f32 / SAMPLE_RATE as f32;
-        let left = 0.2 * (TAU * LEFT_HZ * time).sin();
+        let left = 0.1 * (TAU * LEFT_HZ * time).sin();
         let right = 0.1 * (TAU * RIGHT_HZ * time).sin();
         file.write_all(&left.to_le_bytes()).unwrap();
         file.write_all(&right.to_le_bytes()).unwrap();
@@ -127,14 +130,15 @@ fn verify_capture(path: &Path) {
     let right_frequency = positive_crossings(&right, first, last) as f32 / duration;
     let left_rms = rms(&left[first..=last]);
     let right_rms = rms(&right[first..=last]);
-    let rms_ratio = left_rms / right_rms;
+    let measured_gain = left_rms / right_rms;
+    let expected_gain = 10.0_f32.powf(FILTER_GAIN_DB / 20.0);
 
     println!(
-        "captured left={left_frequency:.1} Hz, right={right_frequency:.1} Hz, RMS ratio={rms_ratio:.2}"
+        "captured left={left_frequency:.1} Hz, right={right_frequency:.1} Hz, measured gain={measured_gain:.2}"
     );
     assert!((left_frequency - LEFT_HZ).abs() < 3.0);
     assert!((right_frequency - RIGHT_HZ).abs() < 3.0);
-    assert!((rms_ratio - 2.0).abs() < 0.1);
+    assert!((measured_gain - expected_gain).abs() < 0.1);
 }
 
 fn positive_crossings(samples: &[f32], first: usize, last: usize) -> usize {

@@ -11,6 +11,7 @@ use std::thread;
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
+use tunic_dsp::{Configuration, FrequencyHz, GainDb, PeakingFilter, QualityFactor};
 use tunic_engine::{
     Engine, EngineHandle, EngineOptions, EngineSnapshot, EngineStatus, OutputDevice,
     ProcessedOutputSink,
@@ -54,6 +55,11 @@ enum SessionCommand {
     },
     /// Toggle processing bypass.
     Bypass,
+    /// Configure the live equalizer.
+    Filter {
+        #[command(subcommand)]
+        command: FilterCommand,
+    },
     /// Show interactive commands.
     Help,
     /// Shut down Tunic.
@@ -66,6 +72,24 @@ enum DeviceCommand {
     List,
     /// Show one output device; defaults to the active device.
     Show { device: Option<String> },
+}
+
+#[derive(Debug, Subcommand)]
+enum FilterCommand {
+    /// Set the single peaking EQ band.
+    Set {
+        /// Center frequency in hertz.
+        #[arg(long)]
+        frequency: f64,
+        /// Gain in decibels.
+        #[arg(long, allow_hyphen_values = true)]
+        gain: f64,
+        /// Quality factor.
+        #[arg(long)]
+        q: f64,
+    },
+    /// Remove the EQ band and return to identity processing.
+    Clear,
 }
 
 fn main() {
@@ -91,6 +115,7 @@ fn start_session(capture_path: Option<PathBuf>) -> Result<(), Box<dyn std::error
     let engine = Engine::start(
         EngineOptions {
             processed_output_sink: output_sink,
+            ..EngineOptions::default()
         },
         CoreAudioPlatform::new,
     )?;
@@ -175,10 +200,40 @@ fn handle_line(engine: &EngineHandle, line: &str) -> Result<bool, Box<dyn std::e
                 if bypassed { "bypassed" } else { "active" }
             );
         }
+        SessionCommand::Filter { command } => {
+            let configuration = match filter_configuration(command) {
+                Ok(configuration) => configuration,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return Ok(false);
+                }
+            };
+            match engine.set_configuration(configuration) {
+                Ok(revision) => {
+                    println!("Applied filter configuration revision {}.", revision.get());
+                }
+                Err(error) => eprintln!("error: {error}"),
+            }
+        }
         SessionCommand::Help => print_session_help()?,
         SessionCommand::Quit => return Ok(true),
     }
     Ok(false)
+}
+
+fn filter_configuration(
+    command: FilterCommand,
+) -> Result<Configuration, tunic_dsp::ConfigurationError> {
+    match command {
+        FilterCommand::Set { frequency, gain, q } => {
+            Ok(Configuration::with_peaking_filter(PeakingFilter::new(
+                FrequencyHz::new(frequency)?,
+                GainDb::new(gain)?,
+                QualityFactor::new(q)?,
+            )))
+        }
+        FilterCommand::Clear => Ok(Configuration::identity()),
+    }
 }
 
 fn print_status(snapshot: &EngineSnapshot) {
@@ -204,6 +259,20 @@ fn print_status(snapshot: &EngineSnapshot) {
         );
     } else {
         println!("Output: none");
+    }
+    if let Some(filter) = snapshot.configuration.peaking_filter() {
+        println!(
+            "Filter: peaking, {} Hz, {:+} dB, Q {} (revision {})",
+            filter.frequency().get(),
+            filter.gain().get(),
+            filter.quality_factor().get(),
+            snapshot.configuration_revision.get()
+        );
+    } else {
+        println!(
+            "Filter: none (revision {})",
+            snapshot.configuration_revision.get()
+        );
     }
 }
 
@@ -271,7 +340,7 @@ use clap::CommandFactory as _;
 
 #[cfg(test)]
 mod tests {
-    use super::{DeviceCommand, SessionCli, SessionCommand};
+    use super::{DeviceCommand, FilterCommand, SessionCli, SessionCommand, filter_configuration};
     use clap::Parser as _;
 
     #[test]
@@ -285,5 +354,33 @@ mod tests {
                 command: DeviceCommand::Show { device: Some(name) }
             } if name == "Studio Display Speakers"
         ));
+    }
+
+    #[test]
+    fn parses_peaking_filter_with_negative_gain() {
+        let words = shlex::split("filter set --frequency 1000 --gain -6 --q 1.25").unwrap();
+        let parsed = SessionCli::try_parse_from(words).unwrap();
+
+        assert!(matches!(
+            parsed.command,
+            SessionCommand::Filter {
+                command: FilterCommand::Set {
+                    frequency: 1000.0,
+                    gain: -6.0,
+                    q: 1.25,
+                }
+            }
+        ));
+    }
+
+    #[test]
+    fn rejects_invalid_filter_parameters_without_starting_the_engine() {
+        let result = filter_configuration(FilterCommand::Set {
+            frequency: 0.0,
+            gain: 6.0,
+            q: 1.0,
+        });
+
+        assert!(result.is_err());
     }
 }

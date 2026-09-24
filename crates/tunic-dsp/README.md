@@ -2,8 +2,9 @@
 
 **Responsibility:** Portable audio-processing definitions and algorithms.
 
-- Defines the versioned processing configuration.
-- Validates and canonicalizes configurations.
+- Defines and validates the processing configuration; versioning and
+  serialization are planned.
+- Rejects invalid filter parameters and sample-rate-specific configurations.
 - Prepares processing graphs for a specific sample rate.
 - Processes arbitrary stereo frame counts without allocation.
 - Supports reset, bypass integration, and latency reporting.
@@ -12,20 +13,24 @@
 
 ## Rough public interface
 
+The current implementation supports either identity processing or one peaking
+filter. Versioning, serialization, and additional filter types remain planned.
+
 ```rust
 pub struct Configuration;
+pub struct PeakingFilter;
 pub struct PreparedGraph;
 
 impl Configuration {
-    pub fn parse_json(input: &str) -> Result<Self, ConfigurationError>;
-    pub fn to_canonical_json(&self) -> Result<String, ConfigurationError>;
+    pub fn identity() -> Self;
+    pub fn with_peaking_filter(filter: PeakingFilter) -> Self;
 }
 
 impl PreparedGraph {
     pub fn prepare(
         configuration: &Configuration,
         sample_rate_hz: f64,
-    ) -> Result<Self, PrepareError>;
+    ) -> Result<Self, ConfigurationError>;
 
     pub fn process(
         &mut self,
