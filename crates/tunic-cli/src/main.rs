@@ -4,11 +4,12 @@ mod capture;
 
 use std::io::{self, BufRead, IsTerminal, Write};
 use std::path::PathBuf;
+use std::process::Command as ProcessCommand;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use clap::{Parser, Subcommand, ValueEnum};
 use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, QualityFactor};
@@ -685,23 +686,32 @@ fn stream_telemetry(
     let telemetry = engine.telemetry();
     let is_terminal = io::stdout().is_terminal();
     let mut frame = telemetry.try_latest().unwrap_or_default();
-    if is_terminal {
-        print!("\x1b[?1049h\x1b[?25l");
-    } else {
-        println!("Live telemetry (press Enter to stop)");
+    let mut terminal_size = is_terminal.then(read_terminal_size).flatten();
+    let mut terminal_size_read_at = Instant::now();
+    let screen = is_terminal.then(TerminalScreen::enter).transpose()?;
+    let mut output = io::stdout().lock();
+    if !is_terminal {
+        writeln!(output, "Live telemetry (press Enter to stop)")?;
     }
 
     let disconnected = loop {
         if let Some(latest) = telemetry.try_latest() {
             frame = latest;
         }
-        let formatted = format_telemetry(frame);
         if is_terminal {
-            print!("\x1b[HLive telemetry (press Enter to stop)\n\n{formatted}\x1b[J");
+            if terminal_size_read_at.elapsed() >= Duration::from_millis(500) {
+                terminal_size = read_terminal_size();
+                terminal_size_read_at = Instant::now();
+            }
+            write!(
+                output,
+                "\x1b[H{}\x1b[J",
+                format_terminal_telemetry(frame, terminal_size)
+            )?;
         } else {
-            println!("{formatted}");
+            writeln!(output, "{}", format_telemetry(frame))?;
         }
-        io::stdout().flush()?;
+        output.flush()?;
 
         if interrupted.load(Ordering::Acquire) {
             break false;
@@ -713,11 +723,81 @@ fn stream_telemetry(
         }
     };
 
-    if is_terminal {
-        print!("\x1b[?25h\x1b[?1049l");
-    }
-    io::stdout().flush()?;
+    drop(output);
+    drop(screen);
     Ok(disconnected)
+}
+
+const TELEMETRY_MINIMUM_ROWS: u16 = 18;
+const TELEMETRY_MINIMUM_COLUMNS: u16 = 62;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct TerminalSize {
+    rows: u16,
+    columns: u16,
+}
+
+fn read_terminal_size() -> Option<TerminalSize> {
+    let output = ProcessCommand::new("stty")
+        .args(["-f", "/dev/tty", "size"])
+        .output()
+        .ok()?;
+    output
+        .status
+        .success()
+        .then(|| parse_terminal_size(&output.stdout))?
+}
+
+fn parse_terminal_size(output: &[u8]) -> Option<TerminalSize> {
+    let mut dimensions = std::str::from_utf8(output).ok()?.split_whitespace();
+    let rows = dimensions.next()?.parse().ok()?;
+    let columns = dimensions.next()?.parse().ok()?;
+    dimensions
+        .next()
+        .is_none()
+        .then_some(TerminalSize { rows, columns })
+}
+
+struct TerminalScreen;
+
+impl TerminalScreen {
+    fn enter() -> io::Result<Self> {
+        let screen = Self;
+        let mut output = io::stdout().lock();
+        if let Err(error) = output
+            .write_all(b"\x1b[?1049h\x1b[?25l")
+            .and_then(|()| output.flush())
+        {
+            drop(output);
+            drop(screen);
+            return Err(error);
+        }
+        Ok(screen)
+    }
+}
+
+impl Drop for TerminalScreen {
+    fn drop(&mut self) {
+        let mut output = io::stdout().lock();
+        let _ = output.write_all(b"\x1b[?25h\x1b[?1049l");
+        let _ = output.flush();
+    }
+}
+
+fn format_terminal_telemetry(frame: TelemetryFrame, size: Option<TerminalSize>) -> String {
+    let Some(size) = size else {
+        return "Live telemetry (press Enter to stop)\n\nTerminal size unavailable".into();
+    };
+    if size.rows < TELEMETRY_MINIMUM_ROWS || size.columns < TELEMETRY_MINIMUM_COLUMNS {
+        return format!(
+            "Live telemetry (press Enter to stop)\n\nTerminal too small: {}×{}\nMinimum size: {}×{}",
+            size.columns, size.rows, TELEMETRY_MINIMUM_COLUMNS, TELEMETRY_MINIMUM_ROWS
+        );
+    }
+    format!(
+        "Live telemetry (press Enter to stop)\n\n{}",
+        format_telemetry(frame)
+    )
 }
 
 fn format_telemetry(frame: TelemetryFrame) -> String {
@@ -795,7 +875,8 @@ use clap::CommandFactory as _;
 mod tests {
     use super::{
         Cli, Command, DeviceCommand, FilterCommand, FilterKind, ProfileCommand, SessionCli,
-        SessionCommand, equalizer_from_command, format_telemetry, matching_profile_id,
+        SessionCommand, TerminalSize, equalizer_from_command, format_telemetry,
+        format_terminal_telemetry, matching_profile_id, parse_terminal_size,
     };
     use clap::Parser as _;
     use tunic_dsp::{Equalizer, Filter};
@@ -803,7 +884,7 @@ mod tests {
 
     #[test]
     fn formats_asymmetric_linear_levels_as_dbfs() {
-        let output = format_telemetry(TelemetryFrame {
+        let frame = TelemetryFrame {
             levels: StereoLevels {
                 left: ChannelLevels {
                     peak: 1.0,
@@ -817,12 +898,45 @@ mod tests {
             spectrum: Spectrum {
                 bands: std::array::from_fn(|index| if index == 15 { 1.0 } else { 0.0 }),
             },
-        });
+        };
+        let output = format_telemetry(frame);
 
         assert!(output.contains("peak    0.0 dBFS  RMS   -6.0 dBFS"));
         assert!(output.contains("peak  -12.0 dBFS  RMS -120.0 dBFS"));
         assert!(output.contains("RTA 31.5 Hz – 16 kHz"));
         assert!(output.contains("  0 |                              █ "));
+
+        let terminal = format_terminal_telemetry(
+            frame,
+            Some(TerminalSize {
+                rows: 18,
+                columns: 62,
+            }),
+        );
+        assert_eq!(terminal.lines().count(), 18);
+        assert!(terminal.lines().all(|line| line.chars().count() <= 62));
+    }
+
+    #[test]
+    fn parses_terminal_dimensions_and_warns_when_the_viewport_is_too_small() {
+        assert_eq!(
+            parse_terminal_size(b"15 50\n"),
+            Some(TerminalSize {
+                rows: 15,
+                columns: 50,
+            })
+        );
+        assert_eq!(parse_terminal_size(b"15 50 extra\n"), None);
+
+        let output = format_terminal_telemetry(
+            TelemetryFrame::default(),
+            Some(TerminalSize {
+                rows: 15,
+                columns: 50,
+            }),
+        );
+        assert!(output.contains("Terminal too small: 50×15"));
+        assert!(!output.contains("L ["));
     }
 
     #[test]

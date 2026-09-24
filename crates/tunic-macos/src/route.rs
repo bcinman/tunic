@@ -44,7 +44,7 @@ use crate::{address, check_status};
 
 const SCRATCH_FRAME_CAPACITY: usize = 16_384;
 const TELEMETRY_UPDATES_PER_SECOND: f64 = 30.0;
-const SPECTRUM_FFT_SIZE: usize = 4_096;
+const SPECTRUM_MAX_BIN_WIDTH_HZ: f64 = 6.0;
 const PEAK_DECAY_DB_PER_SECOND: f32 = 20.0;
 const RMS_DECAY_DB_PER_SECOND: f32 = 12.0;
 const SPECTRUM_DECAY_DB_PER_SECOND: f32 = 24.0;
@@ -837,14 +837,13 @@ fn decay_multiplier(decibels_per_second: f32, updates_per_second: f64) -> f32 {
 }
 
 struct SpectrumMeter {
-    sample_rate_hz: f32,
     hop_frames: usize,
     frames_since_analysis: usize,
     filled: usize,
     write_index: usize,
-    left: Box<[f32; SPECTRUM_FFT_SIZE]>,
-    right: Box<[f32; SPECTRUM_FFT_SIZE]>,
-    window: Box<[f32; SPECTRUM_FFT_SIZE]>,
+    left: Vec<f32>,
+    right: Vec<f32>,
+    window: Vec<f32>,
     fft: SpectrumFft,
     smoothed: Spectrum,
     decay: f32,
@@ -852,36 +851,37 @@ struct SpectrumMeter {
 
 impl SpectrumMeter {
     fn new(sample_rate_hz: f64) -> Self {
-        let mut window = Box::new([0.0; SPECTRUM_FFT_SIZE]);
+        let fft_size = spectrum_fft_size(sample_rate_hz);
+        let mut window = vec![0.0; fft_size];
         for (index, value) in window.iter_mut().enumerate() {
-            *value = 0.5 - 0.5 * (TAU * index as f32 / (SPECTRUM_FFT_SIZE - 1) as f32).cos();
+            *value = 0.5 - 0.5 * (TAU * index as f32 / (fft_size - 1) as f32).cos();
         }
         Self {
-            sample_rate_hz: sample_rate_hz as f32,
             hop_frames: (sample_rate_hz / TELEMETRY_UPDATES_PER_SECOND)
                 .round()
                 .max(1.0) as usize,
             frames_since_analysis: 0,
             filled: 0,
             write_index: 0,
-            left: Box::new([0.0; SPECTRUM_FFT_SIZE]),
-            right: Box::new([0.0; SPECTRUM_FFT_SIZE]),
+            left: vec![0.0; fft_size],
+            right: vec![0.0; fft_size],
             window,
-            fft: SpectrumFft::new(),
+            fft: SpectrumFft::new(fft_size, sample_rate_hz),
             smoothed: Spectrum::default(),
             decay: decay_multiplier(SPECTRUM_DECAY_DB_PER_SECOND, TELEMETRY_UPDATES_PER_SECOND),
         }
     }
 
     fn observe(&mut self, interleaved_stereo: &[f32]) {
+        let fft_size = self.left.len();
         for frame in interleaved_stereo.as_chunks::<2>().0 {
             self.left[self.write_index] = frame[0];
             self.right[self.write_index] = frame[1];
-            self.write_index = (self.write_index + 1) % SPECTRUM_FFT_SIZE;
-            self.filled = (self.filled + 1).min(SPECTRUM_FFT_SIZE);
+            self.write_index = (self.write_index + 1) % fft_size;
+            self.filled = (self.filled + 1).min(fft_size);
             self.frames_since_analysis += 1;
 
-            if self.filled == SPECTRUM_FFT_SIZE && self.frames_since_analysis >= self.hop_frames {
+            if self.filled == fft_size && self.frames_since_analysis >= self.hop_frames {
                 self.analyze();
                 self.frames_since_analysis = 0;
             }
@@ -894,82 +894,95 @@ impl SpectrumMeter {
 
     fn analyze(&mut self) {
         let mut measured = [0.0; SPECTRUM_BAND_COUNT];
-        self.fft.analyze(
-            &self.left,
-            self.write_index,
-            &self.window,
-            self.sample_rate_hz,
-            &mut measured,
-        );
-        self.fft.analyze(
-            &self.right,
-            self.write_index,
-            &self.window,
-            self.sample_rate_hz,
-            &mut measured,
-        );
+        self.fft
+            .analyze(&self.left, self.write_index, &self.window, &mut measured);
+        self.fft
+            .analyze(&self.right, self.write_index, &self.window, &mut measured);
         for (smoothed, measured) in self.smoothed.bands.iter_mut().zip(measured) {
             *smoothed = smooth_with_decay(*smoothed, measured, SPECTRUM_ATTACK, self.decay);
         }
     }
 }
 
+fn spectrum_fft_size(sample_rate_hz: f64) -> usize {
+    ((sample_rate_hz / SPECTRUM_MAX_BIN_WIDTH_HZ).ceil() as usize)
+        .max(2)
+        .next_power_of_two()
+}
+
 struct SpectrumFft {
     plan: Arc<dyn Fft<f32>>,
     buffer: Vec<Complex32>,
     scratch: Vec<Complex32>,
+    band_bins: [(usize, usize); SPECTRUM_BAND_COUNT],
 }
 
 impl SpectrumFft {
-    fn new() -> Self {
-        let plan = FftPlanner::new().plan_fft_forward(SPECTRUM_FFT_SIZE);
+    fn new(fft_size: usize, sample_rate_hz: f64) -> Self {
+        let plan = FftPlanner::new().plan_fft_forward(fft_size);
         let scratch = vec![Complex32::default(); plan.get_inplace_scratch_len()];
         Self {
             plan,
-            buffer: vec![Complex32::default(); SPECTRUM_FFT_SIZE],
+            buffer: vec![Complex32::default(); fft_size],
             scratch,
+            band_bins: spectrum_band_bins(fft_size, sample_rate_hz),
         }
     }
 
     fn analyze(
         &mut self,
-        samples: &[f32; SPECTRUM_FFT_SIZE],
+        samples: &[f32],
         start: usize,
-        window: &[f32; SPECTRUM_FFT_SIZE],
-        sample_rate_hz: f32,
+        window: &[f32],
         bands: &mut [f32; SPECTRUM_BAND_COUNT],
     ) {
-        for index in 0..SPECTRUM_FFT_SIZE {
-            self.buffer[index] = Complex32::new(
-                samples[(start + index) % SPECTRUM_FFT_SIZE] * window[index],
-                0.0,
-            );
+        let fft_size = self.buffer.len();
+        for index in 0..fft_size {
+            self.buffer[index] =
+                Complex32::new(samples[(start + index) % fft_size] * window[index], 0.0);
         }
         self.plan
             .process_with_scratch(&mut self.buffer, &mut self.scratch);
 
-        let amplitude_scale = 4.0 / SPECTRUM_FFT_SIZE as f32;
-        let band_edge = 2.0_f32.powf(1.0 / 6.0);
-        for (band, center_hz) in bands.iter_mut().zip(SPECTRUM_FREQUENCIES_HZ) {
-            let first = ((center_hz / band_edge) * SPECTRUM_FFT_SIZE as f32 / sample_rate_hz).ceil()
-                as usize;
-            let last = ((center_hz * band_edge) * SPECTRUM_FFT_SIZE as f32 / sample_rate_hz).floor()
-                as usize;
-            let first = first.max(1);
-            let last = last.min(SPECTRUM_FFT_SIZE / 2);
-            let nearest =
-                ((center_hz * SPECTRUM_FFT_SIZE as f32 / sample_rate_hz).round() as usize).max(1);
-            let bins = if first <= last {
-                first..=last
-            } else {
-                nearest..=nearest.min(SPECTRUM_FFT_SIZE / 2)
-            };
-            for bin in bins {
-                let amplitude = self.buffer[bin].norm() * amplitude_scale;
-                *band = band.max(amplitude);
+        let amplitude_scale = 4.0 / fft_size as f32;
+        for (band, &(first, last)) in bands.iter_mut().zip(&self.band_bins) {
+            if first <= last {
+                for value in &self.buffer[first..=last] {
+                    let amplitude = value.norm() * amplitude_scale;
+                    *band = band.max(amplitude);
+                }
             }
         }
     }
+}
+
+fn spectrum_band_bins(
+    fft_size: usize,
+    sample_rate_hz: f64,
+) -> [(usize, usize); SPECTRUM_BAND_COUNT] {
+    let bin_width_hz = sample_rate_hz / fft_size as f64;
+    std::array::from_fn(|index| {
+        let center = f64::from(SPECTRUM_FREQUENCIES_HZ[index]);
+        let lower_hz = if index == 0 {
+            let next = f64::from(SPECTRUM_FREQUENCIES_HZ[1]);
+            center / (next / center).sqrt()
+        } else {
+            let previous = f64::from(SPECTRUM_FREQUENCIES_HZ[index - 1]);
+            (previous * center).sqrt()
+        };
+        let upper_hz = if index + 1 == SPECTRUM_BAND_COUNT {
+            let previous = f64::from(SPECTRUM_FREQUENCIES_HZ[index - 1]);
+            center * (center / previous).sqrt()
+        } else {
+            let next = f64::from(SPECTRUM_FREQUENCIES_HZ[index + 1]);
+            (center * next).sqrt()
+        };
+        let first = (lower_hz / bin_width_hz).ceil() as usize;
+        let last = ((upper_hz / bin_width_hz).ceil() as usize)
+            .saturating_sub(1)
+            .min(fft_size / 2);
+        (first.max(1), last)
+    })
 }
 
 fn writable_frames(buffers: &[AudioBuffer]) -> usize {
@@ -1111,7 +1124,8 @@ mod tests {
     fn spectrum_meter_separates_asymmetric_tones_and_decays() {
         const SAMPLE_RATE: f32 = 48_000.0;
         let mut meter = SpectrumMeter::new(f64::from(SAMPLE_RATE));
-        let samples = (0..4_096)
+        let fft_size = meter.left.len();
+        let samples = (0..fft_size)
             .flat_map(|frame| {
                 let time = frame as f32 / SAMPLE_RATE;
                 [
@@ -1134,6 +1148,39 @@ mod tests {
         let decayed = meter.current();
         assert!(decayed.bands[15] < measured.bands[15]);
         assert!(decayed.bands[15] > 0.0);
+    }
+
+    #[test]
+    fn spectrum_bands_are_distinct_and_contiguous_at_supported_sample_rates() {
+        for sample_rate_hz in [48_000.0, 192_000.0] {
+            let meter = SpectrumMeter::new(sample_rate_hz);
+            let bins = meter.fft.band_bins;
+
+            assert_ne!(bins[0], bins[1]);
+            for adjacent in bins.windows(2) {
+                assert_eq!(adjacent[0].1 + 1, adjacent[1].0);
+            }
+            assert!(sample_rate_hz / meter.left.len() as f64 <= 6.0);
+        }
+    }
+
+    #[test]
+    fn spectrum_assigns_tones_between_rounded_centers_to_a_band() {
+        const SAMPLE_RATE: f32 = 48_000.0;
+        const TONE_HZ: f32 = 14_144.531;
+        let mut meter = SpectrumMeter::new(f64::from(SAMPLE_RATE));
+        let fft_size = meter.left.len();
+        let samples = (0..fft_size)
+            .flat_map(|frame| {
+                let sample =
+                    0.5 * (std::f32::consts::TAU * TONE_HZ * frame as f32 / SAMPLE_RATE).sin();
+                [sample, sample]
+            })
+            .collect::<Vec<_>>();
+
+        meter.observe(&samples);
+
+        assert!(meter.current().bands[27] > 0.4);
     }
 
     #[test]
