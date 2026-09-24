@@ -52,6 +52,8 @@ architecture.
 - Filter history is cleared when bypass begins so stale ringing is not replayed
   when processing resumes.
 - Automated formatting, Clippy, and workspace test tasks through `mise`.
+- A Criterion DSP processing benchmark covering 0, 5, 10, and 20 filters at
+  common buffer lengths and sample rates.
 - Unit coverage for identity, peaking, and shelving DSP; equalizer validation
   and publication; audio buffer handling; telemetry calculation and
   publication; command parsing; and WAV capture.
