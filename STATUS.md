@@ -25,7 +25,7 @@ architecture.
 - One validated peaking filter with configurable frequency, gain, and Q,
   including post-quantization stability checks.
 - Live, real-time-safe graph replacement from the engine to the audio callback.
-- Configuration revisions published in engine snapshots.
+- Equalizer revisions published in engine snapshots.
 - A headless interactive CLI with:
   - engine and route status;
   - output-device listing and inspection;
@@ -36,7 +36,7 @@ architecture.
 - Filter history is cleared when bypass begins so stale ringing is not replayed
   when processing resumes.
 - Automated formatting, Clippy, and workspace test tasks through `mise`.
-- Unit coverage for identity and peaking DSP, configuration validation and
+- Unit coverage for identity and peaking DSP, equalizer validation and
   publication, audio buffer handling, command parsing, and WAV capture.
 - An ignored hardware test that applies a live filter, plays a stereo probe
   through the production route, and verifies its post-DSP gain.
@@ -44,10 +44,10 @@ architecture.
 ## Not In Yet
 
 - Multiple simultaneous filters or filter types other than peaking EQ.
-- A versioned or serialized processing-configuration format.
+- A versioned or serialized equalizer format.
 - Profiles, profile import/export, or per-device profile selection.
 - Persistent state or SQLite storage.
-- Live graph preview, save, and discard workflows.
+- Live equalizer preview, save, and discard workflows.
 - Telemetry, meters, or snapshot streaming.
 - Automatic recovery or retry after route rebuild failures.
 - Route handoff, crossfading, or sample-rate conversion.

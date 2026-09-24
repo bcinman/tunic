@@ -34,7 +34,7 @@ fn live_filter_changes_captured_audio() {
         "filter set --frequency {LEFT_HZ} --gain {FILTER_GAIN_DB} --q 4"
     )
     .expect("configure peaking filter");
-    wait_for_output(&mut output, "Applied filter configuration revision 1");
+    wait_for_output(&mut output, "Applied equalizer revision 1");
 
     let playback = Command::new("/usr/bin/afplay")
         .arg(&artifacts.probe)

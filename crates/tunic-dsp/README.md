@@ -2,9 +2,9 @@
 
 **Responsibility:** Portable audio-processing definitions and algorithms.
 
-- Defines and validates the processing configuration; versioning and
+- Defines and validates the equalizer; versioning and
   serialization are planned.
-- Rejects invalid filter parameters and sample-rate-specific configurations.
+- Rejects invalid filter parameters and sample-rate-specific equalizers.
 - Prepares processing graphs for a specific sample rate.
 - Processes arbitrary stereo frame counts without allocation.
 - Supports reset, bypass integration, and latency reporting.
@@ -17,20 +17,20 @@ The current implementation supports either identity processing or one peaking
 filter. Versioning, serialization, and additional filter types remain planned.
 
 ```rust
-pub struct Configuration;
+pub struct Equalizer;
 pub struct PeakingFilter;
 pub struct PreparedGraph;
 
-impl Configuration {
+impl Equalizer {
     pub fn identity() -> Self;
     pub fn with_peaking_filter(filter: PeakingFilter) -> Self;
 }
 
 impl PreparedGraph {
     pub fn prepare(
-        configuration: &Configuration,
+        equalizer: &Equalizer,
         sample_rate_hz: f64,
-    ) -> Result<Self, ConfigurationError>;
+    ) -> Result<Self, EqualizerError>;
 
     pub fn process(
         &mut self,

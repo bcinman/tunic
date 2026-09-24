@@ -7,11 +7,11 @@ use std::fmt;
 pub struct FrequencyHz(f64);
 
 impl FrequencyHz {
-    pub fn new(value: f64) -> Result<Self, ConfigurationError> {
+    pub fn new(value: f64) -> Result<Self, EqualizerError> {
         if value.is_finite() && value > 0.0 {
             Ok(Self(value))
         } else {
-            Err(ConfigurationError::new(
+            Err(EqualizerError::new(
                 "filter frequency must be finite and greater than zero",
             ))
         }
@@ -27,11 +27,11 @@ impl FrequencyHz {
 pub struct GainDb(f64);
 
 impl GainDb {
-    pub fn new(value: f64) -> Result<Self, ConfigurationError> {
+    pub fn new(value: f64) -> Result<Self, EqualizerError> {
         if value.is_finite() {
             Ok(Self(value))
         } else {
-            Err(ConfigurationError::new("filter gain must be finite"))
+            Err(EqualizerError::new("filter gain must be finite"))
         }
     }
 
@@ -45,11 +45,11 @@ impl GainDb {
 pub struct QualityFactor(f64);
 
 impl QualityFactor {
-    pub fn new(value: f64) -> Result<Self, ConfigurationError> {
+    pub fn new(value: f64) -> Result<Self, EqualizerError> {
         if value.is_finite() && value > 0.0 {
             Ok(Self(value))
         } else {
-            Err(ConfigurationError::new(
+            Err(EqualizerError::new(
                 "filter Q must be finite and greater than zero",
             ))
         }
@@ -95,11 +95,11 @@ impl PeakingFilter {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct Configuration {
+pub struct Equalizer {
     peaking_filter: Option<PeakingFilter>,
 }
 
-impl Configuration {
+impl Equalizer {
     #[must_use]
     pub fn identity() -> Self {
         Self::default()
@@ -119,21 +119,21 @@ impl Configuration {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ConfigurationError(String);
+pub struct EqualizerError(String);
 
-impl ConfigurationError {
+impl EqualizerError {
     fn new(message: impl Into<String>) -> Self {
         Self(message.into())
     }
 }
 
-impl fmt::Display for ConfigurationError {
+impl fmt::Display for EqualizerError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(formatter)
     }
 }
 
-impl std::error::Error for ConfigurationError {}
+impl std::error::Error for EqualizerError {}
 
 /// A processing graph prepared for a concrete audio stream.
 #[derive(Debug, Default)]
@@ -147,16 +147,13 @@ impl PreparedGraph {
         Self::default()
     }
 
-    pub fn prepare(
-        configuration: &Configuration,
-        sample_rate_hz: f64,
-    ) -> Result<Self, ConfigurationError> {
+    pub fn prepare(equalizer: &Equalizer, sample_rate_hz: f64) -> Result<Self, EqualizerError> {
         if !sample_rate_hz.is_finite() || sample_rate_hz <= 0.0 {
-            return Err(ConfigurationError::new(
+            return Err(EqualizerError::new(
                 "sample rate must be finite and greater than zero",
             ));
         }
-        let peaking_filter = configuration
+        let peaking_filter = equalizer
             .peaking_filter()
             .map(|filter| StereoBiquad::peaking(filter, sample_rate_hz))
             .transpose()?;
@@ -205,10 +202,10 @@ struct StereoBiquad {
 }
 
 impl StereoBiquad {
-    fn peaking(filter: PeakingFilter, sample_rate_hz: f64) -> Result<Self, ConfigurationError> {
+    fn peaking(filter: PeakingFilter, sample_rate_hz: f64) -> Result<Self, EqualizerError> {
         let frequency_hz = filter.frequency().get();
         if frequency_hz >= sample_rate_hz / 2.0 {
-            return Err(ConfigurationError::new(format!(
+            return Err(EqualizerError::new(format!(
                 "filter frequency {frequency_hz} Hz must be below Nyquist for {sample_rate_hz} Hz audio"
             )));
         }
@@ -225,7 +222,7 @@ impl StereoBiquad {
             a2: ((1.0 - alpha / amplitude) / a0) as f32,
         };
         if !coefficients.is_finite() || !coefficients.is_stable() {
-            return Err(ConfigurationError::new(
+            return Err(EqualizerError::new(
                 "filter parameters do not produce a stable finite filter",
             ));
         }
@@ -292,7 +289,7 @@ impl Biquad {
 mod tests {
     use std::f32::consts::TAU;
 
-    use super::{Configuration, FrequencyHz, GainDb, PeakingFilter, PreparedGraph, QualityFactor};
+    use super::{Equalizer, FrequencyHz, GainDb, PeakingFilter, PreparedGraph, QualityFactor};
 
     #[test]
     fn identity_graph_preserves_asymmetric_stereo_samples() {
@@ -320,11 +317,9 @@ mod tests {
             GainDb::new(6.0).unwrap(),
             QualityFactor::new(1.0).unwrap(),
         );
-        let mut graph = PreparedGraph::prepare(
-            &Configuration::with_peaking_filter(filter),
-            SAMPLE_RATE as f64,
-        )
-        .unwrap();
+        let mut graph =
+            PreparedGraph::prepare(&Equalizer::with_peaking_filter(filter), SAMPLE_RATE as f64)
+                .unwrap();
         let mut samples = (0..SAMPLE_RATE)
             .flat_map(|frame| {
                 let sample = (TAU * FREQUENCY * frame as f32 / SAMPLE_RATE as f32).sin();
@@ -350,9 +345,7 @@ mod tests {
             QualityFactor::new(1.0).unwrap(),
         );
 
-        assert!(
-            PreparedGraph::prepare(&Configuration::with_peaking_filter(filter), 48_000.0).is_err()
-        );
+        assert!(PreparedGraph::prepare(&Equalizer::with_peaking_filter(filter), 48_000.0).is_err());
     }
 
     #[test]
@@ -371,9 +364,7 @@ mod tests {
             QualityFactor::new(1.0).unwrap(),
         );
 
-        assert!(
-            PreparedGraph::prepare(&Configuration::with_peaking_filter(filter), 48_000.0).is_err()
-        );
+        assert!(PreparedGraph::prepare(&Equalizer::with_peaking_filter(filter), 48_000.0).is_err());
     }
 
     #[test]
@@ -384,9 +375,7 @@ mod tests {
             QualityFactor::new(1.0).unwrap(),
         );
 
-        assert!(
-            PreparedGraph::prepare(&Configuration::with_peaking_filter(filter), 48_000.0).is_err()
-        );
+        assert!(PreparedGraph::prepare(&Equalizer::with_peaking_filter(filter), 48_000.0).is_err());
     }
 
     fn channel_rms(samples: &[f32], channel: usize) -> f32 {

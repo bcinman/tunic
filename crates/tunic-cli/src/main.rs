@@ -11,7 +11,7 @@ use std::thread;
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
-use tunic_dsp::{Configuration, FrequencyHz, GainDb, PeakingFilter, QualityFactor};
+use tunic_dsp::{Equalizer, FrequencyHz, GainDb, PeakingFilter, QualityFactor};
 use tunic_engine::{
     Engine, EngineHandle, EngineOptions, EngineSnapshot, EngineStatus, OutputDevice,
     ProcessedOutputSink,
@@ -201,16 +201,16 @@ fn handle_line(engine: &EngineHandle, line: &str) -> Result<bool, Box<dyn std::e
             );
         }
         SessionCommand::Filter { command } => {
-            let configuration = match filter_configuration(command) {
-                Ok(configuration) => configuration,
+            let equalizer = match equalizer_from_command(command) {
+                Ok(equalizer) => equalizer,
                 Err(error) => {
                     eprintln!("error: {error}");
                     return Ok(false);
                 }
             };
-            match engine.set_configuration(configuration) {
+            match engine.set_equalizer(equalizer) {
                 Ok(revision) => {
-                    println!("Applied filter configuration revision {}.", revision.get());
+                    println!("Applied equalizer revision {}.", revision.get());
                 }
                 Err(error) => eprintln!("error: {error}"),
             }
@@ -221,18 +221,16 @@ fn handle_line(engine: &EngineHandle, line: &str) -> Result<bool, Box<dyn std::e
     Ok(false)
 }
 
-fn filter_configuration(
-    command: FilterCommand,
-) -> Result<Configuration, tunic_dsp::ConfigurationError> {
+fn equalizer_from_command(command: FilterCommand) -> Result<Equalizer, tunic_dsp::EqualizerError> {
     match command {
         FilterCommand::Set { frequency, gain, q } => {
-            Ok(Configuration::with_peaking_filter(PeakingFilter::new(
+            Ok(Equalizer::with_peaking_filter(PeakingFilter::new(
                 FrequencyHz::new(frequency)?,
                 GainDb::new(gain)?,
                 QualityFactor::new(q)?,
             )))
         }
-        FilterCommand::Clear => Ok(Configuration::identity()),
+        FilterCommand::Clear => Ok(Equalizer::identity()),
     }
 }
 
@@ -260,18 +258,18 @@ fn print_status(snapshot: &EngineSnapshot) {
     } else {
         println!("Output: none");
     }
-    if let Some(filter) = snapshot.configuration.peaking_filter() {
+    if let Some(filter) = snapshot.equalizer.peaking_filter() {
         println!(
             "Filter: peaking, {} Hz, {:+} dB, Q {} (revision {})",
             filter.frequency().get(),
             filter.gain().get(),
             filter.quality_factor().get(),
-            snapshot.configuration_revision.get()
+            snapshot.equalizer_revision.get()
         );
     } else {
         println!(
             "Filter: none (revision {})",
-            snapshot.configuration_revision.get()
+            snapshot.equalizer_revision.get()
         );
     }
 }
@@ -340,7 +338,7 @@ use clap::CommandFactory as _;
 
 #[cfg(test)]
 mod tests {
-    use super::{DeviceCommand, FilterCommand, SessionCli, SessionCommand, filter_configuration};
+    use super::{DeviceCommand, FilterCommand, SessionCli, SessionCommand, equalizer_from_command};
     use clap::Parser as _;
 
     #[test]
@@ -375,7 +373,7 @@ mod tests {
 
     #[test]
     fn rejects_invalid_filter_parameters_without_starting_the_engine() {
-        let result = filter_configuration(FilterCommand::Set {
+        let result = equalizer_from_command(FilterCommand::Set {
             frequency: 0.0,
             gain: 6.0,
             q: 1.0,

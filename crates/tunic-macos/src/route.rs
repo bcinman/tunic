@@ -31,7 +31,7 @@ use objc2_core_audio_types::{
 };
 use objc2_core_foundation::CFDictionary;
 use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSObject, NSString, NSUUID};
-use tunic_dsp::{Configuration, PreparedGraph};
+use tunic_dsp::{Equalizer, PreparedGraph};
 use tunic_engine::{PlatformError, ProcessedOutputSink};
 
 use crate::devices::{device_uid, input_stream_count};
@@ -87,15 +87,9 @@ impl Route {
         sample_rate_hz: f64,
         bypassed: Arc<AtomicBool>,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
-        configuration: &Configuration,
+        equalizer: &Equalizer,
     ) -> Result<Self, PlatformError> {
-        Self::start_inner(
-            output_id,
-            sample_rate_hz,
-            bypassed,
-            output_sink,
-            configuration,
-        )
+        Self::start_inner(output_id, sample_rate_hz, bypassed, output_sink, equalizer)
     }
 
     fn start_inner(
@@ -103,9 +97,9 @@ impl Route {
         sample_rate_hz: f64,
         bypassed: Arc<AtomicBool>,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
-        configuration: &Configuration,
+        equalizer: &Equalizer,
     ) -> Result<Self, PlatformError> {
-        let prepared_graph = PreparedGraph::prepare(configuration, sample_rate_hz)
+        let prepared_graph = PreparedGraph::prepare(equalizer, sample_rate_hz)
             .map_err(|error| PlatformError::new(error.to_string()))?;
         let output_uid = device_uid(output_id)?;
         let excluded_process = current_process_object().into_iter().collect::<Vec<_>>();
@@ -250,11 +244,8 @@ impl Route {
         Ok(route)
     }
 
-    pub(crate) fn set_configuration(
-        &self,
-        configuration: &Configuration,
-    ) -> Result<(), PlatformError> {
-        let graph = PreparedGraph::prepare(configuration, self.sample_rate_hz)
+    pub(crate) fn set_equalizer(&self, equalizer: &Equalizer) -> Result<(), PlatformError> {
+        let graph = PreparedGraph::prepare(equalizer, self.sample_rate_hz)
             .map_err(|error| PlatformError::new(error.to_string()))?;
         self.graph_updates.publish(graph);
         Ok(())
@@ -769,9 +760,7 @@ mod tests {
         kAudioFormatFlagIsNonInterleaved, kAudioFormatLinearPCM,
     };
     use std::cell::Cell;
-    use tunic_dsp::{
-        Configuration, FrequencyHz, GainDb, PeakingFilter, PreparedGraph, QualityFactor,
-    };
+    use tunic_dsp::{Equalizer, FrequencyHz, GainDb, PeakingFilter, PreparedGraph, QualityFactor};
 
     #[test]
     fn graph_exchange_installs_the_latest_pending_graph() {
@@ -905,11 +894,11 @@ mod tests {
     }
 
     fn peaking_graph(gain_db: f64) -> PreparedGraph {
-        let configuration = Configuration::with_peaking_filter(PeakingFilter::new(
+        let equalizer = Equalizer::with_peaking_filter(PeakingFilter::new(
             FrequencyHz::new(1_000.0).unwrap(),
             GainDb::new(gain_db).unwrap(),
             QualityFactor::new(1.0).unwrap(),
         ));
-        PreparedGraph::prepare(&configuration, 48_000.0).unwrap()
+        PreparedGraph::prepare(&equalizer, 48_000.0).unwrap()
     }
 }

@@ -15,7 +15,7 @@ use objc2_core_audio::{
     kAudioHardwarePropertyDefaultOutputDevice, kAudioObjectPropertyElementMain,
     kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyScopeOutput, kAudioObjectSystemObject,
 };
-use tunic_dsp::Configuration;
+use tunic_dsp::Equalizer;
 use tunic_engine::{
     ActiveRoute, AudioPlatform, DeviceId, PlatformError, PlatformEvent, PlatformEventSink,
     PlatformState, ProcessedOutputFormat, ProcessedOutputSink,
@@ -33,7 +33,7 @@ pub struct CoreAudioPlatform {
     events: Option<PlatformEventSink>,
     bypassed: Arc<AtomicBool>,
     output_sink: Option<Arc<dyn ProcessedOutputSink>>,
-    configuration: Configuration,
+    equalizer: Equalizer,
 }
 
 impl CoreAudioPlatform {
@@ -46,7 +46,7 @@ impl CoreAudioPlatform {
             events: None,
             bypassed: Arc::new(AtomicBool::new(false)),
             output_sink: None,
-            configuration: Configuration::identity(),
+            equalizer: Equalizer::identity(),
         }
     }
 
@@ -86,7 +86,7 @@ impl CoreAudioPlatform {
             sample_rate_hz,
             Arc::clone(&self.bypassed),
             self.output_sink.clone(),
-            &self.configuration,
+            &self.equalizer,
         )?);
         self.sample_rate_listener = Some(sample_rate_listener);
         Ok(PlatformState { route, devices })
@@ -120,10 +120,10 @@ impl AudioPlatform for CoreAudioPlatform {
         &mut self,
         events: PlatformEventSink,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
-        configuration: &Configuration,
+        equalizer: &Equalizer,
     ) -> Result<PlatformState, PlatformError> {
         self.output_sink = output_sink;
-        self.configuration = configuration.clone();
+        self.equalizer = equalizer.clone();
         self.events = Some(events.clone());
         self.default_output_listener = Some(PropertyListener::new(
             kAudioObjectSystemObject as AudioObjectID,
@@ -148,13 +148,13 @@ impl AudioPlatform for CoreAudioPlatform {
         self.bypassed.store(bypassed, Ordering::Relaxed);
     }
 
-    fn set_configuration(&mut self, configuration: &Configuration) -> Result<(), PlatformError> {
+    fn set_equalizer(&mut self, equalizer: &Equalizer) -> Result<(), PlatformError> {
         let route = self
             .route
             .as_ref()
             .ok_or_else(|| PlatformError::new("no active output route"))?;
-        route.set_configuration(configuration)?;
-        self.configuration = configuration.clone();
+        route.set_equalizer(equalizer)?;
+        self.equalizer = equalizer.clone();
         Ok(())
     }
 

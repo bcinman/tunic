@@ -61,18 +61,18 @@ impl EngineHandle {
     pub fn create_profile(
         &self,
         name: String,
-        configuration: Configuration,
+        equalizer: Equalizer,
     ) -> Result<(), SubmitError>;
 
-    pub fn save_configuration(
+    pub fn save_equalizer(
         &self,
-        configuration: Configuration,
-        expected_revision: ConfigurationRevision,
+        equalizer: Equalizer,
+        expected_revision: EqualizerRevision,
     ) -> Result<(), SubmitError>;
 
-    pub fn preview_configuration(
+    pub fn preview_equalizer(
         &self,
-        configuration: Configuration,
+        equalizer: Equalizer,
         edit_revision: EditRevision,
     ) -> Result<(), SubmitError>;
 
@@ -113,8 +113,8 @@ Commands, events, effects, and reducer details can remain private to the engine.
 
 **Responsibility:** Portable audio-processing definitions and algorithms.
 
-- Defines the versioned processing configuration.
-- Validates and canonicalizes configurations.
+- Defines the versioned equalizer.
+- Validates and canonicalizes equalizers.
 - Prepares processing graphs for a specific sample rate.
 - Processes arbitrary stereo frame counts without allocation.
 - Supports reset, bypass integration, and latency reporting.
@@ -124,17 +124,17 @@ Commands, events, effects, and reducer details can remain private to the engine.
 ### Rough public interface
 
 ```rust
-pub struct Configuration;
+pub struct Equalizer;
 pub struct PreparedGraph;
 
-impl Configuration {
-    pub fn parse_json(input: &str) -> Result<Self, ConfigurationError>;
-    pub fn to_canonical_json(&self) -> Result<String, ConfigurationError>;
+impl Equalizer {
+    pub fn parse_json(input: &str) -> Result<Self, EqualizerError>;
+    pub fn to_canonical_json(&self) -> Result<String, EqualizerError>;
 }
 
 impl PreparedGraph {
     pub fn prepare(
-        configuration: &Configuration,
+        equalizer: &Equalizer,
         sample_rate_hz: f64,
     ) -> Result<Self, PrepareError>;
 

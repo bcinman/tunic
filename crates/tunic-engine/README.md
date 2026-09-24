@@ -30,18 +30,18 @@ impl EngineHandle {
     pub fn create_profile(
         &self,
         name: String,
-        configuration: Configuration,
+        equalizer: Equalizer,
     ) -> Result<(), SubmitError>;
 
-    pub fn save_configuration(
+    pub fn save_equalizer(
         &self,
-        configuration: Configuration,
-        expected_revision: ConfigurationRevision,
+        equalizer: Equalizer,
+        expected_revision: EqualizerRevision,
     ) -> Result<(), SubmitError>;
 
-    pub fn preview_configuration(
+    pub fn preview_equalizer(
         &self,
-        configuration: Configuration,
+        equalizer: Equalizer,
         edit_revision: EditRevision,
     ) -> Result<(), SubmitError>;
 

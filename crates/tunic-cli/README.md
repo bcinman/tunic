@@ -5,7 +5,7 @@ Tunic's headless reference client.
 **Responsibility:** Exercise every durable product capability through the same engine API used by the app.
 
 - Runs the engine against the real platform and processes system audio.
-- Manages profiles, live graph edits, bypass, and per-device settings.
+- Manages profiles, live equalizer edits, bypass, and per-device settings.
 - Exposes engine snapshots, failures, and telemetry as human-readable or structured output.
 - Exercises routing, output-device changes, recovery, persistence, and shutdown without GPUI.
 
