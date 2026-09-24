@@ -35,9 +35,10 @@ architecture.
   restored across restarts, while previews remain ephemeral.
 - Saved equalizer and edit revisions published in engine snapshots.
 - Ordered engine snapshot subscriptions with immediate initial-state delivery.
-- Real-time-safe post-DSP stereo peak/RMS and 28-band RTA measurement, with
-  attack smoothing and controlled dB decay, published at 30 Hz through a
-  lock-free latest-value engine telemetry reader.
+- Demand-driven, real-time-safe post-DSP stereo peak/RMS and 28-band RTA
+  measurement, with attack smoothing and controlled dB decay, published at 30
+  Hz through a lock-free latest-value engine telemetry reader only while a
+  meter consumer is active.
 - A headless interactive CLI with:
   - engine and route status;
   - continuous engine snapshot watching;

@@ -16,6 +16,7 @@ use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, QualityFactor};
 use tunic_engine::{
     Engine, EngineHandle, EngineOptions, EngineSnapshot, EngineStatus, OutputDevice,
     ProcessedOutputSink, Profile, ProfileId, SPECTRUM_BAND_COUNT, Spectrum, TelemetryFrame,
+    TelemetryReader,
 };
 use tunic_macos::CoreAudioPlatform;
 
@@ -731,11 +732,11 @@ fn stream_telemetry(
     lines: &mpsc::Receiver<Option<String>>,
     interrupted: &AtomicBool,
 ) -> io::Result<bool> {
-    let telemetry = engine.telemetry();
     let is_terminal = io::stdout().is_terminal();
-    let mut frame = telemetry.try_latest().unwrap_or_default();
     let mut terminal_size = is_terminal.then(read_terminal_size).flatten();
     let mut terminal_size_read_at = Instant::now();
+    let mut telemetry = None;
+    let mut frame = None;
     let screen = is_terminal.then(TerminalScreen::enter).transpose()?;
     let mut output = io::stdout().lock();
     if !is_terminal {
@@ -743,23 +744,36 @@ fn stream_telemetry(
     }
 
     let disconnected = loop {
-        if let Some(latest) = telemetry.try_latest() {
-            frame = latest;
+        if is_terminal && terminal_size_read_at.elapsed() >= Duration::from_millis(500) {
+            terminal_size = read_terminal_size();
+            terminal_size_read_at = Instant::now();
+        }
+        let meters_visible = !is_terminal || terminal_can_render_telemetry(terminal_size);
+        if meters_visible && telemetry.is_none() {
+            telemetry = Some(engine.subscribe_telemetry());
+            frame = None;
+        } else if !meters_visible {
+            telemetry = None;
+            frame = None;
+        }
+        if let Some(latest) = telemetry.as_ref().and_then(TelemetryReader::try_latest) {
+            frame = Some(latest);
         }
         if is_terminal {
-            if terminal_size_read_at.elapsed() >= Duration::from_millis(500) {
-                terminal_size = read_terminal_size();
-                terminal_size_read_at = Instant::now();
-            }
-            write!(
-                output,
-                "\x1b[H{}\x1b[J",
-                format_terminal_telemetry(frame, terminal_size)
-            )?;
-        } else {
+            let display = if meters_visible {
+                frame.map_or_else(
+                    || "Live telemetry (press Enter to stop)\n\nStarting meters…".into(),
+                    |frame| format_terminal_telemetry(frame, terminal_size),
+                )
+            } else {
+                format_terminal_telemetry(TelemetryFrame::default(), terminal_size)
+            };
+            write!(output, "\x1b[H{display}\x1b[J")?;
+            output.flush()?;
+        } else if let Some(frame) = frame {
             writeln!(output, "{}", format_telemetry(frame))?;
+            output.flush()?;
         }
-        output.flush()?;
 
         if interrupted.load(Ordering::Acquire) {
             break false;
@@ -783,6 +797,12 @@ const TELEMETRY_MINIMUM_COLUMNS: u16 = 62;
 struct TerminalSize {
     rows: u16,
     columns: u16,
+}
+
+fn terminal_can_render_telemetry(size: Option<TerminalSize>) -> bool {
+    size.is_some_and(|size| {
+        size.rows >= TELEMETRY_MINIMUM_ROWS && size.columns >= TELEMETRY_MINIMUM_COLUMNS
+    })
 }
 
 fn read_terminal_size() -> Option<TerminalSize> {
@@ -925,6 +945,7 @@ mod tests {
         Cli, Command, DeviceCommand, FilterCommand, FilterKind, ProfileCommand, SessionCli,
         SessionCommand, TerminalSize, equalizer_from_command, format_telemetry,
         format_terminal_telemetry, matching_profile_id, parse_terminal_size,
+        terminal_can_render_telemetry,
     };
     use clap::Parser as _;
     use tunic_dsp::{Equalizer, Filter};
@@ -975,6 +996,15 @@ mod tests {
             })
         );
         assert_eq!(parse_terminal_size(b"15 50 extra\n"), None);
+        assert!(!terminal_can_render_telemetry(None));
+        assert!(!terminal_can_render_telemetry(Some(TerminalSize {
+            rows: 15,
+            columns: 50,
+        })));
+        assert!(terminal_can_render_telemetry(Some(TerminalSize {
+            rows: 18,
+            columns: 62,
+        })));
 
         let output = format_terminal_telemetry(
             TelemetryFrame::default(),

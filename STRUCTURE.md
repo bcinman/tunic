@@ -84,7 +84,7 @@ impl EngineHandle {
 
     pub fn snapshot(&self) -> EngineSnapshot;
     pub fn subscribe_snapshots(&self) -> SnapshotReceiver;
-    pub fn telemetry(&self) -> TelemetryReader;
+    pub fn subscribe_telemetry(&self) -> TelemetryReader;
 
     pub fn shutdown(self) -> Result<(), EngineError>;
 }

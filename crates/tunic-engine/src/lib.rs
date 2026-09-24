@@ -16,7 +16,7 @@ use tunic_dsp::Equalizer;
 use crate::persistence::{ProfileStore, StoredCatalog, StoredProfile};
 pub use crate::telemetry::{
     ChannelLevels, SPECTRUM_BAND_COUNT, SPECTRUM_FREQUENCIES_HZ, Spectrum, StereoLevels,
-    TelemetryFrame, TelemetryPublisher, TelemetryReader,
+    TelemetryFrame, TelemetryGeneration, TelemetryPublisher, TelemetryReader,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -369,7 +369,7 @@ pub struct Engine;
 pub struct EngineHandle {
     commands: Sender<Command>,
     snapshot: Arc<SnapshotState>,
-    telemetry: TelemetryReader,
+    telemetry: telemetry::TelemetrySource,
     worker: Option<JoinHandle<()>>,
 }
 
@@ -434,8 +434,8 @@ impl EngineHandle {
     }
 
     #[must_use]
-    pub fn telemetry(&self) -> TelemetryReader {
-        self.telemetry.clone()
+    pub fn subscribe_telemetry(&self) -> TelemetryReader {
+        self.telemetry.subscribe()
     }
 
     pub fn toggle_bypass(&self) -> Result<bool, EngineError> {

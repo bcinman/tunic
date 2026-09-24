@@ -36,7 +36,8 @@ use rustfft::{Fft, FftPlanner, num_complex::Complex32};
 use tunic_dsp::{Equalizer, PreparedGraph};
 use tunic_engine::{
     ChannelLevels, PlatformError, ProcessedOutputSink, SPECTRUM_BAND_COUNT,
-    SPECTRUM_FREQUENCIES_HZ, Spectrum, StereoLevels, TelemetryFrame, TelemetryPublisher,
+    SPECTRUM_FREQUENCIES_HZ, Spectrum, StereoLevels, TelemetryFrame, TelemetryGeneration,
+    TelemetryPublisher,
 };
 
 use crate::devices::{device_uid, input_stream_count};
@@ -690,6 +691,7 @@ fn render_audio(
 struct ProcessedOutputObservers {
     output_sink: Option<Arc<dyn ProcessedOutputSink>>,
     telemetry: TelemetryPublisher,
+    telemetry_generation: Option<TelemetryGeneration>,
     level_meter: LevelMeter,
     spectrum_meter: SpectrumMeter,
 }
@@ -703,18 +705,33 @@ impl ProcessedOutputObservers {
         Self {
             output_sink,
             telemetry,
+            telemetry_generation: None,
             level_meter: LevelMeter::new(sample_rate_hz),
             spectrum_meter: SpectrumMeter::new(sample_rate_hz),
         }
     }
 
     fn observe(&mut self, samples: &[f32]) {
-        self.spectrum_meter.observe(samples);
-        if let Some(levels) = self.level_meter.observe(samples) {
-            self.telemetry.publish(TelemetryFrame {
-                levels,
-                spectrum: self.spectrum_meter.current(),
-            });
+        if let Some(generation) = self.telemetry.active_generation() {
+            if self.telemetry_generation != Some(generation) {
+                self.level_meter.reset();
+                self.spectrum_meter.reset();
+                self.telemetry_generation = Some(generation);
+            }
+            self.spectrum_meter.observe(samples);
+            if let Some(levels) = self.level_meter.observe(samples)
+                && self.spectrum_meter.is_ready()
+            {
+                self.telemetry.publish(
+                    generation,
+                    TelemetryFrame {
+                        levels,
+                        spectrum: self.spectrum_meter.current(),
+                    },
+                );
+            }
+        } else {
+            self.telemetry_generation = None;
         }
         if let Some(output_sink) = &self.output_sink {
             output_sink.write(samples);
@@ -808,6 +825,15 @@ impl LevelMeter {
         }
         latest
     }
+
+    fn reset(&mut self) {
+        self.frames = 0;
+        self.left_peak = 0.0;
+        self.right_peak = 0.0;
+        self.left_square_sum = 0.0;
+        self.right_square_sum = 0.0;
+        self.smoothed = StereoLevels::default();
+    }
 }
 
 fn smooth_levels(
@@ -847,6 +873,7 @@ struct SpectrumMeter {
     fft: SpectrumFft,
     smoothed: Spectrum,
     decay: f32,
+    ready: bool,
 }
 
 impl SpectrumMeter {
@@ -869,6 +896,7 @@ impl SpectrumMeter {
             fft: SpectrumFft::new(fft_size, sample_rate_hz),
             smoothed: Spectrum::default(),
             decay: decay_multiplier(SPECTRUM_DECAY_DB_PER_SECOND, TELEMETRY_UPDATES_PER_SECOND),
+            ready: false,
         }
     }
 
@@ -892,6 +920,18 @@ impl SpectrumMeter {
         self.smoothed
     }
 
+    fn is_ready(&self) -> bool {
+        self.ready
+    }
+
+    fn reset(&mut self) {
+        self.frames_since_analysis = 0;
+        self.filled = 0;
+        self.write_index = 0;
+        self.smoothed = Spectrum::default();
+        self.ready = false;
+    }
+
     fn analyze(&mut self) {
         let mut measured = [0.0; SPECTRUM_BAND_COUNT];
         self.fft
@@ -901,6 +941,7 @@ impl SpectrumMeter {
         for (smoothed, measured) in self.smoothed.bands.iter_mut().zip(measured) {
             *smoothed = smooth_with_decay(*smoothed, measured, SPECTRUM_ATTACK, self.decay);
         }
+        self.ready = true;
     }
 }
 
@@ -1084,7 +1125,7 @@ mod tests {
     };
     use std::cell::Cell;
     use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, PreparedGraph, QualityFactor};
-    use tunic_engine::{ChannelLevels, StereoLevels};
+    use tunic_engine::{ChannelLevels, Spectrum, StereoLevels};
 
     #[test]
     fn level_meter_publishes_asymmetric_peak_and_rms_windows() {
@@ -1138,6 +1179,7 @@ mod tests {
         meter.observe(&samples);
         let measured = meter.current();
 
+        assert!(meter.is_ready());
         assert!(measured.bands[15] > 0.2, "1 kHz: {}", measured.bands[15]);
         assert!(measured.bands[24] > 0.2, "8 kHz: {}", measured.bands[24]);
         assert!(measured.bands[11] < 0.01, "400 Hz: {}", measured.bands[11]);
@@ -1148,6 +1190,10 @@ mod tests {
         let decayed = meter.current();
         assert!(decayed.bands[15] < measured.bands[15]);
         assert!(decayed.bands[15] > 0.0);
+
+        meter.reset();
+        assert!(!meter.is_ready());
+        assert_eq!(meter.current(), Spectrum::default());
     }
 
     #[test]
