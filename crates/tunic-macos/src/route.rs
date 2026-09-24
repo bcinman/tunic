@@ -32,12 +32,15 @@ use objc2_core_audio_types::{
 use objc2_core_foundation::CFDictionary;
 use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSObject, NSString, NSUUID};
 use tunic_dsp::{Equalizer, PreparedGraph};
-use tunic_engine::{PlatformError, ProcessedOutputSink};
+use tunic_engine::{
+    ChannelLevels, PlatformError, ProcessedOutputSink, StereoLevels, TelemetryPublisher,
+};
 
 use crate::devices::{device_uid, input_stream_count};
 use crate::{address, check_status};
 
 const SCRATCH_FRAME_CAPACITY: usize = 16_384;
+const TELEMETRY_UPDATES_PER_SECOND: f64 = 30.0;
 
 type IoBlock = RcBlock<
     dyn Fn(
@@ -87,9 +90,17 @@ impl Route {
         sample_rate_hz: f64,
         bypassed: Arc<AtomicBool>,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+        telemetry: TelemetryPublisher,
         equalizer: &Equalizer,
     ) -> Result<Self, PlatformError> {
-        Self::start_inner(output_id, sample_rate_hz, bypassed, output_sink, equalizer)
+        Self::start_inner(
+            output_id,
+            sample_rate_hz,
+            bypassed,
+            output_sink,
+            telemetry,
+            equalizer,
+        )
     }
 
     fn start_inner(
@@ -97,6 +108,7 @@ impl Route {
         sample_rate_hz: f64,
         bypassed: Arc<AtomicBool>,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+        telemetry: TelemetryPublisher,
         equalizer: &Equalizer,
     ) -> Result<Self, PlatformError> {
         let prepared_graph = PreparedGraph::prepare(equalizer, sample_rate_hz)
@@ -164,6 +176,11 @@ impl Route {
         let callback_active = Arc::clone(&active);
         let scratch = RefCell::new(Box::new([0.0_f32; SCRATCH_FRAME_CAPACITY * 2]));
         let graph = RefCell::new(prepared_graph);
+        let processed_output = RefCell::new(ProcessedOutputObservers::new(
+            output_sink,
+            telemetry,
+            sample_rate_hz,
+        ));
         let graph_updates = Arc::new(GraphExchange::new());
         let callback_graph_updates = Arc::clone(&graph_updates);
         let callback_bypassed = Cell::new(false);
@@ -179,9 +196,11 @@ impl Route {
                     if !callback_active.load(Ordering::Acquire) {
                         return;
                     }
-                    let (Ok(mut scratch), Ok(mut graph)) =
-                        (scratch.try_borrow_mut(), graph.try_borrow_mut())
-                    else {
+                    let (Ok(mut scratch), Ok(mut graph), Ok(mut processed_output)) = (
+                        scratch.try_borrow_mut(),
+                        graph.try_borrow_mut(),
+                        processed_output.try_borrow_mut(),
+                    ) else {
                         return;
                     };
                     callback_graph_updates.install_latest(&mut graph);
@@ -194,7 +213,7 @@ impl Route {
                         &mut scratch[..],
                         &mut graph,
                         is_bypassed,
-                        output_sink.as_deref(),
+                        &mut processed_output,
                     );
                 }));
             },
@@ -629,7 +648,7 @@ fn render_audio(
     scratch: &mut [f32],
     graph: &mut PreparedGraph,
     bypassed: bool,
-    output_sink: Option<&dyn ProcessedOutputSink>,
+    processed_output: &mut ProcessedOutputObservers,
 ) {
     if input.is_null() || output.is_null() {
         return;
@@ -655,10 +674,96 @@ fn render_audio(
     if !bypassed {
         graph.process_interleaved_stereo(&mut scratch[..frames * 2]);
     }
-    if write_stereo(&scratch[..frames * 2], output_buffers, frames)
-        && let Some(output_sink) = output_sink
-    {
-        output_sink.write(&scratch[..frames * 2]);
+    if write_stereo(&scratch[..frames * 2], output_buffers, frames) {
+        processed_output.observe(&scratch[..frames * 2]);
+    }
+}
+
+struct ProcessedOutputObservers {
+    output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+    telemetry: TelemetryPublisher,
+    level_meter: LevelMeter,
+}
+
+impl ProcessedOutputObservers {
+    fn new(
+        output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+        telemetry: TelemetryPublisher,
+        sample_rate_hz: f64,
+    ) -> Self {
+        Self {
+            output_sink,
+            telemetry,
+            level_meter: LevelMeter::new(sample_rate_hz),
+        }
+    }
+
+    fn observe(&mut self, samples: &[f32]) {
+        if let Some(levels) = self.level_meter.observe(samples) {
+            self.telemetry.publish(levels);
+        }
+        if let Some(output_sink) = &self.output_sink {
+            output_sink.write(samples);
+        }
+    }
+}
+
+struct LevelMeter {
+    window_frames: usize,
+    frames: usize,
+    left_peak: f32,
+    right_peak: f32,
+    left_square_sum: f64,
+    right_square_sum: f64,
+}
+
+impl LevelMeter {
+    fn new(sample_rate_hz: f64) -> Self {
+        Self::with_window_frames((sample_rate_hz / TELEMETRY_UPDATES_PER_SECOND).round() as usize)
+    }
+
+    fn with_window_frames(window_frames: usize) -> Self {
+        Self {
+            window_frames: window_frames.max(1),
+            frames: 0,
+            left_peak: 0.0,
+            right_peak: 0.0,
+            left_square_sum: 0.0,
+            right_square_sum: 0.0,
+        }
+    }
+
+    fn observe(&mut self, interleaved_stereo: &[f32]) -> Option<StereoLevels> {
+        let mut latest = None;
+        for frame in interleaved_stereo.as_chunks::<2>().0 {
+            let left = frame[0];
+            let right = frame[1];
+            self.left_peak = self.left_peak.max(left.abs());
+            self.right_peak = self.right_peak.max(right.abs());
+            self.left_square_sum += f64::from(left) * f64::from(left);
+            self.right_square_sum += f64::from(right) * f64::from(right);
+            self.frames += 1;
+
+            if self.frames == self.window_frames {
+                let frames = self.frames as f64;
+                latest = Some(StereoLevels {
+                    left: ChannelLevels {
+                        peak: self.left_peak,
+                        rms: (self.left_square_sum / frames).sqrt() as f32,
+                    },
+                    right: ChannelLevels {
+                        peak: self.right_peak,
+                        rms: (self.right_square_sum / frames).sqrt() as f32,
+                    },
+                });
+                self.frames = 0;
+                self.left_peak = 0.0;
+                self.right_peak = 0.0;
+                self.left_square_sum = 0.0;
+                self.right_square_sum = 0.0;
+            }
+        }
+        latest
     }
 }
 
@@ -752,7 +857,7 @@ const fn size_of<T>() -> usize {
 #[cfg(test)]
 mod tests {
     use super::{
-        GraphExchange, TapBufferRange, normalize_stereo, reset_graph_on_bypass,
+        GraphExchange, LevelMeter, TapBufferRange, normalize_stereo, reset_graph_on_bypass,
         validate_stream_format, write_stereo,
     };
     use objc2_core_audio_types::{
@@ -761,6 +866,28 @@ mod tests {
     };
     use std::cell::Cell;
     use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, PreparedGraph, QualityFactor};
+    use tunic_engine::{ChannelLevels, StereoLevels};
+
+    #[test]
+    fn level_meter_publishes_asymmetric_peak_and_rms_windows() {
+        let mut meter = LevelMeter::with_window_frames(2);
+
+        let levels = meter.observe(&[1.0, -0.5, 0.0, -0.5]);
+
+        assert_eq!(
+            levels,
+            Some(StereoLevels {
+                left: ChannelLevels {
+                    peak: 1.0,
+                    rms: std::f32::consts::FRAC_1_SQRT_2,
+                },
+                right: ChannelLevels {
+                    peak: 0.5,
+                    rms: 0.5,
+                },
+            })
+        );
+    }
 
     #[test]
     fn graph_exchange_installs_the_latest_pending_graph() {

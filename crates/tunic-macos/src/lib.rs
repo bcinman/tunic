@@ -18,7 +18,7 @@ use objc2_core_audio::{
 use tunic_dsp::Equalizer;
 use tunic_engine::{
     ActiveRoute, AudioPlatform, DeviceId, PlatformError, PlatformEvent, PlatformEventSink,
-    PlatformState, ProcessedOutputFormat, ProcessedOutputSink,
+    PlatformState, ProcessedOutputFormat, ProcessedOutputSink, TelemetryPublisher,
 };
 
 use crate::devices::{
@@ -33,6 +33,7 @@ pub struct CoreAudioPlatform {
     events: Option<PlatformEventSink>,
     bypassed: Arc<AtomicBool>,
     output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+    telemetry: Option<TelemetryPublisher>,
     equalizer: Equalizer,
 }
 
@@ -46,6 +47,7 @@ impl CoreAudioPlatform {
             events: None,
             bypassed: Arc::new(AtomicBool::new(false)),
             output_sink: None,
+            telemetry: None,
             equalizer: Equalizer::identity(),
         }
     }
@@ -80,12 +82,17 @@ impl CoreAudioPlatform {
         if let Some(mut previous_route) = self.route.take() {
             previous_route.stop()?;
         }
+        let telemetry = self
+            .telemetry
+            .as_ref()
+            .ok_or_else(|| PlatformError::new("telemetry publisher is not configured"))?;
         let devices = list_output_devices()?;
         self.route = Some(Route::start(
             output_id,
             sample_rate_hz,
             Arc::clone(&self.bypassed),
             self.output_sink.clone(),
+            telemetry.clone(),
             &self.equalizer,
         )?);
         self.sample_rate_listener = Some(sample_rate_listener);
@@ -120,9 +127,11 @@ impl AudioPlatform for CoreAudioPlatform {
         &mut self,
         events: PlatformEventSink,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+        telemetry: TelemetryPublisher,
         equalizer: &Equalizer,
     ) -> Result<PlatformState, PlatformError> {
         self.output_sink = output_sink;
+        self.telemetry = Some(telemetry);
         self.equalizer = equalizer.clone();
         self.events = Some(events.clone());
         self.default_output_listener = Some(PropertyListener::new(

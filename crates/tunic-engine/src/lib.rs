@@ -2,6 +2,7 @@
 //! processing provided by `tunic-dsp`.
 
 mod persistence;
+mod telemetry;
 
 use std::fmt;
 use std::path::PathBuf;
@@ -13,6 +14,7 @@ use std::time::Duration;
 use tunic_dsp::Equalizer;
 
 use crate::persistence::{ProfileStore, StoredProfile};
+pub use crate::telemetry::{ChannelLevels, StereoLevels, TelemetryPublisher, TelemetryReader};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ProcessedOutputFormat {
@@ -202,6 +204,7 @@ pub trait AudioPlatform: 'static {
         &mut self,
         events: PlatformEventSink,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+        telemetry: TelemetryPublisher,
         equalizer: &Equalizer,
     ) -> Result<PlatformState, PlatformError>;
     fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError>;
@@ -244,6 +247,7 @@ pub struct Engine;
 pub struct EngineHandle {
     commands: Sender<Command>,
     snapshot: Arc<RwLock<EngineSnapshot>>,
+    telemetry: TelemetryReader,
     worker: Option<JoinHandle<()>>,
 }
 
@@ -257,13 +261,21 @@ impl Engine {
             options.equalizer.clone(),
         )));
         let worker_snapshot = Arc::clone(&snapshot);
+        let (telemetry_publisher, telemetry) = telemetry::channel();
         let (commands, command_rx) = mpsc::channel();
         let (startup_tx, startup_rx) = mpsc::sync_channel(1);
 
         let worker = thread::Builder::new()
             .name("tunic-engine".into())
             .spawn(move || {
-                run_engine(platform(), options, command_rx, worker_snapshot, startup_tx);
+                run_engine(
+                    platform(),
+                    options,
+                    telemetry_publisher,
+                    command_rx,
+                    worker_snapshot,
+                    startup_tx,
+                );
             })
             .map_err(|error| EngineError(format!("failed to start engine thread: {error}")))?;
 
@@ -271,6 +283,7 @@ impl Engine {
             Ok(Ok(())) => Ok(EngineHandle {
                 commands,
                 snapshot,
+                telemetry,
                 worker: Some(worker),
             }),
             Ok(Err(error)) => {
@@ -294,6 +307,11 @@ impl EngineHandle {
             .read()
             .expect("engine snapshot lock poisoned")
             .clone()
+    }
+
+    #[must_use]
+    pub fn telemetry(&self) -> TelemetryReader {
+        self.telemetry.clone()
     }
 
     pub fn toggle_bypass(&self) -> Result<bool, EngineError> {
@@ -386,6 +404,7 @@ impl Drop for EngineHandle {
 fn run_engine(
     mut platform: impl AudioPlatform,
     options: EngineOptions,
+    telemetry: TelemetryPublisher,
     commands: Receiver<Command>,
     snapshot: Arc<RwLock<EngineSnapshot>>,
     startup: mpsc::SyncSender<Result<(), EngineError>>,
@@ -419,6 +438,7 @@ fn run_engine(
     match platform.start(
         events,
         options.processed_output_sink,
+        telemetry,
         &initial_profile.equalizer,
     ) {
         Ok(state) => {
@@ -726,7 +746,7 @@ mod tests {
 
     use super::{
         ActiveRoute, AudioPlatform, DeviceId, Engine, EngineOptions, PlatformError, PlatformEvent,
-        PlatformEventSink, PlatformState, ProcessedOutputSink,
+        PlatformEventSink, PlatformState, ProcessedOutputSink, TelemetryPublisher,
     };
 
     #[test]
@@ -1033,6 +1053,7 @@ mod tests {
             &mut self,
             events: PlatformEventSink,
             _output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+            _telemetry: TelemetryPublisher,
             _equalizer: &Equalizer,
         ) -> Result<PlatformState, PlatformError> {
             if let Some(target) = &self.events {

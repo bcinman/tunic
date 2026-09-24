@@ -2,7 +2,7 @@
 
 mod capture;
 
-use std::io::{self, BufRead, Write};
+use std::io::{self, BufRead, IsTerminal, Write};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -14,7 +14,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, QualityFactor};
 use tunic_engine::{
     Engine, EngineHandle, EngineOptions, EngineSnapshot, EngineStatus, OutputDevice,
-    ProcessedOutputSink,
+    ProcessedOutputSink, StereoLevels,
 };
 use tunic_macos::CoreAudioPlatform;
 
@@ -58,6 +58,8 @@ enum SessionCommand {
     },
     /// Toggle processing bypass.
     Bypass,
+    /// Show the latest post-EQ stereo peak and RMS levels.
+    Telemetry,
     /// Configure the live equalizer.
     Filter {
         #[command(subcommand)]
@@ -183,7 +185,16 @@ fn start_session(
     while !interrupted.load(Ordering::Acquire) {
         match line_rx.recv_timeout(Duration::from_millis(50)) {
             Ok(Some(line)) => {
-                if handle_line(&engine, &line)? {
+                match handle_line(&engine, &line)? {
+                    SessionAction::Continue => {}
+                    SessionAction::StreamTelemetry => {
+                        if stream_telemetry(&engine, &line_rx, &interrupted)? {
+                            break;
+                        }
+                    }
+                    SessionAction::Quit => break,
+                }
+                if interrupted.load(Ordering::Acquire) {
                     break;
                 }
                 print_prompt()?;
@@ -229,42 +240,61 @@ fn read_input(lines: mpsc::Sender<Option<String>>) {
     let _ = lines.send(None);
 }
 
-fn handle_line(engine: &EngineHandle, line: &str) -> Result<bool, Box<dyn std::error::Error>> {
+enum SessionAction {
+    Continue,
+    StreamTelemetry,
+    Quit,
+}
+
+fn handle_line(
+    engine: &EngineHandle,
+    line: &str,
+) -> Result<SessionAction, Box<dyn std::error::Error>> {
     let Some(words) = shlex::split(line) else {
         eprintln!("error: unmatched quote");
-        return Ok(false);
+        return Ok(SessionAction::Continue);
     };
     if words.is_empty() {
-        return Ok(false);
+        return Ok(SessionAction::Continue);
     }
     let command = match SessionCli::try_parse_from(words) {
         Ok(command) => command.command,
         Err(error) => {
             error.print()?;
-            return Ok(false);
+            return Ok(SessionAction::Continue);
         }
     };
 
-    match command {
-        SessionCommand::Status => print_status(&engine.snapshot()),
-        SessionCommand::Device { command } => match command {
-            DeviceCommand::List => print_devices(&engine.snapshot()),
-            DeviceCommand::Show { device } => show_device(&engine.snapshot(), device.as_deref()),
-        },
+    let action = match command {
+        SessionCommand::Status => {
+            print_status(&engine.snapshot());
+            SessionAction::Continue
+        }
+        SessionCommand::Device { command } => {
+            match command {
+                DeviceCommand::List => print_devices(&engine.snapshot()),
+                DeviceCommand::Show { device } => {
+                    show_device(&engine.snapshot(), device.as_deref());
+                }
+            }
+            SessionAction::Continue
+        }
         SessionCommand::Bypass => {
             let bypassed = engine.toggle_bypass()?;
             println!(
                 "Processing is {}.",
                 if bypassed { "bypassed" } else { "active" }
             );
+            SessionAction::Continue
         }
+        SessionCommand::Telemetry => SessionAction::StreamTelemetry,
         SessionCommand::Filter { command } => {
             let snapshot = engine.snapshot();
             let equalizer = match equalizer_from_command(&snapshot.equalizer, command) {
                 Ok(equalizer) => equalizer,
                 Err(error) => {
                     eprintln!("error: {error}");
-                    return Ok(false);
+                    return Ok(SessionAction::Continue);
                 }
             };
             match engine.preview_equalizer(equalizer, snapshot.edit_revision) {
@@ -273,6 +303,7 @@ fn handle_line(engine: &EngineHandle, line: &str) -> Result<bool, Box<dyn std::e
                 }
                 Err(error) => eprintln!("error: {error}"),
             }
+            SessionAction::Continue
         }
         SessionCommand::Save => {
             let snapshot = engine.snapshot();
@@ -283,6 +314,7 @@ fn handle_line(engine: &EngineHandle, line: &str) -> Result<bool, Box<dyn std::e
                 Ok(_) => println!("No equalizer changes to save."),
                 Err(error) => eprintln!("error: {error}"),
             }
+            SessionAction::Continue
         }
         SessionCommand::Discard => {
             let snapshot = engine.snapshot();
@@ -293,11 +325,15 @@ fn handle_line(engine: &EngineHandle, line: &str) -> Result<bool, Box<dyn std::e
                 Ok(_) => println!("No equalizer changes to discard."),
                 Err(error) => eprintln!("error: {error}"),
             }
+            SessionAction::Continue
         }
-        SessionCommand::Help => print_session_help()?,
-        SessionCommand::Quit => return Ok(true),
-    }
-    Ok(false)
+        SessionCommand::Help => {
+            print_session_help()?;
+            SessionAction::Continue
+        }
+        SessionCommand::Quit => SessionAction::Quit,
+    };
+    Ok(action)
 }
 
 fn equalizer_from_command(
@@ -465,6 +501,74 @@ fn find_device<'a>(devices: &'a [OutputDevice], query: &str) -> Option<&'a Outpu
         .find(|device| device.id.as_str() == query || device.name == query)
 }
 
+fn stream_telemetry(
+    engine: &EngineHandle,
+    lines: &mpsc::Receiver<Option<String>>,
+    interrupted: &AtomicBool,
+) -> io::Result<bool> {
+    let telemetry = engine.telemetry();
+    let is_terminal = io::stdout().is_terminal();
+    println!("Live telemetry (press Enter to stop)");
+    if is_terminal {
+        print!("\x1b[?25l");
+    }
+
+    let disconnected = loop {
+        let levels = format_telemetry(telemetry.latest());
+        if is_terminal {
+            let (left, right) = levels
+                .split_once('\n')
+                .expect("telemetry has left and right lines");
+            print!("\r\x1b[2K{left}\n\r\x1b[2K{right}\x1b[1A\r");
+        } else {
+            println!("{levels}");
+        }
+        io::stdout().flush()?;
+
+        if interrupted.load(Ordering::Acquire) {
+            break false;
+        }
+        match lines.recv_timeout(Duration::from_millis(33)) {
+            Ok(Some(_)) => break false,
+            Ok(None) | Err(mpsc::RecvTimeoutError::Disconnected) => break true,
+            Err(mpsc::RecvTimeoutError::Timeout) => {}
+        }
+    };
+
+    if is_terminal {
+        print!("\x1b[1B\r\n\x1b[?25h");
+    }
+    io::stdout().flush()?;
+    Ok(disconnected)
+}
+
+fn format_telemetry(levels: StereoLevels) -> String {
+    format!(
+        "L [{}] peak {:>6.1} dBFS  RMS {:>6.1} dBFS\nR [{}] peak {:>6.1} dBFS  RMS {:>6.1} dBFS",
+        level_bar(levels.left.peak),
+        decibels_full_scale(levels.left.peak),
+        decibels_full_scale(levels.left.rms),
+        level_bar(levels.right.peak),
+        decibels_full_scale(levels.right.peak),
+        decibels_full_scale(levels.right.rms),
+    )
+}
+
+fn level_bar(amplitude: f32) -> String {
+    const WIDTH: usize = 20;
+    let normalized = ((decibels_full_scale(amplitude) + 60.0) / 60.0).clamp(0.0, 1.0);
+    let filled = (normalized * WIDTH as f32).round() as usize;
+    format!("{}{}", "#".repeat(filled), "-".repeat(WIDTH - filled))
+}
+
+fn decibels_full_scale(amplitude: f32) -> f32 {
+    if amplitude > 0.0 {
+        20.0 * amplitude.log10()
+    } else {
+        -120.0
+    }
+}
+
 fn print_session_help() -> Result<(), clap::Error> {
     SessionCli::command().print_help()?;
     println!();
@@ -482,10 +586,28 @@ use clap::CommandFactory as _;
 mod tests {
     use super::{
         Cli, Command, DeviceCommand, FilterCommand, FilterKind, SessionCli, SessionCommand,
-        equalizer_from_command,
+        equalizer_from_command, format_telemetry,
     };
     use clap::Parser as _;
     use tunic_dsp::{Equalizer, Filter};
+    use tunic_engine::{ChannelLevels, StereoLevels};
+
+    #[test]
+    fn formats_asymmetric_linear_levels_as_dbfs() {
+        let output = format_telemetry(StereoLevels {
+            left: ChannelLevels {
+                peak: 1.0,
+                rms: 0.5,
+            },
+            right: ChannelLevels {
+                peak: 0.25,
+                rms: 0.0,
+            },
+        });
+
+        assert!(output.contains("peak    0.0 dBFS  RMS   -6.0 dBFS"));
+        assert!(output.contains("peak  -12.0 dBFS  RMS -120.0 dBFS"));
+    }
 
     #[test]
     fn parses_a_custom_data_directory() {

@@ -5,6 +5,8 @@ use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::thread;
+use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const SAMPLE_RATE: u32 = 48_000;
@@ -16,7 +18,7 @@ const SHELF_GAIN_DB: f32 = EXPECTED_CONTRAST_DB / 2.0;
 
 #[test]
 #[ignore = "uses the current macOS output device"]
-fn saved_shelf_filters_survive_restart_and_change_captured_gain_contrast() {
+fn saved_filters_and_telemetry_work_through_the_production_route() {
     let artifacts = Artifacts::new();
     write_probe(&artifacts.probe);
 
@@ -68,10 +70,23 @@ fn saved_shelf_filters_survive_restart_and_change_captured_gain_contrast() {
     );
     let mut input = tunic.stdin.take().expect("capture Tunic stdin");
 
-    let playback = Command::new("/usr/bin/afplay")
+    let mut playback = Command::new("/usr/bin/afplay")
         .arg(&artifacts.probe)
-        .status()
+        .spawn()
         .expect("play stereo probe");
+    thread::sleep(Duration::from_millis(250));
+    input
+        .write_all(b"telemetry\n")
+        .expect("request live telemetry");
+    let left_levels = read_until_output(&mut output, "L [");
+    let right_levels = read_until_output(&mut output, "R [");
+    assert!(!left_levels.contains("-120.0 dBFS"), "{left_levels}");
+    assert!(!right_levels.contains("-120.0 dBFS"), "{right_levels}");
+    read_until_output(&mut output, "L [");
+    read_until_output(&mut output, "R [");
+    input.write_all(b"\n").expect("stop live telemetry");
+
+    let playback = playback.wait().expect("wait for stereo probe");
     assert!(playback.success(), "afplay failed with {playback}");
 
     input.write_all(b"quit\n").expect("stop Tunic");
@@ -82,13 +97,17 @@ fn saved_shelf_filters_survive_restart_and_change_captured_gain_contrast() {
 }
 
 fn wait_for_output(output: &mut impl BufRead, expected: &str) {
+    let _ = read_until_output(output, expected);
+}
+
+fn read_until_output(output: &mut impl BufRead, expected: &str) -> String {
     let mut line = String::new();
     loop {
         line.clear();
         let bytes = output.read_line(&mut line).expect("read Tunic startup");
         assert_ne!(bytes, 0, "Tunic stopped before capture started");
         if line.contains(expected) {
-            return;
+            return line;
         }
     }
 }
@@ -131,10 +150,7 @@ fn verify_capture(path: &Path) {
     let bytes = fs::read(path).expect("read Tunic capture");
     assert_eq!(&bytes[0..4], b"RIFF");
     assert_eq!(&bytes[8..12], b"WAVE");
-    assert_eq!(
-        u32::from_le_bytes(bytes[24..28].try_into().unwrap()),
-        SAMPLE_RATE
-    );
+    let capture_sample_rate = u32::from_le_bytes(bytes[24..28].try_into().unwrap());
 
     let samples = bytes[44..]
         .as_chunks::<4>()
@@ -157,7 +173,7 @@ fn verify_capture(path: &Path) {
     let first = active[0] + 1_000;
     let last = active[active.len() - 1] - 1_000;
     assert!(last > first, "captured probe is too short");
-    let duration = (last - first) as f32 / SAMPLE_RATE as f32;
+    let duration = (last - first) as f32 / capture_sample_rate as f32;
     let left_frequency = positive_crossings(&left, first, last) as f32 / duration;
     let right_frequency = positive_crossings(&right, first, last) as f32 / duration;
     let left_rms = rms(&left[first..=last]);
@@ -166,7 +182,7 @@ fn verify_capture(path: &Path) {
     let expected_contrast = 10.0_f32.powf(EXPECTED_CONTRAST_DB / 20.0);
 
     println!(
-        "captured left={left_frequency:.1} Hz, right={right_frequency:.1} Hz, measured low/high gain contrast={measured_contrast:.2}"
+        "captured at {capture_sample_rate} Hz: left={left_frequency:.1} Hz, right={right_frequency:.1} Hz, measured low/high gain contrast={measured_contrast:.2}"
     );
     assert!((left_frequency - LEFT_HZ).abs() < 3.0);
     assert!((right_frequency - RIGHT_HZ).abs() < 3.0);

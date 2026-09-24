@@ -24,6 +24,7 @@ status
 device list
 device show [DEVICE]
 bypass
+telemetry                             # Stream post-EQ levels until Enter is pressed
 filter add <peaking|low-shelf|high-shelf> --frequency <HZ> --gain <DB> --q <Q>
 filter set <BAND> <peaking|low-shelf|high-shelf> --frequency <HZ> --gain <DB> --q <Q>
 filter remove <BAND>
@@ -51,7 +52,7 @@ tunic bypass                         # Toggle processing
 tunic device list|show               # Inspect output devices and their settings
 tunic device set-profile             # Associate a profile with an output device
 
-tunic telemetry                      # Stream telemetry data
+tunic telemetry                      # Stream telemetry data (not implemented)
 ```
 
 The executable selects the platform automatically. By default it stores state

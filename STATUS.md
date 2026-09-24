@@ -32,10 +32,13 @@ architecture.
 - In-memory previews with live save and discard workflows. Saved equalizers are
   restored across restarts, while previews remain ephemeral.
 - Saved equalizer and edit revisions published in engine snapshots.
+- Real-time-safe post-DSP stereo peak and RMS measurement in 30 Hz windows,
+  published through a lock-free latest-value engine telemetry reader.
 - A headless interactive CLI with:
   - engine and route status;
   - output-device listing and inspection;
   - processing bypass;
+  - a live stereo peak and RMS meter in dBFS;
   - live typed-filter add, set, remove, and reset commands;
   - persistent equalizer save and discard commands;
   - optional post-DSP Float32 stereo WAV capture;
@@ -44,17 +47,18 @@ architecture.
   when processing resumes.
 - Automated formatting, Clippy, and workspace test tasks through `mise`.
 - Unit coverage for identity, peaking, and shelving DSP; equalizer validation
-  and publication; audio buffer handling; command parsing; and WAV capture.
+  and publication; audio buffer handling; telemetry calculation and
+  publication; command parsing; and WAV capture.
 - An ignored hardware test that applies live low- and high-shelf filters, plays
-  a stereo probe through the production route, and verifies the combined
-  post-DSP low/high gain contrast.
+  a stereo probe through the production route, and verifies telemetry plus the
+  combined post-DSP low/high gain contrast.
 
 ## Not In Yet
 
 - Filter types other than peaking, low-shelf, and high-shelf EQ.
 - User-facing profile management, profile import/export, or per-device profile
   assignment commands.
-- Telemetry, meters, or snapshot streaming.
+- Spectrum/RTA telemetry, meter smoothing or decay, and snapshot streaming.
 - Automatic recovery or retry after route rebuild failures.
 - Route handoff, crossfading, or sample-rate conversion.
 - A GPUI application; `tunic-app` is currently a placeholder crate.

@@ -90,4 +90,12 @@ profile. Equalizers are stored as versioned JSON documents, while profile
 revisions and relationships remain relational. The CLI stores this database at
 `~/Library/Application Support/Tunic/tunic.sqlite3` by default.
 
+## Telemetry
+
+The engine owns a lock-free latest-value channel for post-DSP stereo peak and
+RMS levels. The platform publishes from its real-time audio callback, while
+clients obtain an independent `TelemetryReader` from `EngineHandle::telemetry`.
+Telemetry is intentionally separate from engine snapshots and commands so a
+meter can poll it without waking or blocking the engine thread.
+
 See the [workspace structure](../../STRUCTURE.md) for the complete crate layout and dependency direction.
