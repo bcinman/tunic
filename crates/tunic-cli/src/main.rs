@@ -508,20 +508,21 @@ fn stream_telemetry(
 ) -> io::Result<bool> {
     let telemetry = engine.telemetry();
     let is_terminal = io::stdout().is_terminal();
+    let mut levels = telemetry.try_latest().unwrap_or_default();
     println!("Live telemetry (press Enter to stop)");
     if is_terminal {
-        print!("\x1b[?25l");
+        print!("\x1b[?25l\x1b7");
     }
 
     let disconnected = loop {
-        let levels = format_telemetry(telemetry.latest());
+        if let Some(latest) = telemetry.try_latest() {
+            levels = latest;
+        }
+        let formatted = format_telemetry(levels);
         if is_terminal {
-            let (left, right) = levels
-                .split_once('\n')
-                .expect("telemetry has left and right lines");
-            print!("\r\x1b[2K{left}\n\r\x1b[2K{right}\x1b[1A\r");
+            print!("\x1b8\x1b[J{formatted}");
         } else {
-            println!("{levels}");
+            println!("{formatted}");
         }
         io::stdout().flush()?;
 
@@ -536,7 +537,7 @@ fn stream_telemetry(
     };
 
     if is_terminal {
-        print!("\x1b[1B\r\n\x1b[?25h");
+        print!("\x1b8\x1b[J\x1b[?25h");
     }
     io::stdout().flush()?;
     Ok(disconnected)
