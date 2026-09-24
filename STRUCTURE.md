@@ -55,14 +55,16 @@ impl Engine {
 }
 
 impl EngineHandle {
-    pub fn set_bypassed(&self, value: bool) -> Result<(), SubmitError>;
-    pub fn select_profile(&self, id: ProfileId) -> Result<(), SubmitError>;
-
-    pub fn create_profile(
+    pub fn toggle_bypass(&self) -> Result<bool, EngineError>;
+    pub fn create_profile(&self, name: String) -> Result<ProfileId, EngineError>;
+    pub fn rename_profile(&self, id: ProfileId, name: String) -> Result<(), EngineError>;
+    pub fn delete_profile(&self, id: ProfileId) -> Result<(), EngineError>;
+    pub fn select_profile(&self, id: ProfileId) -> Result<(), EngineError>;
+    pub fn assign_profile(
         &self,
-        name: String,
-        equalizer: Equalizer,
-    ) -> Result<(), SubmitError>;
+        device_id: DeviceId,
+        profile_id: ProfileId,
+    ) -> Result<(), EngineError>;
 
     pub fn preview_equalizer(
         &self,
@@ -80,10 +82,10 @@ impl EngineHandle {
         expected_revision: EditRevision,
     ) -> Result<EditRevision, EngineError>;
 
-    pub fn snapshots(&self) -> SnapshotReceiver;
+    pub fn snapshot(&self) -> EngineSnapshot;
     pub fn telemetry(&self) -> TelemetryReader;
 
-    pub fn shutdown(&self) -> Result<(), ShutdownError>;
+    pub fn shutdown(self) -> Result<(), EngineError>;
 }
 ```
 

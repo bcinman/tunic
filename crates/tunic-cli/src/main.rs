@@ -14,7 +14,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, QualityFactor};
 use tunic_engine::{
     Engine, EngineHandle, EngineOptions, EngineSnapshot, EngineStatus, OutputDevice,
-    ProcessedOutputSink, StereoLevels,
+    ProcessedOutputSink, Profile, ProfileId, StereoLevels,
 };
 use tunic_macos::CoreAudioPlatform;
 
@@ -56,6 +56,11 @@ enum SessionCommand {
         #[command(subcommand)]
         command: DeviceCommand,
     },
+    /// Manage equalizer profiles.
+    Profile {
+        #[command(subcommand)]
+        command: ProfileCommand,
+    },
     /// Toggle processing bypass.
     Bypass,
     /// Show the latest post-EQ stereo peak and RMS levels.
@@ -81,6 +86,27 @@ enum DeviceCommand {
     List,
     /// Show one output device; defaults to the active device.
     Show { device: Option<String> },
+    /// Assign a profile to an output device; defaults to the active device.
+    SetProfile {
+        profile: String,
+        device: Option<String>,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum ProfileCommand {
+    /// List profiles.
+    List,
+    /// Show one profile.
+    Info { profile: String },
+    /// Create and activate a profile from the current equalizer.
+    Create { name: String },
+    /// Rename a profile.
+    Rename { profile: String, name: String },
+    /// Delete a profile.
+    Delete { profile: String },
+    /// Activate a profile and make it the default.
+    Select { profile: String },
 }
 
 #[derive(Debug, Subcommand)]
@@ -276,6 +302,74 @@ fn handle_line(
                 DeviceCommand::Show { device } => {
                     show_device(&engine.snapshot(), device.as_deref());
                 }
+                DeviceCommand::SetProfile { profile, device } => {
+                    let snapshot = engine.snapshot();
+                    let profile_id = match find_profile_id(&snapshot, &profile) {
+                        Ok(profile_id) => profile_id,
+                        Err(error) => {
+                            eprintln!("error: {error}");
+                            return Ok(SessionAction::Continue);
+                        }
+                    };
+                    let output = device.as_deref().map_or_else(
+                        || {
+                            snapshot.route.as_ref().and_then(|route| {
+                                snapshot
+                                    .devices
+                                    .iter()
+                                    .find(|device| device.id == route.device_id)
+                            })
+                        },
+                        |query| find_device(&snapshot.devices, query),
+                    );
+                    let Some(output) = output else {
+                        eprintln!("error: output device not found");
+                        return Ok(SessionAction::Continue);
+                    };
+                    let output_name = output.name.clone();
+                    match engine.assign_profile(output.id.clone(), profile_id) {
+                        Ok(()) => println!("Assigned profile to {output_name}."),
+                        Err(error) => eprintln!("error: {error}"),
+                    }
+                }
+            }
+            SessionAction::Continue
+        }
+        SessionCommand::Profile { command } => {
+            let snapshot = engine.snapshot();
+            match command {
+                ProfileCommand::List => print_profiles(&snapshot),
+                ProfileCommand::Info { profile } => match find_profile(&snapshot, &profile) {
+                    Ok(profile) => print_profile(&snapshot, profile),
+                    Err(error) => eprintln!("error: {error}"),
+                },
+                ProfileCommand::Create { name } => match engine.create_profile(name) {
+                    Ok(profile_id) => println!("Created and selected profile {profile_id}."),
+                    Err(error) => eprintln!("error: {error}"),
+                },
+                ProfileCommand::Rename { profile, name } => {
+                    match find_profile_id(&snapshot, &profile) {
+                        Ok(profile_id) => match engine.rename_profile(profile_id, name) {
+                            Ok(()) => println!("Renamed profile."),
+                            Err(error) => eprintln!("error: {error}"),
+                        },
+                        Err(error) => eprintln!("error: {error}"),
+                    }
+                }
+                ProfileCommand::Delete { profile } => match find_profile_id(&snapshot, &profile) {
+                    Ok(profile_id) => match engine.delete_profile(profile_id) {
+                        Ok(()) => println!("Deleted profile."),
+                        Err(error) => eprintln!("error: {error}"),
+                    },
+                    Err(error) => eprintln!("error: {error}"),
+                },
+                ProfileCommand::Select { profile } => match find_profile_id(&snapshot, &profile) {
+                    Ok(profile_id) => match engine.select_profile(profile_id) {
+                        Ok(()) => println!("Selected profile."),
+                        Err(error) => eprintln!("error: {error}"),
+                    },
+                    Err(error) => eprintln!("error: {error}"),
+                },
             }
             SessionAction::Continue
         }
@@ -410,6 +504,13 @@ fn print_status(snapshot: &EngineSnapshot) {
     } else {
         println!("Output: none");
     }
+    if let Some(profile) = snapshot
+        .active_profile_id
+        .as_ref()
+        .and_then(|id| snapshot.profiles.iter().find(|profile| &profile.id == id))
+    {
+        println!("Profile: {} ({})", profile.name, profile.id);
+    }
     let filters = snapshot.equalizer.filters();
     if filters.is_empty() {
         println!(
@@ -493,12 +594,87 @@ fn show_device(snapshot: &EngineSnapshot, query: Option<&str>) {
     println!("Sample rate: {} Hz", device.sample_rate_hz);
     println!("Channels: {}", device.channels);
     println!("System default: {}", device.is_default);
+    let profile_id = snapshot
+        .device_profile_assignments
+        .iter()
+        .find(|assignment| assignment.device_id == device.id)
+        .map(|assignment| &assignment.profile_id)
+        .or(snapshot.default_profile_id.as_ref());
+    if let Some(profile) = profile_id.and_then(|profile_id| {
+        snapshot
+            .profiles
+            .iter()
+            .find(|profile| &profile.id == profile_id)
+    }) {
+        println!("Profile: {} ({})", profile.name, profile.id);
+    }
 }
 
 fn find_device<'a>(devices: &'a [OutputDevice], query: &str) -> Option<&'a OutputDevice> {
     devices
         .iter()
         .find(|device| device.id.as_str() == query || device.name == query)
+}
+
+fn find_profile<'a>(snapshot: &'a EngineSnapshot, query: &str) -> Result<&'a Profile, String> {
+    let profiles = snapshot
+        .profiles
+        .iter()
+        .map(|profile| (&profile.id, profile.name.as_str()));
+    let profile_id = matching_profile_id(profiles, query)
+        .ok_or_else(|| format!("profile '{query}' not found"))?;
+    Ok(snapshot
+        .profiles
+        .iter()
+        .find(|profile| &profile.id == profile_id)
+        .expect("matched profile id came from the snapshot"))
+}
+
+fn matching_profile_id<'a, I>(mut profiles: I, query: &str) -> Option<&'a ProfileId>
+where
+    I: Clone + Iterator<Item = (&'a ProfileId, &'a str)>,
+{
+    profiles
+        .clone()
+        .find_map(|(id, _)| (id.as_str() == query).then_some(id))
+        .or_else(|| profiles.find_map(|(id, name)| name.eq_ignore_ascii_case(query).then_some(id)))
+}
+
+fn find_profile_id(snapshot: &EngineSnapshot, query: &str) -> Result<ProfileId, String> {
+    find_profile(snapshot, query).map(|profile| profile.id.clone())
+}
+
+fn print_profiles(snapshot: &EngineSnapshot) {
+    for profile in &snapshot.profiles {
+        let active = snapshot.active_profile_id.as_ref() == Some(&profile.id);
+        let default = snapshot.default_profile_id.as_ref() == Some(&profile.id);
+        let marker = match (active, default) {
+            (true, true) => "active, default",
+            (true, false) => "active",
+            (false, true) => "default",
+            (false, false) => "",
+        };
+        if marker.is_empty() {
+            println!("  {} ({})", profile.name, profile.id);
+        } else {
+            println!("* {} ({}, {marker})", profile.name, profile.id);
+        }
+    }
+}
+
+fn print_profile(snapshot: &EngineSnapshot, profile: &Profile) {
+    println!("Name: {}", profile.name);
+    println!("ID: {}", profile.id);
+    println!("Revision: {}", profile.revision.get());
+    println!(
+        "Active: {}",
+        snapshot.active_profile_id.as_ref() == Some(&profile.id)
+    );
+    println!(
+        "Default: {}",
+        snapshot.default_profile_id.as_ref() == Some(&profile.id)
+    );
+    println!("Bands: {}", profile.equalizer.filters().len());
 }
 
 fn stream_telemetry(
@@ -586,12 +762,12 @@ use clap::CommandFactory as _;
 #[cfg(test)]
 mod tests {
     use super::{
-        Cli, Command, DeviceCommand, FilterCommand, FilterKind, SessionCli, SessionCommand,
-        equalizer_from_command, format_telemetry,
+        Cli, Command, DeviceCommand, FilterCommand, FilterKind, ProfileCommand, SessionCli,
+        SessionCommand, equalizer_from_command, format_telemetry, matching_profile_id,
     };
     use clap::Parser as _;
     use tunic_dsp::{Equalizer, Filter};
-    use tunic_engine::{ChannelLevels, StereoLevels};
+    use tunic_engine::{ChannelLevels, ProfileId, StereoLevels};
 
     #[test]
     fn formats_asymmetric_linear_levels_as_dbfs() {
@@ -635,6 +811,61 @@ mod tests {
                 command: DeviceCommand::Show { device: Some(name) }
             } if name == "Studio Display Speakers"
         ));
+    }
+
+    #[test]
+    fn parses_profile_management_commands() {
+        let create = SessionCli::try_parse_from(
+            shlex::split("profile create \"Studio Headphones\"").unwrap(),
+        )
+        .unwrap();
+        assert!(matches!(
+            create.command,
+            SessionCommand::Profile {
+                command: ProfileCommand::Create { name }
+            } if name == "Studio Headphones"
+        ));
+
+        let rename = SessionCli::try_parse_from(
+            shlex::split("profile rename headphones \"Desk Headphones\"").unwrap(),
+        )
+        .unwrap();
+        assert!(matches!(
+            rename.command,
+            SessionCommand::Profile {
+                command: ProfileCommand::Rename { profile, name }
+            } if profile == "headphones" && name == "Desk Headphones"
+        ));
+
+        let assignment = SessionCli::try_parse_from(
+            shlex::split("device set-profile headphones \"Studio Display Speakers\"").unwrap(),
+        )
+        .unwrap();
+        assert!(matches!(
+            assignment.command,
+            SessionCommand::Device {
+                command: DeviceCommand::SetProfile {
+                    profile,
+                    device: Some(device),
+                }
+            } if profile == "headphones" && device == "Studio Display Speakers"
+        ));
+    }
+
+    #[test]
+    fn profile_id_match_takes_precedence_over_a_name_match() {
+        let alpha = ProfileId::new("alpha");
+        let alpha_two = ProfileId::new("alpha-2");
+        let profiles = [(&alpha_two, "alpha"), (&alpha, "Zulu")];
+
+        assert_eq!(
+            matching_profile_id(profiles.into_iter(), "alpha"),
+            Some(&alpha)
+        );
+        assert_eq!(
+            matching_profile_id(profiles.into_iter(), "ALPHA"),
+            Some(&alpha_two)
+        );
     }
 
     #[test]

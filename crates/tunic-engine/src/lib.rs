@@ -13,7 +13,7 @@ use std::time::Duration;
 
 use tunic_dsp::Equalizer;
 
-use crate::persistence::{ProfileStore, StoredProfile};
+use crate::persistence::{ProfileStore, StoredCatalog, StoredProfile};
 pub use crate::telemetry::{ChannelLevels, StereoLevels, TelemetryPublisher, TelemetryReader};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -85,6 +85,41 @@ impl fmt::Display for DeviceId {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProfileId(String);
+
+impl ProfileId {
+    #[must_use]
+    pub fn new(value: impl Into<String>) -> Self {
+        Self(value.into())
+    }
+
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for ProfileId {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(formatter)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Profile {
+    pub id: ProfileId,
+    pub name: String,
+    pub equalizer: Equalizer,
+    pub revision: EqualizerRevision,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DeviceProfileAssignment {
+    pub device_id: DeviceId,
+    pub profile_id: ProfileId,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct OutputDevice {
     pub id: DeviceId,
@@ -120,6 +155,10 @@ pub struct EngineSnapshot {
     pub equalizer_revision: EqualizerRevision,
     pub edit_revision: EditRevision,
     pub has_unsaved_changes: bool,
+    pub profiles: Vec<Profile>,
+    pub default_profile_id: Option<ProfileId>,
+    pub active_profile_id: Option<ProfileId>,
+    pub device_profile_assignments: Vec<DeviceProfileAssignment>,
 }
 
 impl EngineSnapshot {
@@ -133,6 +172,10 @@ impl EngineSnapshot {
             equalizer_revision: EqualizerRevision::INITIAL,
             edit_revision: EditRevision::INITIAL,
             has_unsaved_changes: false,
+            profiles: Vec::new(),
+            default_profile_id: None,
+            active_profile_id: None,
+            device_profile_assignments: Vec::new(),
         }
     }
 }
@@ -239,6 +282,11 @@ enum Command {
     ),
     SaveEqualizer(EditRevision, Sender<Result<EqualizerRevision, EngineError>>),
     DiscardPreview(EditRevision, Sender<Result<EditRevision, EngineError>>),
+    CreateProfile(String, Sender<Result<ProfileId, EngineError>>),
+    RenameProfile(ProfileId, String, Sender<Result<(), EngineError>>),
+    DeleteProfile(ProfileId, Sender<Result<(), EngineError>>),
+    SelectProfile(ProfileId, Sender<Result<(), EngineError>>),
+    AssignProfile(DeviceId, ProfileId, Sender<Result<(), EngineError>>),
     Shutdown(Sender<Result<(), PlatformError>>),
 }
 
@@ -368,6 +416,60 @@ impl EngineHandle {
             .map_err(|_| EngineError("engine stopped before discarding equalizer preview".into()))?
     }
 
+    pub fn create_profile(&self, name: String) -> Result<ProfileId, EngineError> {
+        let (result_tx, result_rx) = mpsc::channel();
+        self.commands
+            .send(Command::CreateProfile(name, result_tx))
+            .map_err(|_| EngineError("engine is not running".into()))?;
+        result_rx
+            .recv()
+            .map_err(|_| EngineError("engine stopped before creating profile".into()))?
+    }
+
+    pub fn rename_profile(&self, id: ProfileId, name: String) -> Result<(), EngineError> {
+        let (result_tx, result_rx) = mpsc::channel();
+        self.commands
+            .send(Command::RenameProfile(id, name, result_tx))
+            .map_err(|_| EngineError("engine is not running".into()))?;
+        result_rx
+            .recv()
+            .map_err(|_| EngineError("engine stopped before renaming profile".into()))?
+    }
+
+    pub fn delete_profile(&self, id: ProfileId) -> Result<(), EngineError> {
+        let (result_tx, result_rx) = mpsc::channel();
+        self.commands
+            .send(Command::DeleteProfile(id, result_tx))
+            .map_err(|_| EngineError("engine is not running".into()))?;
+        result_rx
+            .recv()
+            .map_err(|_| EngineError("engine stopped before deleting profile".into()))?
+    }
+
+    pub fn select_profile(&self, id: ProfileId) -> Result<(), EngineError> {
+        let (result_tx, result_rx) = mpsc::channel();
+        self.commands
+            .send(Command::SelectProfile(id, result_tx))
+            .map_err(|_| EngineError("engine is not running".into()))?;
+        result_rx
+            .recv()
+            .map_err(|_| EngineError("engine stopped before selecting profile".into()))?
+    }
+
+    pub fn assign_profile(
+        &self,
+        device_id: DeviceId,
+        profile_id: ProfileId,
+    ) -> Result<(), EngineError> {
+        let (result_tx, result_rx) = mpsc::channel();
+        self.commands
+            .send(Command::AssignProfile(device_id, profile_id, result_tx))
+            .map_err(|_| EngineError("engine is not running".into()))?;
+        result_rx
+            .recv()
+            .map_err(|_| EngineError("engine stopped before assigning profile".into()))?
+    }
+
     pub fn shutdown(mut self) -> Result<(), EngineError> {
         self.shutdown_inner()
     }
@@ -466,6 +568,18 @@ fn run_engine(
                 EditRevision::INITIAL,
                 false,
             );
+            if let Some(store) = store.as_ref() {
+                let catalog = match store.catalog() {
+                    Ok(catalog) => catalog,
+                    Err(error) => {
+                        let _ = platform.shutdown();
+                        let _ = startup.send(Err(EngineError(error.to_string())));
+                        return;
+                    }
+                };
+                apply_profile_catalog(&mut write_snapshot(&snapshot), catalog);
+            }
+            write_snapshot(&snapshot).active_profile_id = selected_profile.profile_id.clone();
             let _ = startup.send(Ok(()));
             run_commands(
                 platform,
@@ -531,6 +645,8 @@ fn run_commands(
                                 edit_revision,
                                 false,
                             );
+                            write_snapshot(&snapshot).active_profile_id =
+                                profile.profile_id.clone();
                             saved_equalizer = profile;
                         }
                         Err(error) => fail_snapshot(&snapshot, error.to_string()),
@@ -597,20 +713,26 @@ fn run_commands(
                 } else if !has_unsaved_changes {
                     Ok(equalizer_revision)
                 } else {
-                    let persisted_revision = match (&mut store, &saved_equalizer.profile_id) {
+                    let persisted = match (&mut store, &saved_equalizer.profile_id) {
                         (Some(store), Some(profile_id)) => store
-                            .save_profile(profile_id, &equalizer, equalizer_revision.get())
-                            .map(EqualizerRevision::from_persisted)
+                            .save_profile(profile_id.as_str(), &equalizer, equalizer_revision.get())
+                            .map(|(revision, catalog)| {
+                                (EqualizerRevision::from_persisted(revision), Some(catalog))
+                            })
                             .map_err(|error| EngineError(error.to_string())),
-                        _ => Ok(equalizer_revision.next()),
+                        _ => Ok((equalizer_revision.next(), None)),
                     };
-                    persisted_revision.inspect(|&revision| {
+                    persisted.map(|(revision, catalog)| {
                         saved_equalizer.equalizer = equalizer;
                         saved_equalizer.revision = revision;
                         let mut current = write_snapshot(&snapshot);
                         current.equalizer_revision = revision;
                         current.edit_revision = current.edit_revision.next();
                         current.has_unsaved_changes = false;
+                        if let Some(catalog) = catalog {
+                            apply_profile_catalog(&mut current, catalog);
+                        }
+                        revision
                     })
                 };
                 let _ = result.send(saved);
@@ -638,6 +760,198 @@ fn run_commands(
                 };
                 let _ = result.send(discarded);
             }
+            Ok(Command::CreateProfile(name, result)) => {
+                let current = read_snapshot(&snapshot);
+                let equalizer = current.equalizer.clone();
+                let active_device_id = current
+                    .route
+                    .as_ref()
+                    .map(|route| route.device_id.as_str().to_owned());
+                drop(current);
+                let created = match (&mut store, active_device_id) {
+                    (Some(store), Some(active_device_id)) => store
+                        .create_and_select_profile(&name, &equalizer, &active_device_id)
+                        .map_err(|error| EngineError(error.to_string()))
+                        .map(|(profile, catalog)| {
+                            let saved = SavedEqualizer::from(profile);
+                            let id = saved.profile_id.clone().expect("stored profile has an id");
+                            saved_equalizer = saved;
+                            let mut current = write_snapshot(&snapshot);
+                            current.equalizer_revision = saved_equalizer.revision;
+                            current.edit_revision = current.edit_revision.next();
+                            current.has_unsaved_changes = false;
+                            current.active_profile_id = Some(id.clone());
+                            apply_profile_catalog(&mut current, catalog);
+                            id
+                        }),
+                    (None, _) => Err(profile_store_required()),
+                    (_, None) => Err(EngineError("no active output device".into())),
+                };
+                let _ = result.send(created);
+            }
+            Ok(Command::RenameProfile(profile_id, name, result)) => {
+                let renamed = match &mut store {
+                    Some(store) => store
+                        .rename_profile(profile_id.as_str(), &name)
+                        .map_err(|error| EngineError(error.to_string()))
+                        .map(|catalog| {
+                            apply_profile_catalog(&mut write_snapshot(&snapshot), catalog);
+                        }),
+                    None => Err(profile_store_required()),
+                };
+                let _ = result.send(renamed);
+            }
+            Ok(Command::SelectProfile(profile_id, result)) => {
+                let current = read_snapshot(&snapshot);
+                let has_unsaved_changes = current.has_unsaved_changes;
+                let current_equalizer = current.equalizer.clone();
+                let active_device_id = current
+                    .route
+                    .as_ref()
+                    .map(|route| route.device_id.as_str().to_owned());
+                drop(current);
+                let selected = if has_unsaved_changes {
+                    Err(unsaved_profile_change())
+                } else {
+                    match (&mut store, active_device_id) {
+                        (Some(store), Some(active_device_id)) => store
+                            .load_profile_by_id(profile_id.as_str())
+                            .map_err(|error| EngineError(error.to_string()))
+                            .and_then(|profile| {
+                                let changed = current_equalizer != profile.equalizer;
+                                if changed {
+                                    platform
+                                        .set_equalizer(&profile.equalizer)
+                                        .map_err(|error| EngineError(error.to_string()))?;
+                                }
+                                let catalog = store
+                                    .select_default_profile(profile_id.as_str(), &active_device_id)
+                                    .map_err(|error| {
+                                        if changed {
+                                            let _ = platform.set_equalizer(&current_equalizer);
+                                        }
+                                        EngineError(error.to_string())
+                                    })?;
+                                saved_equalizer = SavedEqualizer::from(profile);
+                                let mut current = write_snapshot(&snapshot);
+                                publish_selected_profile(&mut current, &saved_equalizer);
+                                apply_profile_catalog(&mut current, catalog);
+                                Ok(())
+                            }),
+                        (None, _) => Err(profile_store_required()),
+                        (_, None) => Err(EngineError("no active output device".into())),
+                    }
+                };
+                let _ = result.send(selected);
+            }
+            Ok(Command::AssignProfile(device_id, profile_id, result)) => {
+                let current = read_snapshot(&snapshot);
+                let is_active = current
+                    .route
+                    .as_ref()
+                    .is_some_and(|route| route.device_id == device_id);
+                let has_unsaved_changes = current.has_unsaved_changes;
+                let current_equalizer = current.equalizer.clone();
+                drop(current);
+                let assigned = if is_active && has_unsaved_changes {
+                    Err(unsaved_profile_change())
+                } else {
+                    match &mut store {
+                        Some(store) => store
+                            .load_profile_by_id(profile_id.as_str())
+                            .map_err(|error| EngineError(error.to_string()))
+                            .and_then(|profile| {
+                                let changed = is_active && current_equalizer != profile.equalizer;
+                                if changed {
+                                    platform
+                                        .set_equalizer(&profile.equalizer)
+                                        .map_err(|error| EngineError(error.to_string()))?;
+                                }
+                                let catalog = store
+                                    .assign_profile(device_id.as_str(), profile_id.as_str())
+                                    .map_err(|error| {
+                                        if changed {
+                                            let _ = platform.set_equalizer(&current_equalizer);
+                                        }
+                                        EngineError(error.to_string())
+                                    })?;
+                                let mut current = write_snapshot(&snapshot);
+                                if is_active {
+                                    saved_equalizer = SavedEqualizer::from(profile);
+                                    publish_selected_profile(&mut current, &saved_equalizer);
+                                }
+                                apply_profile_catalog(&mut current, catalog);
+                                Ok(())
+                            }),
+                        None => Err(profile_store_required()),
+                    }
+                };
+                let _ = result.send(assigned);
+            }
+            Ok(Command::DeleteProfile(profile_id, result)) => {
+                let current = read_snapshot(&snapshot);
+                let is_active = current.active_profile_id.as_ref() == Some(&profile_id);
+                let has_unsaved_changes = current.has_unsaved_changes;
+                let current_equalizer = current.equalizer.clone();
+                drop(current);
+                let deleted = if is_active && has_unsaved_changes {
+                    Err(unsaved_profile_change())
+                } else {
+                    match &mut store {
+                        Some(store) => {
+                            let fallback = if is_active {
+                                Some(
+                                    store
+                                        .load_default_profile()
+                                        .map_err(|error| EngineError(error.to_string())),
+                                )
+                            } else {
+                                None
+                            };
+                            fallback
+                                .transpose()
+                                .and_then(|fallback| {
+                                    if fallback
+                                        .as_ref()
+                                        .is_some_and(|profile| profile.id == profile_id.as_str())
+                                    {
+                                        return Err(EngineError(
+                                            "cannot delete the default profile; select another profile first"
+                                                .into(),
+                                        ));
+                                    }
+                                    let changed = fallback
+                                        .as_ref()
+                                        .is_some_and(|profile| profile.equalizer != current_equalizer);
+                                    if let Some(fallback) = &fallback
+                                        && changed
+                                    {
+                                        platform
+                                            .set_equalizer(&fallback.equalizer)
+                                            .map_err(|error| EngineError(error.to_string()))?;
+                                    }
+                                    let catalog = store
+                                        .delete_profile(profile_id.as_str())
+                                        .map_err(|error| {
+                                            if changed {
+                                                let _ = platform.set_equalizer(&current_equalizer);
+                                            }
+                                            EngineError(error.to_string())
+                                        })?;
+                                    let mut current = write_snapshot(&snapshot);
+                                    if let Some(fallback) = fallback {
+                                        saved_equalizer = SavedEqualizer::from(fallback);
+                                        publish_selected_profile(&mut current, &saved_equalizer);
+                                    }
+                                    apply_profile_catalog(&mut current, catalog);
+                                    Ok(())
+                                })
+                        }
+                        None => Err(profile_store_required()),
+                    }
+                };
+                let _ = result.send(deleted);
+            }
             Ok(Command::Shutdown(result)) => {
                 let shutdown = platform.shutdown();
                 let mut current = write_snapshot(&snapshot);
@@ -657,7 +971,7 @@ fn run_commands(
 
 #[derive(Clone)]
 struct SavedEqualizer {
-    profile_id: Option<String>,
+    profile_id: Option<ProfileId>,
     equalizer: Equalizer,
     revision: EqualizerRevision,
 }
@@ -665,7 +979,7 @@ struct SavedEqualizer {
 impl From<StoredProfile> for SavedEqualizer {
     fn from(profile: StoredProfile) -> Self {
         Self {
-            profile_id: Some(profile.id),
+            profile_id: Some(ProfileId::new(profile.id)),
             equalizer: profile.equalizer,
             revision: EqualizerRevision::from_persisted(profile.revision),
         }
@@ -703,16 +1017,53 @@ fn update_running_snapshot(
     edit_revision: EditRevision,
     has_unsaved_changes: bool,
 ) {
-    *write_snapshot(snapshot) = EngineSnapshot {
-        status: EngineStatus::Running,
-        bypassed,
-        route: Some(state.route),
-        devices: state.devices,
-        equalizer,
-        equalizer_revision,
-        edit_revision,
-        has_unsaved_changes,
-    };
+    let mut current = write_snapshot(snapshot);
+    current.status = EngineStatus::Running;
+    current.bypassed = bypassed;
+    current.route = Some(state.route);
+    current.devices = state.devices;
+    current.equalizer = equalizer;
+    current.equalizer_revision = equalizer_revision;
+    current.edit_revision = edit_revision;
+    current.has_unsaved_changes = has_unsaved_changes;
+}
+
+fn apply_profile_catalog(snapshot: &mut EngineSnapshot, catalog: StoredCatalog) {
+    snapshot.profiles = catalog
+        .profiles
+        .into_iter()
+        .map(|profile| Profile {
+            id: ProfileId::new(profile.id),
+            name: profile.name,
+            equalizer: profile.equalizer,
+            revision: EqualizerRevision::from_persisted(profile.revision),
+        })
+        .collect();
+    snapshot.default_profile_id = Some(ProfileId::new(catalog.default_profile_id));
+    snapshot.device_profile_assignments = catalog
+        .assignments
+        .into_iter()
+        .map(|assignment| DeviceProfileAssignment {
+            device_id: DeviceId::new(assignment.device_id),
+            profile_id: ProfileId::new(assignment.profile_id),
+        })
+        .collect();
+}
+
+fn publish_selected_profile(snapshot: &mut EngineSnapshot, profile: &SavedEqualizer) {
+    snapshot.equalizer = profile.equalizer.clone();
+    snapshot.equalizer_revision = profile.revision;
+    snapshot.edit_revision = snapshot.edit_revision.next();
+    snapshot.has_unsaved_changes = false;
+    snapshot.active_profile_id = profile.profile_id.clone();
+}
+
+fn profile_store_required() -> EngineError {
+    EngineError("profile management requires persistent storage".into())
+}
+
+fn unsaved_profile_change() -> EngineError {
+    EngineError("save or discard equalizer changes before changing profiles".into())
 }
 
 fn stale_edit_revision(expected: EditRevision, current: EditRevision) -> EngineError {
@@ -746,7 +1097,7 @@ mod tests {
 
     use super::{
         ActiveRoute, AudioPlatform, DeviceId, Engine, EngineOptions, PlatformError, PlatformEvent,
-        PlatformEventSink, PlatformState, ProcessedOutputSink, TelemetryPublisher,
+        PlatformEventSink, PlatformState, ProcessedOutputSink, ProfileId, TelemetryPublisher,
     };
 
     #[test]
@@ -1038,6 +1389,182 @@ mod tests {
         assert_eq!(snapshot.equalizer, assigned_equalizer);
         assert_eq!(snapshot.equalizer_revision.get(), 3);
         assigned.shutdown().unwrap();
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn manages_profiles_and_applies_active_device_assignments() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "tunic-profile-crud-{}-{nonce}.sqlite3",
+            std::process::id()
+        ));
+        let applied = Arc::new(Mutex::new(Vec::new()));
+        let platform_applied = Arc::clone(&applied);
+        let engine = Engine::start(
+            EngineOptions {
+                database_path: Some(path.clone()),
+                ..EngineOptions::default()
+            },
+            move || FakePlatform {
+                applied: platform_applied,
+                reject_equalizer: false,
+                events: None,
+                rebuild_sample_rate_hz: 48_000.0,
+            },
+        )
+        .unwrap();
+        let headphone_equalizer = Equalizer::with_filter(Filter::low_shelf(
+            FrequencyHz::new(90.0).unwrap(),
+            GainDb::new(5.0).unwrap(),
+            QualityFactor::new(0.8).unwrap(),
+        ));
+        engine
+            .assign_profile(DeviceId::new("fake"), ProfileId::new("default"))
+            .unwrap();
+        engine
+            .assign_profile(DeviceId::new("other-device"), ProfileId::new("default"))
+            .unwrap();
+        let edit_revision = engine.snapshot().edit_revision;
+        let revision = engine
+            .preview_equalizer(headphone_equalizer.clone(), edit_revision)
+            .unwrap();
+        assert_eq!(revision.get(), edit_revision.get() + 1);
+
+        let headphones = engine.create_profile("Headphones".into()).unwrap();
+        assert_eq!(headphones.as_str(), "headphones");
+        let snapshot = engine.snapshot();
+        assert_eq!(snapshot.active_profile_id.as_ref(), Some(&headphones));
+        assert_eq!(snapshot.default_profile_id.as_ref(), Some(&headphones));
+        assert!(!snapshot.has_unsaved_changes);
+        assert_eq!(snapshot.profiles.len(), 2);
+        assert_eq!(snapshot.device_profile_assignments.len(), 1);
+        assert_eq!(
+            snapshot.device_profile_assignments[0].device_id,
+            DeviceId::new("other-device")
+        );
+
+        engine
+            .rename_profile(headphones.clone(), "Studio Headphones".into())
+            .unwrap();
+        assert_eq!(
+            engine
+                .snapshot()
+                .profiles
+                .iter()
+                .find(|profile| profile.id == headphones)
+                .unwrap()
+                .name,
+            "Studio Headphones"
+        );
+
+        engine
+            .assign_profile(DeviceId::new("fake"), headphones.clone())
+            .unwrap();
+        engine
+            .assign_profile(DeviceId::new("other-device"), headphones.clone())
+            .unwrap();
+        assert_eq!(engine.snapshot().device_profile_assignments.len(), 2);
+
+        engine.select_profile(ProfileId::new("default")).unwrap();
+        let snapshot = engine.snapshot();
+        assert_eq!(snapshot.equalizer, Equalizer::identity());
+        assert_eq!(snapshot.active_profile_id, Some(ProfileId::new("default")));
+        assert_eq!(snapshot.device_profile_assignments.len(), 1);
+        assert_eq!(
+            snapshot.device_profile_assignments[0].device_id,
+            DeviceId::new("other-device")
+        );
+        engine
+            .assign_profile(DeviceId::new("fake"), headphones.clone())
+            .unwrap();
+        let snapshot = engine.snapshot();
+        assert_eq!(snapshot.equalizer, headphone_equalizer);
+        assert_eq!(snapshot.active_profile_id.as_ref(), Some(&headphones));
+        assert_eq!(snapshot.device_profile_assignments.len(), 2);
+
+        engine.delete_profile(headphones).unwrap();
+        let snapshot = engine.snapshot();
+        assert_eq!(snapshot.equalizer, Equalizer::identity());
+        assert_eq!(snapshot.profiles.len(), 1);
+        assert!(snapshot.device_profile_assignments.is_empty());
+        assert_eq!(snapshot.active_profile_id, Some(ProfileId::new("default")));
+        assert_eq!(
+            applied.lock().unwrap().as_slice(),
+            &[
+                headphone_equalizer.clone(),
+                Equalizer::identity(),
+                headphone_equalizer,
+                Equalizer::identity(),
+            ]
+        );
+
+        engine.shutdown().unwrap();
+        let restored = Engine::start(
+            EngineOptions {
+                database_path: Some(path.clone()),
+                ..EngineOptions::default()
+            },
+            || FakePlatform {
+                applied: Arc::new(Mutex::new(Vec::new())),
+                reject_equalizer: false,
+                events: None,
+                rebuild_sample_rate_hz: 48_000.0,
+            },
+        )
+        .unwrap();
+        let snapshot = restored.snapshot();
+        assert_eq!(snapshot.equalizer, Equalizer::identity());
+        assert_eq!(snapshot.profiles.len(), 1);
+        assert_eq!(snapshot.default_profile_id, Some(ProfileId::new("default")));
+        assert_eq!(snapshot.active_profile_id, Some(ProfileId::new("default")));
+        assert!(snapshot.device_profile_assignments.is_empty());
+        restored.shutdown().unwrap();
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn rejects_profile_selection_with_an_unsaved_preview() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "tunic-profile-unsaved-{}-{nonce}.sqlite3",
+            std::process::id()
+        ));
+        let engine = Engine::start(
+            EngineOptions {
+                database_path: Some(path.clone()),
+                ..EngineOptions::default()
+            },
+            || FakePlatform {
+                applied: Arc::new(Mutex::new(Vec::new())),
+                reject_equalizer: false,
+                events: None,
+                rebuild_sample_rate_hz: 48_000.0,
+            },
+        )
+        .unwrap();
+        let profile = engine.create_profile("Other".into()).unwrap();
+        engine.select_profile(ProfileId::new("default")).unwrap();
+        let preview = Equalizer::with_filter(Filter::peaking(
+            FrequencyHz::new(1_500.0).unwrap(),
+            GainDb::new(-4.0).unwrap(),
+            QualityFactor::new(1.2).unwrap(),
+        ));
+        engine
+            .preview_equalizer(preview.clone(), engine.snapshot().edit_revision)
+            .unwrap();
+
+        let error = engine.select_profile(profile).unwrap_err();
+        assert!(error.to_string().contains("save or discard"));
+        assert_eq!(engine.snapshot().equalizer, preview);
+
+        engine.shutdown().unwrap();
         fs::remove_file(path).unwrap();
     }
 

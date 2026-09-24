@@ -29,6 +29,8 @@ architecture.
 - Versioned JSON equalizer documents with strict validation on load.
 - A SQLite profile store with a seeded fallback profile, per-device assignment
   schema, optimistic saved revisions, and automatic schema versioning.
+- Profile creation from the current equalizer, listing, inspection, renaming,
+  deletion, default selection, and persistent per-device assignment.
 - In-memory previews with live save and discard workflows. Saved equalizers are
   restored across restarts, while previews remain ephemeral.
 - Saved equalizer and edit revisions published in engine snapshots.
@@ -37,6 +39,7 @@ architecture.
 - A headless interactive CLI with:
   - engine and route status;
   - output-device listing and inspection;
+  - profile CRUD, selection, and per-device assignment commands;
   - processing bypass;
   - a live stereo peak and RMS meter in dBFS;
   - live typed-filter add, set, remove, and reset commands;
@@ -56,8 +59,7 @@ architecture.
 ## Not In Yet
 
 - Filter types other than peaking, low-shelf, and high-shelf EQ.
-- User-facing profile management, profile import/export, or per-device profile
-  assignment commands.
+- Profile import/export.
 - Spectrum/RTA telemetry, meter smoothing or decay, and snapshot streaming.
 - Automatic recovery or retry after route rebuild failures.
 - Route handoff, crossfading, or sample-rate conversion.

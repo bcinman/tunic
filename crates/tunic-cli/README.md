@@ -23,6 +23,13 @@ tunic start [--capture <PATH>] [--data-directory <DIRECTORY>]
 status
 device list
 device show [DEVICE]
+device set-profile <PROFILE> [DEVICE]
+profile list
+profile info <PROFILE>
+profile create <NAME>                 # Save as and activate a new profile
+profile rename <PROFILE> <NAME>
+profile delete <PROFILE>
+profile select <PROFILE>              # Activate and make the profile the default
 bypass
 telemetry                             # Stream post-EQ levels until Enter is pressed
 filter add <peaking|low-shelf|high-shelf> --frequency <HZ> --gain <DB> --q <Q>
@@ -41,16 +48,11 @@ The planned product surface also includes:
 tunic status                         # Print the current engine snapshot
 tunic watch                          # Stream snapshots, failures, and telemetry
 
-tunic profile list                   # List profiles
-tunic profile info                   # Show profile details
 tunic profile import                 # Import a profile from a file in APO format
 tunic profile export                 # Export a profile to a file in APO format
-tunic profile create|rename|delete   # Manage profiles
-tunic profile select                 # Activate a profile
 
 tunic bypass                         # Toggle processing
 tunic device list|show               # Inspect output devices and their settings
-tunic device set-profile             # Associate a profile with an output device
 
 tunic telemetry                      # Stream telemetry data (not implemented)
 ```
