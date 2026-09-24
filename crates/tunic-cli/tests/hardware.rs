@@ -78,14 +78,7 @@ fn saved_filters_and_telemetry_work_through_the_production_route() {
     input
         .write_all(b"telemetry\n")
         .expect("request live telemetry");
-    let left_levels = read_until_output(&mut output, "L [");
-    let right_levels = read_until_output(&mut output, "R [");
-    assert!(!left_levels.contains("-120.0 dBFS"), "{left_levels}");
-    assert!(!right_levels.contains("-120.0 dBFS"), "{right_levels}");
-    let spectrum = read_until_output(&mut output, "-18 |");
-    assert!(spectrum.contains('█'), "{spectrum}");
-    read_until_output(&mut output, "L [");
-    read_until_output(&mut output, "R [");
+    wait_for_active_telemetry(&mut output);
     input.write_all(b"\n").expect("stop live telemetry");
 
     let playback = playback.wait().expect("wait for stereo probe");
@@ -112,6 +105,23 @@ fn read_until_output(output: &mut impl BufRead, expected: &str) -> String {
             return line;
         }
     }
+}
+
+fn wait_for_active_telemetry(output: &mut impl BufRead) {
+    let mut last_frame = String::new();
+    for _ in 0..10 {
+        let left = read_until_output(output, "L [");
+        let right = read_until_output(output, "R [");
+        let spectrum = read_until_output(output, "-18 |");
+        let active = !left.contains("-120.0 dBFS")
+            && !right.contains("-120.0 dBFS")
+            && spectrum.contains('█');
+        last_frame = format!("{left}{right}{spectrum}");
+        if active {
+            return;
+        }
+    }
+    panic!("telemetry did not report the active probe:\n{last_frame}");
 }
 
 fn write_probe(path: &Path) {

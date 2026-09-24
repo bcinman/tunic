@@ -141,13 +141,9 @@ impl PreparedGraph {
     pub fn prepare(
         equalizer: &Equalizer,
         sample_rate_hz: f64,
-    ) -> Result<Self, PrepareError>;
+    ) -> Result<Self, EqualizerError>;
 
-    pub fn process(
-        &mut self,
-        left: &mut [f32],
-        right: &mut [f32],
-    );
+    pub fn process(&mut self, frames: &mut [[f32; 2]]);
 
     pub fn reset(&mut self);
     pub fn latency_frames(&self) -> usize;

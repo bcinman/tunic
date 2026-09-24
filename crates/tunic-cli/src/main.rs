@@ -587,11 +587,7 @@ fn print_status(snapshot: &EngineSnapshot) {
             }
         );
         for (index, filter) in filters.iter().enumerate() {
-            let kind = match filter {
-                Filter::Peaking { .. } => "peaking",
-                Filter::LowShelf { .. } => "low-shelf",
-                Filter::HighShelf { .. } => "high-shelf",
-            };
+            let kind = filter.kind();
             println!(
                 "  {}: {kind}, {} Hz, {:+} dB, Q {}",
                 index + 1,
@@ -948,7 +944,7 @@ mod tests {
         terminal_can_render_telemetry,
     };
     use clap::Parser as _;
-    use tunic_dsp::{Equalizer, Filter};
+    use tunic_dsp::Equalizer;
     use tunic_engine::{ChannelLevels, ProfileId, Spectrum, StereoLevels, TelemetryFrame};
 
     #[test]
@@ -1177,9 +1173,9 @@ mod tests {
         .unwrap();
 
         assert_eq!(changed.filters().len(), 2);
-        assert!(matches!(changed.filters()[0], Filter::Peaking { .. }));
+        assert_eq!(changed.filters()[0].kind().to_string(), "peaking");
         assert_eq!(changed.filters()[0].frequency().get(), 200.0);
-        assert!(matches!(changed.filters()[1], Filter::HighShelf { .. }));
+        assert_eq!(changed.filters()[1].kind().to_string(), "high-shelf");
         assert_eq!(changed.filters()[1].frequency().get(), 1_000.0);
 
         let removed = equalizer_from_command(&changed, FilterCommand::Remove { band: 1 }).unwrap();

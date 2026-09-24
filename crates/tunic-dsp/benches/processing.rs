@@ -39,9 +39,9 @@ fn benchmark_processing(criterion: &mut Criterion) {
                                     input(frames, sample_rate_hz),
                                 )
                             },
-                            |(graph, samples)| {
-                                graph.process_interleaved_stereo(black_box(samples));
-                                black_box(&*samples);
+                            |(graph, frames)| {
+                                graph.process(black_box(frames));
+                                black_box(&*frames);
                             },
                             BatchSize::SmallInput,
                         );
@@ -72,9 +72,9 @@ fn equalizer(filter_count: usize) -> Equalizer {
     Equalizer::with_filters(filters)
 }
 
-fn input(frames: usize, sample_rate_hz: u32) -> Vec<f32> {
+fn input(frames: usize, sample_rate_hz: u32) -> Vec<[f32; 2]> {
     (0..frames)
-        .flat_map(|frame| {
+        .map(|frame| {
             let phase = TAU * 997.0 * frame as f32 / sample_rate_hz as f32;
             [phase.sin() * 0.25, (phase * 1.013).sin() * 0.2]
         })

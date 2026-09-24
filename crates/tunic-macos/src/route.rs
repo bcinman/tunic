@@ -681,7 +681,7 @@ fn render_audio(
         return;
     }
     if !bypassed {
-        graph.process_interleaved_stereo(&mut scratch[..frames * 2]);
+        graph.process(scratch[..frames * 2].as_chunks_mut::<2>().0);
     }
     if write_stereo(&scratch[..frames * 2], output_buffers, frames) {
         processed_output.observe(&scratch[..frames * 2]);
@@ -1238,7 +1238,7 @@ mod tests {
         let mut impulse = [1.0_f32, 1.0];
 
         exchange.install_latest(&mut current);
-        current.process_interleaved_stereo(&mut impulse);
+        current.process(std::slice::from_mut(&mut impulse));
 
         assert!(impulse[0] < 1.0);
         assert_eq!(impulse[0], impulse[1]);
@@ -1248,12 +1248,12 @@ mod tests {
     fn entering_bypass_clears_filter_history() {
         let mut graph = peaking_graph(12.0);
         let mut impulse = [1.0_f32, 1.0];
-        graph.process_interleaved_stereo(&mut impulse);
+        graph.process(std::slice::from_mut(&mut impulse));
         let was_bypassed = Cell::new(false);
 
         reset_graph_on_bypass(&mut graph, &was_bypassed, true);
         let mut silence = [0.0_f32, 0.0];
-        graph.process_interleaved_stereo(&mut silence);
+        graph.process(std::slice::from_mut(&mut silence));
 
         assert_eq!(silence, [0.0, 0.0]);
     }
