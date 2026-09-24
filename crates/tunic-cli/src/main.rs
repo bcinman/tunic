@@ -14,7 +14,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, QualityFactor};
 use tunic_engine::{
     Engine, EngineHandle, EngineOptions, EngineSnapshot, EngineStatus, OutputDevice,
-    ProcessedOutputSink, Profile, ProfileId, StereoLevels,
+    ProcessedOutputSink, Profile, ProfileId, SPECTRUM_BAND_COUNT, Spectrum, TelemetryFrame,
 };
 use tunic_macos::CoreAudioPlatform;
 
@@ -63,7 +63,7 @@ enum SessionCommand {
     },
     /// Toggle processing bypass.
     Bypass,
-    /// Show the latest post-EQ stereo peak and RMS levels.
+    /// Show post-EQ stereo levels and a live spectrum analyzer.
     Telemetry,
     /// Configure the live equalizer.
     Filter {
@@ -684,19 +684,20 @@ fn stream_telemetry(
 ) -> io::Result<bool> {
     let telemetry = engine.telemetry();
     let is_terminal = io::stdout().is_terminal();
-    let mut levels = telemetry.try_latest().unwrap_or_default();
-    println!("Live telemetry (press Enter to stop)");
+    let mut frame = telemetry.try_latest().unwrap_or_default();
     if is_terminal {
-        print!("\x1b[?25l\x1b7");
+        print!("\x1b[?1049h\x1b[?25l");
+    } else {
+        println!("Live telemetry (press Enter to stop)");
     }
 
     let disconnected = loop {
         if let Some(latest) = telemetry.try_latest() {
-            levels = latest;
+            frame = latest;
         }
-        let formatted = format_telemetry(levels);
+        let formatted = format_telemetry(frame);
         if is_terminal {
-            print!("\x1b8\x1b[J{formatted}");
+            print!("\x1b[HLive telemetry (press Enter to stop)\n\n{formatted}\x1b[J");
         } else {
             println!("{formatted}");
         }
@@ -713,14 +714,15 @@ fn stream_telemetry(
     };
 
     if is_terminal {
-        print!("\x1b8\x1b[J\x1b[?25h");
+        print!("\x1b[?25h\x1b[?1049l");
     }
     io::stdout().flush()?;
     Ok(disconnected)
 }
 
-fn format_telemetry(levels: StereoLevels) -> String {
-    format!(
+fn format_telemetry(frame: TelemetryFrame) -> String {
+    let levels = frame.levels;
+    let mut output = format!(
         "L [{}] peak {:>6.1} dBFS  RMS {:>6.1} dBFS\nR [{}] peak {:>6.1} dBFS  RMS {:>6.1} dBFS",
         level_bar(levels.left.peak),
         decibels_full_scale(levels.left.peak),
@@ -728,7 +730,37 @@ fn format_telemetry(levels: StereoLevels) -> String {
         level_bar(levels.right.peak),
         decibels_full_scale(levels.right.peak),
         decibels_full_scale(levels.right.rms),
-    )
+    );
+    output.push_str("\n\nRTA 31.5 Hz – 16 kHz\n");
+    output.push_str(&format_spectrum(frame.spectrum));
+    output
+}
+
+fn format_spectrum(spectrum: Spectrum) -> String {
+    const ROWS: usize = 10;
+    const DB_PER_ROW: f32 = 6.0;
+    let mut output = String::new();
+    for row in 0..ROWS {
+        let threshold = if row == 0 {
+            0.0
+        } else {
+            -(row as f32) * DB_PER_ROW
+        };
+        output.push_str(&format!("{threshold:>3.0} |"));
+        for amplitude in spectrum.bands {
+            if decibels_full_scale(amplitude) >= threshold {
+                output.push_str("█ ");
+            } else {
+                output.push_str("  ");
+            }
+        }
+        output.push('\n');
+    }
+    output.push_str("    +");
+    output.push_str(&"--".repeat(SPECTRUM_BAND_COUNT));
+    output.push('\n');
+    output.push_str("     32    63    125   250   500   1k    2k    4k    8k    16k");
+    output
 }
 
 fn level_bar(amplitude: f32) -> String {
@@ -767,23 +799,30 @@ mod tests {
     };
     use clap::Parser as _;
     use tunic_dsp::{Equalizer, Filter};
-    use tunic_engine::{ChannelLevels, ProfileId, StereoLevels};
+    use tunic_engine::{ChannelLevels, ProfileId, Spectrum, StereoLevels, TelemetryFrame};
 
     #[test]
     fn formats_asymmetric_linear_levels_as_dbfs() {
-        let output = format_telemetry(StereoLevels {
-            left: ChannelLevels {
-                peak: 1.0,
-                rms: 0.5,
+        let output = format_telemetry(TelemetryFrame {
+            levels: StereoLevels {
+                left: ChannelLevels {
+                    peak: 1.0,
+                    rms: 0.5,
+                },
+                right: ChannelLevels {
+                    peak: 0.25,
+                    rms: 0.0,
+                },
             },
-            right: ChannelLevels {
-                peak: 0.25,
-                rms: 0.0,
+            spectrum: Spectrum {
+                bands: std::array::from_fn(|index| if index == 15 { 1.0 } else { 0.0 }),
             },
         });
 
         assert!(output.contains("peak    0.0 dBFS  RMS   -6.0 dBFS"));
         assert!(output.contains("peak  -12.0 dBFS  RMS -120.0 dBFS"));
+        assert!(output.contains("RTA 31.5 Hz – 16 kHz"));
+        assert!(output.contains("  0 |                              █ "));
     }
 
     #[test]

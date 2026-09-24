@@ -34,14 +34,15 @@ architecture.
 - In-memory previews with live save and discard workflows. Saved equalizers are
   restored across restarts, while previews remain ephemeral.
 - Saved equalizer and edit revisions published in engine snapshots.
-- Real-time-safe post-DSP stereo peak and RMS measurement in 30 Hz windows,
-  published through a lock-free latest-value engine telemetry reader.
+- Real-time-safe post-DSP stereo peak/RMS and 28-band RTA measurement, with
+  attack smoothing and controlled dB decay, published at 30 Hz through a
+  lock-free latest-value engine telemetry reader.
 - A headless interactive CLI with:
   - engine and route status;
   - output-device listing and inspection;
   - profile CRUD, selection, and per-device assignment commands;
   - processing bypass;
-  - a live stereo peak and RMS meter in dBFS;
+  - live stereo peak/RMS meters and a 31.5 Hz–16 kHz spectrum in dBFS;
   - live typed-filter add, set, remove, and reset commands;
   - persistent equalizer save and discard commands;
   - optional post-DSP Float32 stereo WAV capture;
@@ -60,7 +61,7 @@ architecture.
 
 - Filter types other than peaking, low-shelf, and high-shelf EQ.
 - Profile import/export.
-- Spectrum/RTA telemetry, meter smoothing or decay, and snapshot streaming.
+- Snapshot streaming.
 - Automatic recovery or retry after route rebuild failures.
 - Route handoff, crossfading, or sample-rate conversion.
 - A GPUI application; `tunic-app` is currently a placeholder crate.

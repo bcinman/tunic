@@ -1,4 +1,5 @@
 use std::cell::{Cell, RefCell};
+use std::f32::consts::TAU;
 use std::ffi::{CStr, c_void};
 use std::num::NonZeroUsize;
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -31,9 +32,11 @@ use objc2_core_audio_types::{
 };
 use objc2_core_foundation::CFDictionary;
 use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSObject, NSString, NSUUID};
+use rustfft::{Fft, FftPlanner, num_complex::Complex32};
 use tunic_dsp::{Equalizer, PreparedGraph};
 use tunic_engine::{
-    ChannelLevels, PlatformError, ProcessedOutputSink, StereoLevels, TelemetryPublisher,
+    ChannelLevels, PlatformError, ProcessedOutputSink, SPECTRUM_BAND_COUNT,
+    SPECTRUM_FREQUENCIES_HZ, Spectrum, StereoLevels, TelemetryFrame, TelemetryPublisher,
 };
 
 use crate::devices::{device_uid, input_stream_count};
@@ -41,6 +44,11 @@ use crate::{address, check_status};
 
 const SCRATCH_FRAME_CAPACITY: usize = 16_384;
 const TELEMETRY_UPDATES_PER_SECOND: f64 = 30.0;
+const SPECTRUM_FFT_SIZE: usize = 4_096;
+const PEAK_DECAY_DB_PER_SECOND: f32 = 20.0;
+const RMS_DECAY_DB_PER_SECOND: f32 = 12.0;
+const SPECTRUM_DECAY_DB_PER_SECOND: f32 = 24.0;
+const SPECTRUM_ATTACK: f32 = 0.65;
 
 type IoBlock = RcBlock<
     dyn Fn(
@@ -683,6 +691,7 @@ struct ProcessedOutputObservers {
     output_sink: Option<Arc<dyn ProcessedOutputSink>>,
     telemetry: TelemetryPublisher,
     level_meter: LevelMeter,
+    spectrum_meter: SpectrumMeter,
 }
 
 impl ProcessedOutputObservers {
@@ -695,12 +704,17 @@ impl ProcessedOutputObservers {
             output_sink,
             telemetry,
             level_meter: LevelMeter::new(sample_rate_hz),
+            spectrum_meter: SpectrumMeter::new(sample_rate_hz),
         }
     }
 
     fn observe(&mut self, samples: &[f32]) {
+        self.spectrum_meter.observe(samples);
         if let Some(levels) = self.level_meter.observe(samples) {
-            self.telemetry.publish(levels);
+            self.telemetry.publish(TelemetryFrame {
+                levels,
+                spectrum: self.spectrum_meter.current(),
+            });
         }
         if let Some(output_sink) = &self.output_sink {
             output_sink.write(samples);
@@ -715,14 +729,27 @@ struct LevelMeter {
     right_peak: f32,
     left_square_sum: f64,
     right_square_sum: f64,
+    smoothed: StereoLevels,
+    peak_decay: f32,
+    rms_decay: f32,
 }
 
 impl LevelMeter {
     fn new(sample_rate_hz: f64) -> Self {
-        Self::with_window_frames((sample_rate_hz / TELEMETRY_UPDATES_PER_SECOND).round() as usize)
+        let window_frames = (sample_rate_hz / TELEMETRY_UPDATES_PER_SECOND).round() as usize;
+        Self::with_window_frames_and_rate(window_frames, sample_rate_hz)
     }
 
+    #[cfg(test)]
     fn with_window_frames(window_frames: usize) -> Self {
+        Self::with_window_frames_and_rate(
+            window_frames,
+            window_frames as f64 * TELEMETRY_UPDATES_PER_SECOND,
+        )
+    }
+
+    fn with_window_frames_and_rate(window_frames: usize, sample_rate_hz: f64) -> Self {
+        let update_rate = sample_rate_hz / window_frames.max(1) as f64;
         Self {
             window_frames: window_frames.max(1),
             frames: 0,
@@ -730,6 +757,9 @@ impl LevelMeter {
             right_peak: 0.0,
             left_square_sum: 0.0,
             right_square_sum: 0.0,
+            smoothed: StereoLevels::default(),
+            peak_decay: decay_multiplier(PEAK_DECAY_DB_PER_SECOND, update_rate),
+            rms_decay: decay_multiplier(RMS_DECAY_DB_PER_SECOND, update_rate),
         }
     }
 
@@ -746,7 +776,7 @@ impl LevelMeter {
 
             if self.frames == self.window_frames {
                 let frames = self.frames as f64;
-                latest = Some(StereoLevels {
+                let measured = StereoLevels {
                     left: ChannelLevels {
                         peak: self.left_peak,
                         rms: (self.left_square_sum / frames).sqrt() as f32,
@@ -755,7 +785,20 @@ impl LevelMeter {
                         peak: self.right_peak,
                         rms: (self.right_square_sum / frames).sqrt() as f32,
                     },
-                });
+                };
+                self.smoothed.left = smooth_levels(
+                    self.smoothed.left,
+                    measured.left,
+                    self.peak_decay,
+                    self.rms_decay,
+                );
+                self.smoothed.right = smooth_levels(
+                    self.smoothed.right,
+                    measured.right,
+                    self.peak_decay,
+                    self.rms_decay,
+                );
+                latest = Some(self.smoothed);
                 self.frames = 0;
                 self.left_peak = 0.0;
                 self.right_peak = 0.0;
@@ -764,6 +807,168 @@ impl LevelMeter {
             }
         }
         latest
+    }
+}
+
+fn smooth_levels(
+    current: ChannelLevels,
+    measured: ChannelLevels,
+    peak_decay: f32,
+    rms_decay: f32,
+) -> ChannelLevels {
+    ChannelLevels {
+        peak: smooth_with_decay(current.peak, measured.peak, 1.0, peak_decay),
+        rms: smooth_with_decay(current.rms, measured.rms, 0.35, rms_decay),
+    }
+}
+
+fn smooth_with_decay(current: f32, measured: f32, attack: f32, decay: f32) -> f32 {
+    if current == 0.0 {
+        measured
+    } else if measured >= current {
+        current + (measured - current) * attack
+    } else {
+        measured.max(current * decay)
+    }
+}
+
+fn decay_multiplier(decibels_per_second: f32, updates_per_second: f64) -> f32 {
+    10.0_f32.powf(-decibels_per_second / (20.0 * updates_per_second as f32))
+}
+
+struct SpectrumMeter {
+    sample_rate_hz: f32,
+    hop_frames: usize,
+    frames_since_analysis: usize,
+    filled: usize,
+    write_index: usize,
+    left: Box<[f32; SPECTRUM_FFT_SIZE]>,
+    right: Box<[f32; SPECTRUM_FFT_SIZE]>,
+    window: Box<[f32; SPECTRUM_FFT_SIZE]>,
+    fft: SpectrumFft,
+    smoothed: Spectrum,
+    decay: f32,
+}
+
+impl SpectrumMeter {
+    fn new(sample_rate_hz: f64) -> Self {
+        let mut window = Box::new([0.0; SPECTRUM_FFT_SIZE]);
+        for (index, value) in window.iter_mut().enumerate() {
+            *value = 0.5 - 0.5 * (TAU * index as f32 / (SPECTRUM_FFT_SIZE - 1) as f32).cos();
+        }
+        Self {
+            sample_rate_hz: sample_rate_hz as f32,
+            hop_frames: (sample_rate_hz / TELEMETRY_UPDATES_PER_SECOND)
+                .round()
+                .max(1.0) as usize,
+            frames_since_analysis: 0,
+            filled: 0,
+            write_index: 0,
+            left: Box::new([0.0; SPECTRUM_FFT_SIZE]),
+            right: Box::new([0.0; SPECTRUM_FFT_SIZE]),
+            window,
+            fft: SpectrumFft::new(),
+            smoothed: Spectrum::default(),
+            decay: decay_multiplier(SPECTRUM_DECAY_DB_PER_SECOND, TELEMETRY_UPDATES_PER_SECOND),
+        }
+    }
+
+    fn observe(&mut self, interleaved_stereo: &[f32]) {
+        for frame in interleaved_stereo.as_chunks::<2>().0 {
+            self.left[self.write_index] = frame[0];
+            self.right[self.write_index] = frame[1];
+            self.write_index = (self.write_index + 1) % SPECTRUM_FFT_SIZE;
+            self.filled = (self.filled + 1).min(SPECTRUM_FFT_SIZE);
+            self.frames_since_analysis += 1;
+
+            if self.filled == SPECTRUM_FFT_SIZE && self.frames_since_analysis >= self.hop_frames {
+                self.analyze();
+                self.frames_since_analysis = 0;
+            }
+        }
+    }
+
+    fn current(&self) -> Spectrum {
+        self.smoothed
+    }
+
+    fn analyze(&mut self) {
+        let mut measured = [0.0; SPECTRUM_BAND_COUNT];
+        self.fft.analyze(
+            &self.left,
+            self.write_index,
+            &self.window,
+            self.sample_rate_hz,
+            &mut measured,
+        );
+        self.fft.analyze(
+            &self.right,
+            self.write_index,
+            &self.window,
+            self.sample_rate_hz,
+            &mut measured,
+        );
+        for (smoothed, measured) in self.smoothed.bands.iter_mut().zip(measured) {
+            *smoothed = smooth_with_decay(*smoothed, measured, SPECTRUM_ATTACK, self.decay);
+        }
+    }
+}
+
+struct SpectrumFft {
+    plan: Arc<dyn Fft<f32>>,
+    buffer: Vec<Complex32>,
+    scratch: Vec<Complex32>,
+}
+
+impl SpectrumFft {
+    fn new() -> Self {
+        let plan = FftPlanner::new().plan_fft_forward(SPECTRUM_FFT_SIZE);
+        let scratch = vec![Complex32::default(); plan.get_inplace_scratch_len()];
+        Self {
+            plan,
+            buffer: vec![Complex32::default(); SPECTRUM_FFT_SIZE],
+            scratch,
+        }
+    }
+
+    fn analyze(
+        &mut self,
+        samples: &[f32; SPECTRUM_FFT_SIZE],
+        start: usize,
+        window: &[f32; SPECTRUM_FFT_SIZE],
+        sample_rate_hz: f32,
+        bands: &mut [f32; SPECTRUM_BAND_COUNT],
+    ) {
+        for index in 0..SPECTRUM_FFT_SIZE {
+            self.buffer[index] = Complex32::new(
+                samples[(start + index) % SPECTRUM_FFT_SIZE] * window[index],
+                0.0,
+            );
+        }
+        self.plan
+            .process_with_scratch(&mut self.buffer, &mut self.scratch);
+
+        let amplitude_scale = 4.0 / SPECTRUM_FFT_SIZE as f32;
+        let band_edge = 2.0_f32.powf(1.0 / 6.0);
+        for (band, center_hz) in bands.iter_mut().zip(SPECTRUM_FREQUENCIES_HZ) {
+            let first = ((center_hz / band_edge) * SPECTRUM_FFT_SIZE as f32 / sample_rate_hz).ceil()
+                as usize;
+            let last = ((center_hz * band_edge) * SPECTRUM_FFT_SIZE as f32 / sample_rate_hz).floor()
+                as usize;
+            let first = first.max(1);
+            let last = last.min(SPECTRUM_FFT_SIZE / 2);
+            let nearest =
+                ((center_hz * SPECTRUM_FFT_SIZE as f32 / sample_rate_hz).round() as usize).max(1);
+            let bins = if first <= last {
+                first..=last
+            } else {
+                nearest..=nearest.min(SPECTRUM_FFT_SIZE / 2)
+            };
+            for bin in bins {
+                let amplitude = self.buffer[bin].norm() * amplitude_scale;
+                *band = band.max(amplitude);
+            }
+        }
     }
 }
 
@@ -857,8 +1062,8 @@ const fn size_of<T>() -> usize {
 #[cfg(test)]
 mod tests {
     use super::{
-        GraphExchange, LevelMeter, TapBufferRange, normalize_stereo, reset_graph_on_bypass,
-        validate_stream_format, write_stereo,
+        GraphExchange, LevelMeter, SpectrumMeter, TapBufferRange, normalize_stereo,
+        reset_graph_on_bypass, validate_stream_format, write_stereo,
     };
     use objc2_core_audio_types::{
         AudioBuffer, AudioStreamBasicDescription, kAudioFormatFlagIsFloat,
@@ -887,6 +1092,48 @@ mod tests {
                 },
             })
         );
+    }
+
+    #[test]
+    fn level_meter_decays_instead_of_dropping_to_silence() {
+        let mut meter = LevelMeter::with_window_frames(2);
+        let initial = meter.observe(&[1.0, 0.5, -1.0, -0.5]).unwrap();
+
+        let decayed = meter.observe(&[0.0; 4]).unwrap();
+
+        assert!(decayed.left.peak < initial.left.peak);
+        assert!(decayed.left.peak > 0.9);
+        assert!(decayed.left.rms < initial.left.rms);
+        assert!(decayed.left.rms > 0.9);
+    }
+
+    #[test]
+    fn spectrum_meter_separates_asymmetric_tones_and_decays() {
+        const SAMPLE_RATE: f32 = 48_000.0;
+        let mut meter = SpectrumMeter::new(f64::from(SAMPLE_RATE));
+        let samples = (0..4_096)
+            .flat_map(|frame| {
+                let time = frame as f32 / SAMPLE_RATE;
+                [
+                    0.5 * (std::f32::consts::TAU * 1_000.0 * time).sin(),
+                    0.5 * (std::f32::consts::TAU * 8_000.0 * time).sin(),
+                ]
+            })
+            .collect::<Vec<_>>();
+
+        meter.observe(&samples);
+        let measured = meter.current();
+
+        assert!(measured.bands[15] > 0.2, "1 kHz: {}", measured.bands[15]);
+        assert!(measured.bands[24] > 0.2, "8 kHz: {}", measured.bands[24]);
+        assert!(measured.bands[11] < 0.01, "400 Hz: {}", measured.bands[11]);
+
+        meter.left.fill(0.0);
+        meter.right.fill(0.0);
+        meter.analyze();
+        let decayed = meter.current();
+        assert!(decayed.bands[15] < measured.bands[15]);
+        assert!(decayed.bands[15] > 0.0);
     }
 
     #[test]

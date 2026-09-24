@@ -14,7 +14,10 @@ use std::time::Duration;
 use tunic_dsp::Equalizer;
 
 use crate::persistence::{ProfileStore, StoredCatalog, StoredProfile};
-pub use crate::telemetry::{ChannelLevels, StereoLevels, TelemetryPublisher, TelemetryReader};
+pub use crate::telemetry::{
+    ChannelLevels, SPECTRUM_BAND_COUNT, SPECTRUM_FREQUENCIES_HZ, Spectrum, StereoLevels,
+    TelemetryFrame, TelemetryPublisher, TelemetryReader,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ProcessedOutputFormat {

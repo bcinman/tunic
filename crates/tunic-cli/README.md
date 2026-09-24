@@ -31,7 +31,7 @@ profile rename <PROFILE> <NAME>
 profile delete <PROFILE>
 profile select <PROFILE>              # Activate and make the profile the default
 bypass
-telemetry                             # Stream post-EQ levels until Enter is pressed
+telemetry                             # Stream post-EQ levels and RTA until Enter is pressed
 filter add <peaking|low-shelf|high-shelf> --frequency <HZ> --gain <DB> --q <Q>
 filter set <BAND> <peaking|low-shelf|high-shelf> --frequency <HZ> --gain <DB> --q <Q>
 filter remove <BAND>

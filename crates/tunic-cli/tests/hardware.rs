@@ -82,6 +82,8 @@ fn saved_filters_and_telemetry_work_through_the_production_route() {
     let right_levels = read_until_output(&mut output, "R [");
     assert!(!left_levels.contains("-120.0 dBFS"), "{left_levels}");
     assert!(!right_levels.contains("-120.0 dBFS"), "{right_levels}");
+    let spectrum = read_until_output(&mut output, "-18 |");
+    assert!(spectrum.contains('█'), "{spectrum}");
     read_until_output(&mut output, "L [");
     read_until_output(&mut output, "R [");
     input.write_all(b"\n").expect("stop live telemetry");

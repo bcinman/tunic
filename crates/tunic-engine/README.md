@@ -100,10 +100,12 @@ require any preview to be saved or discarded first.
 
 ## Telemetry
 
-The engine owns a lock-free latest-value channel for post-DSP stereo peak and
-RMS levels. The platform publishes from its real-time audio callback, while
-clients obtain an independent `TelemetryReader` from `EngineHandle::telemetry`.
-Telemetry is intentionally separate from engine snapshots and commands so a
-meter can poll it without waking or blocking the engine thread.
+The engine owns a lock-free latest-value channel for post-DSP stereo peak/RMS
+levels and a fixed 28-band spectrum from 31.5 Hz through 16 kHz. The platform
+publishes smoothed, decaying measurements from its real-time audio callback,
+while clients obtain an independent `TelemetryReader` from
+`EngineHandle::telemetry`. Telemetry is intentionally separate from engine
+snapshots and commands so a meter can poll it without waking or blocking the
+engine thread.
 
 See the [workspace structure](../../STRUCTURE.md) for the complete crate layout and dependency direction.
