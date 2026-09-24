@@ -39,6 +39,12 @@ enum Command {
         #[arg(long, value_name = "DIRECTORY")]
         data_directory: Option<PathBuf>,
     },
+    /// Process system audio and print every engine state change.
+    Watch {
+        /// Store Tunic state in this directory.
+        #[arg(long, value_name = "DIRECTORY")]
+        data_directory: Option<PathBuf>,
+    },
 }
 
 #[derive(Debug, Parser)]
@@ -171,6 +177,7 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             capture,
             data_directory,
         } => start_session(capture, data_directory),
+        Command::Watch { data_directory } => watch(data_directory),
     }
 }
 
@@ -178,21 +185,13 @@ fn start_session(
     capture_path: Option<PathBuf>,
     data_directory: Option<PathBuf>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let data_directory = data_directory.map_or_else(default_data_directory, Ok)?;
     let capture = capture_path
         .as_ref()
         .map(|path| Arc::new(WavCapture::new(path)));
     let output_sink = capture
         .as_ref()
         .map(|capture| Arc::clone(capture) as Arc<dyn ProcessedOutputSink>);
-    let engine = Engine::start(
-        EngineOptions {
-            processed_output_sink: output_sink,
-            database_path: Some(data_directory.join("tunic.sqlite3")),
-            ..EngineOptions::default()
-        },
-        CoreAudioPlatform::new,
-    )?;
+    let engine = start_engine(data_directory, output_sink)?;
     println!("Tunic is processing system audio. Type `help` for commands.");
     if let Some(path) = capture_path {
         println!("Capturing processed output to {}.", path.display());
@@ -237,6 +236,55 @@ fn start_session(
     capture_result?;
     println!("Tunic stopped.");
     Ok(())
+}
+
+fn watch(data_directory: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+    let engine = start_engine(data_directory, None)?;
+    let snapshots = engine.subscribe_snapshots();
+    let interrupted = Arc::new(AtomicBool::new(false));
+    let signal_flag = Arc::clone(&interrupted);
+    ctrlc::set_handler(move || signal_flag.store(true, Ordering::Release))?;
+    let mut first = true;
+
+    while !interrupted.load(Ordering::Acquire) {
+        match snapshots.recv_timeout(Duration::from_millis(50)) {
+            Ok(snapshot) => print_watched_snapshot(&snapshot, &mut first)?,
+            Err(mpsc::RecvTimeoutError::Timeout) => {}
+            Err(mpsc::RecvTimeoutError::Disconnected) => break,
+        }
+    }
+
+    let shutdown = engine.shutdown();
+    while let Ok(snapshot) = snapshots.recv() {
+        print_watched_snapshot(&snapshot, &mut first)?;
+    }
+    shutdown?;
+    Ok(())
+}
+
+fn print_watched_snapshot(snapshot: &EngineSnapshot, first: &mut bool) -> io::Result<()> {
+    if !*first {
+        println!("---");
+    }
+    print_status(snapshot);
+    io::stdout().flush()?;
+    *first = false;
+    Ok(())
+}
+
+fn start_engine(
+    data_directory: Option<PathBuf>,
+    output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+) -> Result<EngineHandle, Box<dyn std::error::Error>> {
+    let data_directory = data_directory.map_or_else(default_data_directory, Ok)?;
+    Ok(Engine::start(
+        EngineOptions {
+            processed_output_sink: output_sink,
+            database_path: Some(data_directory.join("tunic.sqlite3")),
+            ..EngineOptions::default()
+        },
+        CoreAudioPlatform::new,
+    )?)
 }
 
 fn default_data_directory() -> io::Result<PathBuf> {
@@ -950,6 +998,16 @@ mod tests {
                 data_directory: Some(path),
                 ..
             } if path == std::path::Path::new("/tmp/tunic-test")
+        ));
+
+        let parsed =
+            Cli::try_parse_from(["tunic", "watch", "--data-directory", "/tmp/tunic-watch"])
+                .unwrap();
+        assert!(matches!(
+            parsed.command,
+            Command::Watch {
+                data_directory: Some(path),
+            } if path == std::path::Path::new("/tmp/tunic-watch")
         ));
     }
 

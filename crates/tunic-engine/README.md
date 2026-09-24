@@ -53,6 +53,7 @@ impl EngineHandle {
     ) -> Result<EditRevision, EngineError>;
 
     pub fn snapshot(&self) -> EngineSnapshot;
+    pub fn subscribe_snapshots(&self) -> SnapshotReceiver;
     pub fn telemetry(&self) -> TelemetryReader;
 
     pub fn shutdown(self) -> Result<(), EngineError>;
@@ -82,6 +83,10 @@ pub trait AudioPlatform: Send + 'static {
 ```
 
 Commands, events, effects, and reducer details can remain private to the engine.
+
+Snapshot subscriptions immediately deliver the current immutable snapshot and
+then every changed snapshot in engine order. No-op commands do not publish.
+High-frequency audio telemetry remains on its separate lock-free reader.
 
 ## Persistence
 

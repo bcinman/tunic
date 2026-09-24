@@ -6,8 +6,8 @@ mod telemetry;
 
 use std::fmt;
 use std::path::PathBuf;
-use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::{Arc, RwLock};
+use std::sync::mpsc::{self, Receiver, RecvError, RecvTimeoutError, Sender, TryRecvError};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
@@ -164,6 +164,77 @@ pub struct EngineSnapshot {
     pub device_profile_assignments: Vec<DeviceProfileAssignment>,
 }
 
+pub struct SnapshotReceiver {
+    receiver: Receiver<EngineSnapshot>,
+}
+
+impl SnapshotReceiver {
+    pub fn recv(&self) -> Result<EngineSnapshot, RecvError> {
+        self.receiver.recv()
+    }
+
+    pub fn recv_timeout(&self, timeout: Duration) -> Result<EngineSnapshot, RecvTimeoutError> {
+        self.receiver.recv_timeout(timeout)
+    }
+
+    pub fn try_recv(&self) -> Result<EngineSnapshot, TryRecvError> {
+        self.receiver.try_recv()
+    }
+}
+
+struct SnapshotState {
+    current: RwLock<EngineSnapshot>,
+    subscribers: Mutex<Vec<Sender<EngineSnapshot>>>,
+}
+
+impl SnapshotState {
+    fn new(snapshot: EngineSnapshot) -> Self {
+        Self {
+            current: RwLock::new(snapshot),
+            subscribers: Mutex::new(Vec::new()),
+        }
+    }
+
+    fn read(&self) -> std::sync::RwLockReadGuard<'_, EngineSnapshot> {
+        self.current.read().expect("engine snapshot lock poisoned")
+    }
+
+    fn snapshot(&self) -> EngineSnapshot {
+        self.read().clone()
+    }
+
+    fn update<R>(&self, update: impl FnOnce(&mut EngineSnapshot) -> R) -> R {
+        let mut subscribers = self
+            .subscribers
+            .lock()
+            .expect("engine snapshot subscriber lock poisoned");
+        let (result, publication) = {
+            let mut current = self.current.write().expect("engine snapshot lock poisoned");
+            let previous = current.clone();
+            let result = update(&mut current);
+            let publication = (*current != previous).then(|| current.clone());
+            (result, publication)
+        };
+        if let Some(snapshot) = publication {
+            subscribers.retain(|subscriber| subscriber.send(snapshot.clone()).is_ok());
+        }
+        result
+    }
+
+    fn subscribe(&self) -> SnapshotReceiver {
+        let mut subscribers = self
+            .subscribers
+            .lock()
+            .expect("engine snapshot subscriber lock poisoned");
+        let (sender, receiver) = mpsc::channel();
+        sender
+            .send(self.snapshot())
+            .expect("new snapshot receiver must be connected");
+        subscribers.push(sender);
+        SnapshotReceiver { receiver }
+    }
+}
+
 impl EngineSnapshot {
     fn starting(equalizer: Equalizer) -> Self {
         Self {
@@ -297,7 +368,7 @@ pub struct Engine;
 
 pub struct EngineHandle {
     commands: Sender<Command>,
-    snapshot: Arc<RwLock<EngineSnapshot>>,
+    snapshot: Arc<SnapshotState>,
     telemetry: TelemetryReader,
     worker: Option<JoinHandle<()>>,
 }
@@ -308,7 +379,7 @@ impl Engine {
         P: AudioPlatform,
         F: FnOnce() -> P + Send + 'static,
     {
-        let snapshot = Arc::new(RwLock::new(EngineSnapshot::starting(
+        let snapshot = Arc::new(SnapshotState::new(EngineSnapshot::starting(
             options.equalizer.clone(),
         )));
         let worker_snapshot = Arc::clone(&snapshot);
@@ -354,10 +425,12 @@ impl Engine {
 impl EngineHandle {
     #[must_use]
     pub fn snapshot(&self) -> EngineSnapshot {
-        self.snapshot
-            .read()
-            .expect("engine snapshot lock poisoned")
-            .clone()
+        self.snapshot.snapshot()
+    }
+
+    #[must_use]
+    pub fn subscribe_snapshots(&self) -> SnapshotReceiver {
+        self.snapshot.subscribe()
     }
 
     #[must_use]
@@ -511,7 +584,7 @@ fn run_engine(
     options: EngineOptions,
     telemetry: TelemetryPublisher,
     commands: Receiver<Command>,
-    snapshot: Arc<RwLock<EngineSnapshot>>,
+    snapshot: Arc<SnapshotState>,
     startup: mpsc::SyncSender<Result<(), EngineError>>,
 ) {
     let mut store = match options.database_path.as_deref() {
@@ -562,27 +635,33 @@ fn run_engine(
                 let _ = startup.send(Err(EngineError(error.to_string())));
                 return;
             }
-            update_running_snapshot(
-                &snapshot,
-                state,
-                false,
-                selected_profile.equalizer.clone(),
-                selected_profile.revision,
-                EditRevision::INITIAL,
-                false,
-            );
-            if let Some(store) = store.as_ref() {
-                let catalog = match store.catalog() {
-                    Ok(catalog) => catalog,
+            let catalog = if let Some(store) = store.as_ref() {
+                match store.catalog() {
+                    Ok(catalog) => Some(catalog),
                     Err(error) => {
                         let _ = platform.shutdown();
                         let _ = startup.send(Err(EngineError(error.to_string())));
                         return;
                     }
-                };
-                apply_profile_catalog(&mut write_snapshot(&snapshot), catalog);
-            }
-            write_snapshot(&snapshot).active_profile_id = selected_profile.profile_id.clone();
+                }
+            } else {
+                None
+            };
+            snapshot.update(|current| {
+                update_running_snapshot(
+                    current,
+                    state,
+                    false,
+                    selected_profile.equalizer.clone(),
+                    selected_profile.revision,
+                    EditRevision::INITIAL,
+                    false,
+                );
+                if let Some(catalog) = catalog {
+                    apply_profile_catalog(current, catalog);
+                }
+                current.active_profile_id = selected_profile.profile_id.clone();
+            });
             let _ = startup.send(Ok(()));
             run_commands(
                 platform,
@@ -605,7 +684,7 @@ fn run_commands(
     mut saved_equalizer: SavedEqualizer,
     commands: Receiver<Command>,
     event_rx: Receiver<PlatformEvent>,
-    snapshot: Arc<RwLock<EngineSnapshot>>,
+    snapshot: Arc<SnapshotState>,
 ) {
     loop {
         while let Ok(event) = event_rx.try_recv() {
@@ -639,17 +718,18 @@ fn run_commands(
                             {
                                 edit_revision = edit_revision.next();
                             }
-                            update_running_snapshot(
-                                &snapshot,
-                                state,
-                                bypassed,
-                                profile.equalizer.clone(),
-                                profile.revision,
-                                edit_revision,
-                                false,
-                            );
-                            write_snapshot(&snapshot).active_profile_id =
-                                profile.profile_id.clone();
+                            snapshot.update(|current| {
+                                update_running_snapshot(
+                                    current,
+                                    state,
+                                    bypassed,
+                                    profile.equalizer.clone(),
+                                    profile.revision,
+                                    edit_revision,
+                                    false,
+                                );
+                                current.active_profile_id = profile.profile_id.clone();
+                            });
                             saved_equalizer = profile;
                         }
                         Err(error) => fail_snapshot(&snapshot, error.to_string()),
@@ -663,15 +743,17 @@ fn run_commands(
                     let edit_revision = current.edit_revision;
                     let has_unsaved_changes = current.has_unsaved_changes;
                     drop(current);
-                    update_running_snapshot(
-                        &snapshot,
-                        state,
-                        bypassed,
-                        equalizer,
-                        equalizer_revision,
-                        edit_revision,
-                        has_unsaved_changes,
-                    );
+                    snapshot.update(|current| {
+                        update_running_snapshot(
+                            current,
+                            state,
+                            bypassed,
+                            equalizer,
+                            equalizer_revision,
+                            edit_revision,
+                            has_unsaved_changes,
+                        );
+                    });
                 }
             }
         }
@@ -680,7 +762,7 @@ fn run_commands(
             Ok(Command::ToggleBypass(result)) => {
                 let bypassed = !read_snapshot(&snapshot).bypassed;
                 platform.set_bypassed(bypassed);
-                write_snapshot(&snapshot).bypassed = bypassed;
+                snapshot.update(|current| current.bypassed = bypassed);
                 let _ = result.send(bypassed);
             }
             Ok(Command::PreviewEqualizer(equalizer, expected_revision, result)) => {
@@ -694,12 +776,13 @@ fn run_commands(
                         .set_equalizer(&equalizer)
                         .map_err(|error| EngineError(error.to_string()))
                         .map(|()| {
-                            let mut current = write_snapshot(&snapshot);
-                            current.equalizer = equalizer;
-                            current.edit_revision = current.edit_revision.next();
-                            current.has_unsaved_changes =
-                                current.equalizer != saved_equalizer.equalizer;
-                            current.edit_revision
+                            snapshot.update(|current| {
+                                current.equalizer = equalizer;
+                                current.edit_revision = current.edit_revision.next();
+                                current.has_unsaved_changes =
+                                    current.equalizer != saved_equalizer.equalizer;
+                                current.edit_revision
+                            })
                         })
                 };
                 let _ = result.send(previewed);
@@ -728,13 +811,14 @@ fn run_commands(
                     persisted.map(|(revision, catalog)| {
                         saved_equalizer.equalizer = equalizer;
                         saved_equalizer.revision = revision;
-                        let mut current = write_snapshot(&snapshot);
-                        current.equalizer_revision = revision;
-                        current.edit_revision = current.edit_revision.next();
-                        current.has_unsaved_changes = false;
-                        if let Some(catalog) = catalog {
-                            apply_profile_catalog(&mut current, catalog);
-                        }
+                        snapshot.update(|current| {
+                            current.equalizer_revision = revision;
+                            current.edit_revision = current.edit_revision.next();
+                            current.has_unsaved_changes = false;
+                            if let Some(catalog) = catalog {
+                                apply_profile_catalog(current, catalog);
+                            }
+                        });
                         revision
                     })
                 };
@@ -754,11 +838,12 @@ fn run_commands(
                         .set_equalizer(&saved_equalizer.equalizer)
                         .map_err(|error| EngineError(error.to_string()))
                         .map(|()| {
-                            let mut current = write_snapshot(&snapshot);
-                            current.equalizer = saved_equalizer.equalizer.clone();
-                            current.edit_revision = current.edit_revision.next();
-                            current.has_unsaved_changes = false;
-                            current.edit_revision
+                            snapshot.update(|current| {
+                                current.equalizer = saved_equalizer.equalizer.clone();
+                                current.edit_revision = current.edit_revision.next();
+                                current.has_unsaved_changes = false;
+                                current.edit_revision
+                            })
                         })
                 };
                 let _ = result.send(discarded);
@@ -779,12 +864,13 @@ fn run_commands(
                             let saved = SavedEqualizer::from(profile);
                             let id = saved.profile_id.clone().expect("stored profile has an id");
                             saved_equalizer = saved;
-                            let mut current = write_snapshot(&snapshot);
-                            current.equalizer_revision = saved_equalizer.revision;
-                            current.edit_revision = current.edit_revision.next();
-                            current.has_unsaved_changes = false;
-                            current.active_profile_id = Some(id.clone());
-                            apply_profile_catalog(&mut current, catalog);
+                            snapshot.update(|current| {
+                                current.equalizer_revision = saved_equalizer.revision;
+                                current.edit_revision = current.edit_revision.next();
+                                current.has_unsaved_changes = false;
+                                current.active_profile_id = Some(id.clone());
+                                apply_profile_catalog(current, catalog);
+                            });
                             id
                         }),
                     (None, _) => Err(profile_store_required()),
@@ -798,7 +884,7 @@ fn run_commands(
                         .rename_profile(profile_id.as_str(), &name)
                         .map_err(|error| EngineError(error.to_string()))
                         .map(|catalog| {
-                            apply_profile_catalog(&mut write_snapshot(&snapshot), catalog);
+                            snapshot.update(|current| apply_profile_catalog(current, catalog));
                         }),
                     None => Err(profile_store_required()),
                 };
@@ -836,9 +922,10 @@ fn run_commands(
                                         EngineError(error.to_string())
                                     })?;
                                 saved_equalizer = SavedEqualizer::from(profile);
-                                let mut current = write_snapshot(&snapshot);
-                                publish_selected_profile(&mut current, &saved_equalizer);
-                                apply_profile_catalog(&mut current, catalog);
+                                snapshot.update(|current| {
+                                    publish_selected_profile(current, &saved_equalizer);
+                                    apply_profile_catalog(current, catalog);
+                                });
                                 Ok(())
                             }),
                         (None, _) => Err(profile_store_required()),
@@ -878,12 +965,15 @@ fn run_commands(
                                         }
                                         EngineError(error.to_string())
                                     })?;
-                                let mut current = write_snapshot(&snapshot);
                                 if is_active {
                                     saved_equalizer = SavedEqualizer::from(profile);
-                                    publish_selected_profile(&mut current, &saved_equalizer);
                                 }
-                                apply_profile_catalog(&mut current, catalog);
+                                snapshot.update(|current| {
+                                    if is_active {
+                                        publish_selected_profile(current, &saved_equalizer);
+                                    }
+                                    apply_profile_catalog(current, catalog);
+                                });
                                 Ok(())
                             }),
                         None => Err(profile_store_required()),
@@ -941,12 +1031,15 @@ fn run_commands(
                                             }
                                             EngineError(error.to_string())
                                         })?;
-                                    let mut current = write_snapshot(&snapshot);
                                     if let Some(fallback) = fallback {
                                         saved_equalizer = SavedEqualizer::from(fallback);
-                                        publish_selected_profile(&mut current, &saved_equalizer);
                                     }
-                                    apply_profile_catalog(&mut current, catalog);
+                                    snapshot.update(|current| {
+                                        if is_active {
+                                            publish_selected_profile(current, &saved_equalizer);
+                                        }
+                                        apply_profile_catalog(current, catalog);
+                                    });
                                     Ok(())
                                 })
                         }
@@ -957,9 +1050,10 @@ fn run_commands(
             }
             Ok(Command::Shutdown(result)) => {
                 let shutdown = platform.shutdown();
-                let mut current = write_snapshot(&snapshot);
-                current.status = EngineStatus::Stopped;
-                current.route = None;
+                snapshot.update(|current| {
+                    current.status = EngineStatus::Stopped;
+                    current.route = None;
+                });
                 let _ = result.send(shutdown);
                 return;
             }
@@ -1005,14 +1099,15 @@ fn resolve_profile(
     )
 }
 
-fn fail_snapshot(snapshot: &RwLock<EngineSnapshot>, error: String) {
-    let mut current = write_snapshot(snapshot);
-    current.status = EngineStatus::Failed(error);
-    current.route = None;
+fn fail_snapshot(snapshot: &SnapshotState, error: String) {
+    snapshot.update(|current| {
+        current.status = EngineStatus::Failed(error);
+        current.route = None;
+    });
 }
 
 fn update_running_snapshot(
-    snapshot: &RwLock<EngineSnapshot>,
+    snapshot: &mut EngineSnapshot,
     state: PlatformState,
     bypassed: bool,
     equalizer: Equalizer,
@@ -1020,15 +1115,14 @@ fn update_running_snapshot(
     edit_revision: EditRevision,
     has_unsaved_changes: bool,
 ) {
-    let mut current = write_snapshot(snapshot);
-    current.status = EngineStatus::Running;
-    current.bypassed = bypassed;
-    current.route = Some(state.route);
-    current.devices = state.devices;
-    current.equalizer = equalizer;
-    current.equalizer_revision = equalizer_revision;
-    current.edit_revision = edit_revision;
-    current.has_unsaved_changes = has_unsaved_changes;
+    snapshot.status = EngineStatus::Running;
+    snapshot.bypassed = bypassed;
+    snapshot.route = Some(state.route);
+    snapshot.devices = state.devices;
+    snapshot.equalizer = equalizer;
+    snapshot.equalizer_revision = equalizer_revision;
+    snapshot.edit_revision = edit_revision;
+    snapshot.has_unsaved_changes = has_unsaved_changes;
 }
 
 fn apply_profile_catalog(snapshot: &mut EngineSnapshot, catalog: StoredCatalog) {
@@ -1054,9 +1148,15 @@ fn apply_profile_catalog(snapshot: &mut EngineSnapshot, catalog: StoredCatalog) 
 }
 
 fn publish_selected_profile(snapshot: &mut EngineSnapshot, profile: &SavedEqualizer) {
+    let selection_changed = snapshot.active_profile_id != profile.profile_id
+        || snapshot.equalizer != profile.equalizer
+        || snapshot.equalizer_revision != profile.revision
+        || snapshot.has_unsaved_changes;
     snapshot.equalizer = profile.equalizer.clone();
     snapshot.equalizer_revision = profile.revision;
-    snapshot.edit_revision = snapshot.edit_revision.next();
+    if selection_changed {
+        snapshot.edit_revision = snapshot.edit_revision.next();
+    }
     snapshot.has_unsaved_changes = false;
     snapshot.active_profile_id = profile.profile_id.clone();
 }
@@ -1077,16 +1177,8 @@ fn stale_edit_revision(expected: EditRevision, current: EditRevision) -> EngineE
     ))
 }
 
-fn read_snapshot(
-    snapshot: &RwLock<EngineSnapshot>,
-) -> std::sync::RwLockReadGuard<'_, EngineSnapshot> {
-    snapshot.read().expect("engine snapshot lock poisoned")
-}
-
-fn write_snapshot(
-    snapshot: &RwLock<EngineSnapshot>,
-) -> std::sync::RwLockWriteGuard<'_, EngineSnapshot> {
-    snapshot.write().expect("engine snapshot lock poisoned")
+fn read_snapshot(snapshot: &SnapshotState) -> std::sync::RwLockReadGuard<'_, EngineSnapshot> {
+    snapshot.read()
 }
 
 #[cfg(test)]
@@ -1099,9 +1191,106 @@ mod tests {
     use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, QualityFactor};
 
     use super::{
-        ActiveRoute, AudioPlatform, DeviceId, Engine, EngineOptions, PlatformError, PlatformEvent,
-        PlatformEventSink, PlatformState, ProcessedOutputSink, ProfileId, TelemetryPublisher,
+        ActiveRoute, AudioPlatform, DeviceId, Engine, EngineOptions, EngineStatus, PlatformError,
+        PlatformEvent, PlatformEventSink, PlatformState, ProcessedOutputSink, ProfileId,
+        TelemetryPublisher,
     };
+
+    #[test]
+    fn snapshot_subscription_delivers_initial_and_changed_state_in_order() {
+        let engine = Engine::start(EngineOptions::default(), || FakePlatform {
+            applied: Arc::new(Mutex::new(Vec::new())),
+            reject_equalizer: false,
+            events: None,
+            rebuild_sample_rate_hz: 48_000.0,
+        })
+        .unwrap();
+        let snapshots = engine.subscribe_snapshots();
+
+        assert_eq!(snapshots.recv().unwrap(), engine.snapshot());
+        engine
+            .preview_equalizer(Equalizer::identity(), engine.snapshot().edit_revision)
+            .unwrap();
+        assert_eq!(
+            snapshots.try_recv(),
+            Err(std::sync::mpsc::TryRecvError::Empty)
+        );
+
+        assert!(engine.toggle_bypass().unwrap());
+        assert!(snapshots.recv().unwrap().bypassed);
+        assert!(!engine.toggle_bypass().unwrap());
+        assert!(!snapshots.recv().unwrap().bypassed);
+
+        engine.shutdown().unwrap();
+        let stopped = snapshots.recv().unwrap();
+        assert_eq!(stopped.status, EngineStatus::Stopped);
+        assert!(stopped.route.is_none());
+        assert!(snapshots.recv().is_err());
+    }
+
+    #[test]
+    fn repeated_profile_commands_do_not_publish_or_advance_the_edit_revision() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "tunic-snapshot-noop-{}-{nonce}.sqlite3",
+            std::process::id()
+        ));
+        let engine = Engine::start(
+            EngineOptions {
+                database_path: Some(path.clone()),
+                ..EngineOptions::default()
+            },
+            || FakePlatform {
+                applied: Arc::new(Mutex::new(Vec::new())),
+                reject_equalizer: false,
+                events: None,
+                rebuild_sample_rate_hz: 48_000.0,
+            },
+        )
+        .unwrap();
+        let snapshots = engine.subscribe_snapshots();
+        let initial = snapshots.recv().unwrap();
+        let initial_revision = initial.edit_revision;
+
+        engine.select_profile(ProfileId::new("default")).unwrap();
+        assert_eq!(engine.snapshot().edit_revision, initial_revision);
+        assert_eq!(
+            snapshots.try_recv(),
+            Err(std::sync::mpsc::TryRecvError::Empty)
+        );
+
+        engine
+            .assign_profile(DeviceId::new("fake"), ProfileId::new("default"))
+            .unwrap();
+        let assigned = snapshots.recv().unwrap();
+        assert_eq!(assigned.edit_revision, initial_revision);
+        engine
+            .assign_profile(DeviceId::new("fake"), ProfileId::new("default"))
+            .unwrap();
+        assert_eq!(
+            snapshots.try_recv(),
+            Err(std::sync::mpsc::TryRecvError::Empty)
+        );
+
+        let other = engine.create_profile("Other".into()).unwrap();
+        let created = snapshots.recv().unwrap();
+        assert_eq!(created.equalizer, initial.equalizer);
+        engine.select_profile(ProfileId::new("default")).unwrap();
+        let selected = snapshots.recv().unwrap();
+        assert_eq!(selected.equalizer, initial.equalizer);
+        assert_eq!(selected.active_profile_id, Some(ProfileId::new("default")));
+        assert_eq!(
+            selected.edit_revision.get(),
+            created.edit_revision.get() + 1
+        );
+        assert_ne!(selected.active_profile_id, Some(other));
+
+        engine.shutdown().unwrap();
+        fs::remove_file(path).unwrap();
+    }
 
     #[test]
     fn publishes_preview_only_after_the_platform_accepts_it() {

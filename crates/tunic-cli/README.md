@@ -18,6 +18,8 @@ The currently implemented surface is:
 ```console
 tunic start [--capture <PATH>] [--data-directory <DIRECTORY>]
                                       # Process audio; optionally override storage location
+tunic watch [--data-directory <DIRECTORY>]
+                                      # Process audio and print every engine state change
 
 # Inside the interactive session:
 status
@@ -46,8 +48,6 @@ The planned product surface also includes:
 
 ```console
 tunic status                         # Print the current engine snapshot
-tunic watch                          # Stream snapshots, failures, and telemetry
-
 tunic profile import                 # Import a profile from a file in APO format
 tunic profile export                 # Export a profile to a file in APO format
 
