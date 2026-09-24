@@ -143,7 +143,7 @@ pub struct ActiveRoute {
 #[derive(Clone, Debug, PartialEq)]
 pub enum EngineStatus {
     Starting,
-    Running,
+    Running(ActiveRoute),
     Failed(String),
     Stopped,
 }
@@ -152,7 +152,6 @@ pub enum EngineStatus {
 pub struct EngineSnapshot {
     pub status: EngineStatus,
     pub bypassed: bool,
-    pub route: Option<ActiveRoute>,
     pub devices: Vec<OutputDevice>,
     pub equalizer: Equalizer,
     pub equalizer_revision: EqualizerRevision,
@@ -203,22 +202,23 @@ impl SnapshotState {
         self.read().clone()
     }
 
-    fn update<R>(&self, update: impl FnOnce(&mut EngineSnapshot) -> R) -> R {
+    fn publish(&self, snapshot: EngineSnapshot) {
         let mut subscribers = self
             .subscribers
             .lock()
             .expect("engine snapshot subscriber lock poisoned");
-        let (result, publication) = {
+        let changed = {
             let mut current = self.current.write().expect("engine snapshot lock poisoned");
-            let previous = current.clone();
-            let result = update(&mut current);
-            let publication = (*current != previous).then(|| current.clone());
-            (result, publication)
+            if *current == snapshot {
+                false
+            } else {
+                *current = snapshot.clone();
+                true
+            }
         };
-        if let Some(snapshot) = publication {
+        if changed {
             subscribers.retain(|subscriber| subscriber.send(snapshot.clone()).is_ok());
         }
-        result
     }
 
     fn subscribe(&self) -> SnapshotReceiver {
@@ -236,11 +236,18 @@ impl SnapshotState {
 }
 
 impl EngineSnapshot {
+    #[must_use]
+    pub fn active_route(&self) -> Option<&ActiveRoute> {
+        match &self.status {
+            EngineStatus::Running(route) => Some(route),
+            EngineStatus::Starting | EngineStatus::Failed(_) | EngineStatus::Stopped => None,
+        }
+    }
+
     fn starting(equalizer: Equalizer) -> Self {
         Self {
             status: EngineStatus::Starting,
             bypassed: false,
-            route: None,
             devices: Vec::new(),
             equalizer,
             equalizer_revision: EqualizerRevision::INITIAL,
@@ -439,13 +446,7 @@ impl EngineHandle {
     }
 
     pub fn toggle_bypass(&self) -> Result<bool, EngineError> {
-        let (result_tx, result_rx) = mpsc::channel();
-        self.commands
-            .send(Command::ToggleBypass(result_tx))
-            .map_err(|_| EngineError("engine is not running".into()))?;
-        result_rx
-            .recv()
-            .map_err(|_| EngineError("engine stopped before applying bypass".into()))
+        self.request(Command::ToggleBypass, "applying bypass")
     }
 
     pub fn preview_equalizer(
@@ -453,83 +454,58 @@ impl EngineHandle {
         equalizer: Equalizer,
         expected_revision: EditRevision,
     ) -> Result<EditRevision, EngineError> {
-        let (result_tx, result_rx) = mpsc::channel();
-        self.commands
-            .send(Command::PreviewEqualizer(
-                equalizer,
-                expected_revision,
-                result_tx,
-            ))
-            .map_err(|_| EngineError("engine is not running".into()))?;
-        result_rx
-            .recv()
-            .map_err(|_| EngineError("engine stopped before previewing equalizer".into()))?
+        self.request(
+            |reply| Command::PreviewEqualizer(equalizer, expected_revision, reply),
+            "previewing equalizer",
+        )?
     }
 
     pub fn save_equalizer(
         &self,
         expected_revision: EditRevision,
     ) -> Result<EqualizerRevision, EngineError> {
-        let (result_tx, result_rx) = mpsc::channel();
-        self.commands
-            .send(Command::SaveEqualizer(expected_revision, result_tx))
-            .map_err(|_| EngineError("engine is not running".into()))?;
-        result_rx
-            .recv()
-            .map_err(|_| EngineError("engine stopped before saving equalizer".into()))?
+        self.request(
+            |reply| Command::SaveEqualizer(expected_revision, reply),
+            "saving equalizer",
+        )?
     }
 
     pub fn discard_preview(
         &self,
         expected_revision: EditRevision,
     ) -> Result<EditRevision, EngineError> {
-        let (result_tx, result_rx) = mpsc::channel();
-        self.commands
-            .send(Command::DiscardPreview(expected_revision, result_tx))
-            .map_err(|_| EngineError("engine is not running".into()))?;
-        result_rx
-            .recv()
-            .map_err(|_| EngineError("engine stopped before discarding equalizer preview".into()))?
+        self.request(
+            |reply| Command::DiscardPreview(expected_revision, reply),
+            "discarding equalizer preview",
+        )?
     }
 
     pub fn create_profile(&self, name: String) -> Result<ProfileId, EngineError> {
-        let (result_tx, result_rx) = mpsc::channel();
-        self.commands
-            .send(Command::CreateProfile(name, result_tx))
-            .map_err(|_| EngineError("engine is not running".into()))?;
-        result_rx
-            .recv()
-            .map_err(|_| EngineError("engine stopped before creating profile".into()))?
+        self.request(
+            |reply| Command::CreateProfile(name, reply),
+            "creating profile",
+        )?
     }
 
     pub fn rename_profile(&self, id: ProfileId, name: String) -> Result<(), EngineError> {
-        let (result_tx, result_rx) = mpsc::channel();
-        self.commands
-            .send(Command::RenameProfile(id, name, result_tx))
-            .map_err(|_| EngineError("engine is not running".into()))?;
-        result_rx
-            .recv()
-            .map_err(|_| EngineError("engine stopped before renaming profile".into()))?
+        self.request(
+            |reply| Command::RenameProfile(id, name, reply),
+            "renaming profile",
+        )?
     }
 
     pub fn delete_profile(&self, id: ProfileId) -> Result<(), EngineError> {
-        let (result_tx, result_rx) = mpsc::channel();
-        self.commands
-            .send(Command::DeleteProfile(id, result_tx))
-            .map_err(|_| EngineError("engine is not running".into()))?;
-        result_rx
-            .recv()
-            .map_err(|_| EngineError("engine stopped before deleting profile".into()))?
+        self.request(
+            |reply| Command::DeleteProfile(id, reply),
+            "deleting profile",
+        )?
     }
 
     pub fn select_profile(&self, id: ProfileId) -> Result<(), EngineError> {
-        let (result_tx, result_rx) = mpsc::channel();
-        self.commands
-            .send(Command::SelectProfile(id, result_tx))
-            .map_err(|_| EngineError("engine is not running".into()))?;
-        result_rx
-            .recv()
-            .map_err(|_| EngineError("engine stopped before selecting profile".into()))?
+        self.request(
+            |reply| Command::SelectProfile(id, reply),
+            "selecting profile",
+        )?
     }
 
     pub fn assign_profile(
@@ -537,17 +513,28 @@ impl EngineHandle {
         device_id: DeviceId,
         profile_id: ProfileId,
     ) -> Result<(), EngineError> {
-        let (result_tx, result_rx) = mpsc::channel();
-        self.commands
-            .send(Command::AssignProfile(device_id, profile_id, result_tx))
-            .map_err(|_| EngineError("engine is not running".into()))?;
-        result_rx
-            .recv()
-            .map_err(|_| EngineError("engine stopped before assigning profile".into()))?
+        self.request(
+            |reply| Command::AssignProfile(device_id, profile_id, reply),
+            "assigning profile",
+        )?
     }
 
     pub fn shutdown(mut self) -> Result<(), EngineError> {
         self.shutdown_inner()
+    }
+
+    fn request<R>(
+        &self,
+        command: impl FnOnce(Sender<R>) -> Command,
+        operation: &'static str,
+    ) -> Result<R, EngineError> {
+        let (reply, response) = mpsc::channel();
+        self.commands
+            .send(command(reply))
+            .map_err(|_| EngineError("engine is not running".into()))?;
+        response
+            .recv()
+            .map_err(|_| EngineError(format!("engine stopped before {operation}")))
     }
 
     fn shutdown_inner(&mut self) -> Result<(), EngineError> {
@@ -647,26 +634,27 @@ fn run_engine(
             } else {
                 None
             };
-            snapshot.update(|current| {
-                update_running_snapshot(
-                    current,
-                    state,
-                    false,
-                    selected_profile.equalizer.clone(),
-                    selected_profile.revision,
-                    EditRevision::INITIAL,
-                    false,
-                );
-                if let Some(catalog) = catalog {
-                    apply_profile_catalog(current, catalog);
-                }
-                current.active_profile_id = selected_profile.profile_id.clone();
-            });
+            let mut current = EngineSnapshot::starting(selected_profile.equalizer.clone());
+            update_running_snapshot(
+                &mut current,
+                state,
+                false,
+                selected_profile.equalizer.clone(),
+                selected_profile.revision,
+                EditRevision::INITIAL,
+                false,
+            );
+            if let Some(catalog) = catalog {
+                apply_profile_catalog(&mut current, catalog);
+            }
+            current.active_profile_id = selected_profile.profile_id.clone();
+            snapshot.publish(current.clone());
             let _ = startup.send(Ok(()));
             run_commands(
                 platform,
                 store.as_mut(),
                 selected_profile,
+                current,
                 commands,
                 event_rx,
                 snapshot,
@@ -682,6 +670,7 @@ fn run_commands(
     mut platform: impl AudioPlatform,
     mut store: Option<&mut ProfileStore>,
     mut saved_equalizer: SavedEqualizer,
+    mut current: EngineSnapshot,
     commands: Receiver<Command>,
     event_rx: Receiver<PlatformEvent>,
     snapshot: Arc<SnapshotState>,
@@ -691,25 +680,23 @@ fn run_commands(
             let state = match platform.rebuild_default_route() {
                 Ok(state) => state,
                 Err(error) => {
-                    fail_snapshot(&snapshot, error.to_string());
+                    fail_snapshot(&mut current, &snapshot, error.to_string());
                     continue;
                 }
             };
             match event {
                 PlatformEvent::DefaultOutputChanged => {
-                    let current = read_snapshot(&snapshot);
                     let bypassed = current.bypassed;
                     let current_equalizer = current.equalizer.clone();
                     let mut edit_revision = current.edit_revision;
                     let has_unsaved_changes = current.has_unsaved_changes;
-                    drop(current);
                     match resolve_profile(store.as_deref(), &state, &saved_equalizer) {
                         Ok(profile) => {
                             let profile_changed = saved_equalizer.profile_id != profile.profile_id;
                             if current_equalizer != profile.equalizer
                                 && let Err(error) = platform.set_equalizer(&profile.equalizer)
                             {
-                                fail_snapshot(&snapshot, error.to_string());
+                                fail_snapshot(&mut current, &snapshot, error.to_string());
                                 continue;
                             }
                             if profile_changed
@@ -718,82 +705,78 @@ fn run_commands(
                             {
                                 edit_revision = edit_revision.next();
                             }
-                            snapshot.update(|current| {
-                                update_running_snapshot(
-                                    current,
-                                    state,
-                                    bypassed,
-                                    profile.equalizer.clone(),
-                                    profile.revision,
-                                    edit_revision,
-                                    false,
-                                );
-                                current.active_profile_id = profile.profile_id.clone();
-                            });
+                            update_running_snapshot(
+                                &mut current,
+                                state,
+                                bypassed,
+                                profile.equalizer.clone(),
+                                profile.revision,
+                                edit_revision,
+                                false,
+                            );
+                            current.active_profile_id = profile.profile_id.clone();
+                            snapshot.publish(current.clone());
                             saved_equalizer = profile;
                         }
-                        Err(error) => fail_snapshot(&snapshot, error.to_string()),
+                        Err(error) => {
+                            fail_snapshot(&mut current, &snapshot, error.to_string());
+                        }
                     }
                 }
                 PlatformEvent::OutputSampleRateChanged => {
-                    let current = read_snapshot(&snapshot);
                     let bypassed = current.bypassed;
                     let equalizer = current.equalizer.clone();
                     let equalizer_revision = current.equalizer_revision;
                     let edit_revision = current.edit_revision;
                     let has_unsaved_changes = current.has_unsaved_changes;
-                    drop(current);
-                    snapshot.update(|current| {
-                        update_running_snapshot(
-                            current,
-                            state,
-                            bypassed,
-                            equalizer,
-                            equalizer_revision,
-                            edit_revision,
-                            has_unsaved_changes,
-                        );
-                    });
+                    update_running_snapshot(
+                        &mut current,
+                        state,
+                        bypassed,
+                        equalizer,
+                        equalizer_revision,
+                        edit_revision,
+                        has_unsaved_changes,
+                    );
+                    snapshot.publish(current.clone());
                 }
             }
         }
 
         match commands.recv_timeout(Duration::from_millis(50)) {
             Ok(Command::ToggleBypass(result)) => {
-                let bypassed = !read_snapshot(&snapshot).bypassed;
+                let bypassed = !current.bypassed;
                 platform.set_bypassed(bypassed);
-                snapshot.update(|current| current.bypassed = bypassed);
+                current.bypassed = bypassed;
+                snapshot.publish(current.clone());
                 let _ = result.send(bypassed);
             }
             Ok(Command::PreviewEqualizer(equalizer, expected_revision, result)) => {
-                let current_revision = read_snapshot(&snapshot).edit_revision;
+                let current_revision = current.edit_revision;
                 let previewed = if current_revision != expected_revision {
                     Err(stale_edit_revision(expected_revision, current_revision))
-                } else if read_snapshot(&snapshot).equalizer == equalizer {
+                } else if current.equalizer == equalizer {
                     Ok(current_revision)
                 } else {
                     platform
                         .set_equalizer(&equalizer)
                         .map_err(|error| EngineError(error.to_string()))
                         .map(|()| {
-                            snapshot.update(|current| {
-                                current.equalizer = equalizer;
-                                current.edit_revision = current.edit_revision.next();
-                                current.has_unsaved_changes =
-                                    current.equalizer != saved_equalizer.equalizer;
-                                current.edit_revision
-                            })
+                            current.equalizer = equalizer;
+                            current.edit_revision = current.edit_revision.next();
+                            current.has_unsaved_changes =
+                                current.equalizer != saved_equalizer.equalizer;
+                            snapshot.publish(current.clone());
+                            current.edit_revision
                         })
                 };
                 let _ = result.send(previewed);
             }
             Ok(Command::SaveEqualizer(expected_revision, result)) => {
-                let current = read_snapshot(&snapshot);
                 let current_revision = current.edit_revision;
                 let has_unsaved_changes = current.has_unsaved_changes;
                 let equalizer = current.equalizer.clone();
                 let equalizer_revision = current.equalizer_revision;
-                drop(current);
                 let saved = if current_revision != expected_revision {
                     Err(stale_edit_revision(expected_revision, current_revision))
                 } else if !has_unsaved_changes {
@@ -811,24 +794,21 @@ fn run_commands(
                     persisted.map(|(revision, catalog)| {
                         saved_equalizer.equalizer = equalizer;
                         saved_equalizer.revision = revision;
-                        snapshot.update(|current| {
-                            current.equalizer_revision = revision;
-                            current.edit_revision = current.edit_revision.next();
-                            current.has_unsaved_changes = false;
-                            if let Some(catalog) = catalog {
-                                apply_profile_catalog(current, catalog);
-                            }
-                        });
+                        current.equalizer_revision = revision;
+                        current.edit_revision = current.edit_revision.next();
+                        current.has_unsaved_changes = false;
+                        if let Some(catalog) = catalog {
+                            apply_profile_catalog(&mut current, catalog);
+                        }
+                        snapshot.publish(current.clone());
                         revision
                     })
                 };
                 let _ = result.send(saved);
             }
             Ok(Command::DiscardPreview(expected_revision, result)) => {
-                let current = read_snapshot(&snapshot);
                 let current_revision = current.edit_revision;
                 let has_unsaved_changes = current.has_unsaved_changes;
-                drop(current);
                 let discarded = if current_revision != expected_revision {
                     Err(stale_edit_revision(expected_revision, current_revision))
                 } else if !has_unsaved_changes {
@@ -838,24 +818,20 @@ fn run_commands(
                         .set_equalizer(&saved_equalizer.equalizer)
                         .map_err(|error| EngineError(error.to_string()))
                         .map(|()| {
-                            snapshot.update(|current| {
-                                current.equalizer = saved_equalizer.equalizer.clone();
-                                current.edit_revision = current.edit_revision.next();
-                                current.has_unsaved_changes = false;
-                                current.edit_revision
-                            })
+                            current.equalizer = saved_equalizer.equalizer.clone();
+                            current.edit_revision = current.edit_revision.next();
+                            current.has_unsaved_changes = false;
+                            snapshot.publish(current.clone());
+                            current.edit_revision
                         })
                 };
                 let _ = result.send(discarded);
             }
             Ok(Command::CreateProfile(name, result)) => {
-                let current = read_snapshot(&snapshot);
                 let equalizer = current.equalizer.clone();
                 let active_device_id = current
-                    .route
-                    .as_ref()
+                    .active_route()
                     .map(|route| route.device_id.as_str().to_owned());
-                drop(current);
                 let created = match (&mut store, active_device_id) {
                     (Some(store), Some(active_device_id)) => store
                         .create_and_select_profile(&name, &equalizer, &active_device_id)
@@ -864,13 +840,12 @@ fn run_commands(
                             let saved = SavedEqualizer::from(profile);
                             let id = saved.profile_id.clone().expect("stored profile has an id");
                             saved_equalizer = saved;
-                            snapshot.update(|current| {
-                                current.equalizer_revision = saved_equalizer.revision;
-                                current.edit_revision = current.edit_revision.next();
-                                current.has_unsaved_changes = false;
-                                current.active_profile_id = Some(id.clone());
-                                apply_profile_catalog(current, catalog);
-                            });
+                            current.equalizer_revision = saved_equalizer.revision;
+                            current.edit_revision = current.edit_revision.next();
+                            current.has_unsaved_changes = false;
+                            current.active_profile_id = Some(id.clone());
+                            apply_profile_catalog(&mut current, catalog);
+                            snapshot.publish(current.clone());
                             id
                         }),
                     (None, _) => Err(profile_store_required()),
@@ -884,21 +859,19 @@ fn run_commands(
                         .rename_profile(profile_id.as_str(), &name)
                         .map_err(|error| EngineError(error.to_string()))
                         .map(|catalog| {
-                            snapshot.update(|current| apply_profile_catalog(current, catalog));
+                            apply_profile_catalog(&mut current, catalog);
+                            snapshot.publish(current.clone());
                         }),
                     None => Err(profile_store_required()),
                 };
                 let _ = result.send(renamed);
             }
             Ok(Command::SelectProfile(profile_id, result)) => {
-                let current = read_snapshot(&snapshot);
                 let has_unsaved_changes = current.has_unsaved_changes;
                 let current_equalizer = current.equalizer.clone();
                 let active_device_id = current
-                    .route
-                    .as_ref()
+                    .active_route()
                     .map(|route| route.device_id.as_str().to_owned());
-                drop(current);
                 let selected = if has_unsaved_changes {
                     Err(unsaved_profile_change())
                 } else {
@@ -922,10 +895,9 @@ fn run_commands(
                                         EngineError(error.to_string())
                                     })?;
                                 saved_equalizer = SavedEqualizer::from(profile);
-                                snapshot.update(|current| {
-                                    publish_selected_profile(current, &saved_equalizer);
-                                    apply_profile_catalog(current, catalog);
-                                });
+                                publish_selected_profile(&mut current, &saved_equalizer);
+                                apply_profile_catalog(&mut current, catalog);
+                                snapshot.publish(current.clone());
                                 Ok(())
                             }),
                         (None, _) => Err(profile_store_required()),
@@ -935,14 +907,11 @@ fn run_commands(
                 let _ = result.send(selected);
             }
             Ok(Command::AssignProfile(device_id, profile_id, result)) => {
-                let current = read_snapshot(&snapshot);
                 let is_active = current
-                    .route
-                    .as_ref()
+                    .active_route()
                     .is_some_and(|route| route.device_id == device_id);
                 let has_unsaved_changes = current.has_unsaved_changes;
                 let current_equalizer = current.equalizer.clone();
-                drop(current);
                 let assigned = if is_active && has_unsaved_changes {
                     Err(unsaved_profile_change())
                 } else {
@@ -968,12 +937,11 @@ fn run_commands(
                                 if is_active {
                                     saved_equalizer = SavedEqualizer::from(profile);
                                 }
-                                snapshot.update(|current| {
-                                    if is_active {
-                                        publish_selected_profile(current, &saved_equalizer);
-                                    }
-                                    apply_profile_catalog(current, catalog);
-                                });
+                                if is_active {
+                                    publish_selected_profile(&mut current, &saved_equalizer);
+                                }
+                                apply_profile_catalog(&mut current, catalog);
+                                snapshot.publish(current.clone());
                                 Ok(())
                             }),
                         None => Err(profile_store_required()),
@@ -982,11 +950,9 @@ fn run_commands(
                 let _ = result.send(assigned);
             }
             Ok(Command::DeleteProfile(profile_id, result)) => {
-                let current = read_snapshot(&snapshot);
                 let is_active = current.active_profile_id.as_ref() == Some(&profile_id);
                 let has_unsaved_changes = current.has_unsaved_changes;
                 let current_equalizer = current.equalizer.clone();
-                drop(current);
                 let deleted = if is_active && has_unsaved_changes {
                     Err(unsaved_profile_change())
                 } else {
@@ -1034,12 +1000,11 @@ fn run_commands(
                                     if let Some(fallback) = fallback {
                                         saved_equalizer = SavedEqualizer::from(fallback);
                                     }
-                                    snapshot.update(|current| {
-                                        if is_active {
-                                            publish_selected_profile(current, &saved_equalizer);
-                                        }
-                                        apply_profile_catalog(current, catalog);
-                                    });
+                                    if is_active {
+                                        publish_selected_profile(&mut current, &saved_equalizer);
+                                    }
+                                    apply_profile_catalog(&mut current, catalog);
+                                    snapshot.publish(current.clone());
                                     Ok(())
                                 })
                         }
@@ -1050,10 +1015,8 @@ fn run_commands(
             }
             Ok(Command::Shutdown(result)) => {
                 let shutdown = platform.shutdown();
-                snapshot.update(|current| {
-                    current.status = EngineStatus::Stopped;
-                    current.route = None;
-                });
+                current.status = EngineStatus::Stopped;
+                snapshot.publish(current.clone());
                 let _ = result.send(shutdown);
                 return;
             }
@@ -1099,11 +1062,9 @@ fn resolve_profile(
     )
 }
 
-fn fail_snapshot(snapshot: &SnapshotState, error: String) {
-    snapshot.update(|current| {
-        current.status = EngineStatus::Failed(error);
-        current.route = None;
-    });
+fn fail_snapshot(current: &mut EngineSnapshot, snapshots: &SnapshotState, error: String) {
+    current.status = EngineStatus::Failed(error);
+    snapshots.publish(current.clone());
 }
 
 fn update_running_snapshot(
@@ -1115,9 +1076,8 @@ fn update_running_snapshot(
     edit_revision: EditRevision,
     has_unsaved_changes: bool,
 ) {
-    snapshot.status = EngineStatus::Running;
+    snapshot.status = EngineStatus::Running(state.route);
     snapshot.bypassed = bypassed;
-    snapshot.route = Some(state.route);
     snapshot.devices = state.devices;
     snapshot.equalizer = equalizer;
     snapshot.equalizer_revision = equalizer_revision;
@@ -1177,10 +1137,6 @@ fn stale_edit_revision(expected: EditRevision, current: EditRevision) -> EngineE
     ))
 }
 
-fn read_snapshot(snapshot: &SnapshotState) -> std::sync::RwLockReadGuard<'_, EngineSnapshot> {
-    snapshot.read()
-}
-
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -1224,7 +1180,7 @@ mod tests {
         engine.shutdown().unwrap();
         let stopped = snapshots.recv().unwrap();
         assert_eq!(stopped.status, EngineStatus::Stopped);
-        assert!(stopped.route.is_none());
+        assert!(stopped.active_route().is_none());
         assert!(snapshots.recv().is_err());
     }
 
@@ -1472,7 +1428,7 @@ mod tests {
         let deadline = Instant::now() + Duration::from_secs(1);
         while engine
             .snapshot()
-            .route
+            .active_route()
             .is_none_or(|route| route.sample_rate_hz != 44_100.0)
             && Instant::now() < deadline
         {
@@ -1480,7 +1436,7 @@ mod tests {
         }
 
         let snapshot = engine.snapshot();
-        assert_eq!(snapshot.route.unwrap().sample_rate_hz, 44_100.0);
+        assert_eq!(snapshot.active_route().unwrap().sample_rate_hz, 44_100.0);
         assert_eq!(snapshot.equalizer, preview);
         assert_eq!(snapshot.edit_revision, preview_revision);
         assert!(snapshot.has_unsaved_changes);

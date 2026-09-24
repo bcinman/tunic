@@ -363,7 +363,7 @@ fn handle_line(
                     };
                     let output = device.as_deref().map_or_else(
                         || {
-                            snapshot.route.as_ref().and_then(|route| {
+                            snapshot.active_route().and_then(|route| {
                                 snapshot
                                     .devices
                                     .iter()
@@ -533,7 +533,7 @@ fn filter(kind: FilterKind, frequency: f64, gain: f64, q: f64) -> Result<Filter,
 fn print_status(snapshot: &EngineSnapshot) {
     let status = match &snapshot.status {
         EngineStatus::Starting => "starting".to_owned(),
-        EngineStatus::Running => "running".to_owned(),
+        EngineStatus::Running(_) => "running".to_owned(),
         EngineStatus::Failed(error) => format!("failed: {error}"),
         EngineStatus::Stopped => "stopped".to_owned(),
     };
@@ -546,7 +546,7 @@ fn print_status(snapshot: &EngineSnapshot) {
             "active"
         }
     );
-    if let Some(route) = &snapshot.route {
+    if let Some(route) = snapshot.active_route() {
         println!(
             "Output: {} ({} Hz, {} channels)",
             route.device_name, route.sample_rate_hz, route.channels
@@ -602,8 +602,7 @@ fn print_status(snapshot: &EngineSnapshot) {
 fn print_devices(snapshot: &EngineSnapshot) {
     for device in &snapshot.devices {
         let active = snapshot
-            .route
-            .as_ref()
+            .active_route()
             .is_some_and(|route| route.device_id == device.id);
         let marker = match (device.is_default, active) {
             (true, true) => "default, active",
@@ -622,7 +621,7 @@ fn print_devices(snapshot: &EngineSnapshot) {
 fn show_device(snapshot: &EngineSnapshot, query: Option<&str>) {
     let device = query.map_or_else(
         || {
-            snapshot.route.as_ref().and_then(|route| {
+            snapshot.active_route().and_then(|route| {
                 snapshot
                     .devices
                     .iter()
