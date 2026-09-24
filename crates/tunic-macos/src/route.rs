@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::ffi::{CStr, c_void};
 use std::num::NonZeroUsize;
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -84,20 +84,27 @@ impl TapBufferRange {
 impl Route {
     pub(crate) fn start(
         output_id: AudioObjectID,
+        sample_rate_hz: f64,
         bypassed: Arc<AtomicBool>,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
         configuration: &Configuration,
     ) -> Result<Self, PlatformError> {
-        Self::start_inner(output_id, bypassed, output_sink, configuration)
+        Self::start_inner(
+            output_id,
+            sample_rate_hz,
+            bypassed,
+            output_sink,
+            configuration,
+        )
     }
 
     fn start_inner(
         output_id: AudioObjectID,
+        sample_rate_hz: f64,
         bypassed: Arc<AtomicBool>,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
         configuration: &Configuration,
     ) -> Result<Self, PlatformError> {
-        let sample_rate_hz = crate::devices::sample_rate(output_id)?;
         let prepared_graph = PreparedGraph::prepare(configuration, sample_rate_hz)
             .map_err(|error| PlatformError::new(error.to_string()))?;
         let output_uid = device_uid(output_id)?;
@@ -165,6 +172,7 @@ impl Route {
         let graph = RefCell::new(prepared_graph);
         let graph_updates = Arc::new(GraphExchange::new());
         let callback_graph_updates = Arc::clone(&graph_updates);
+        let callback_bypassed = Cell::new(false);
         let block = RcBlock::new(
             move |_now: NonNull<AudioTimeStamp>,
                   input: NonNull<AudioBufferList>,
@@ -183,13 +191,15 @@ impl Route {
                         return;
                     };
                     callback_graph_updates.install_latest(&mut graph);
+                    let is_bypassed = bypassed.load(Ordering::Relaxed);
+                    reset_graph_on_bypass(&mut graph, &callback_bypassed, is_bypassed);
                     render_audio(
                         input.as_ptr(),
                         output.as_ptr(),
                         tap_buffers,
                         &mut scratch[..],
                         &mut graph,
-                        bypassed.load(Ordering::Relaxed),
+                        is_bypassed,
                         output_sink.as_deref(),
                     );
                 }));
@@ -297,6 +307,12 @@ impl Route {
         }
 
         errors_to_result(errors)
+    }
+}
+
+fn reset_graph_on_bypass(graph: &mut PreparedGraph, was_bypassed: &Cell<bool>, is_bypassed: bool) {
+    if is_bypassed && !was_bypassed.replace(is_bypassed) {
+        graph.reset();
     }
 }
 
@@ -745,12 +761,14 @@ const fn size_of<T>() -> usize {
 #[cfg(test)]
 mod tests {
     use super::{
-        GraphExchange, TapBufferRange, normalize_stereo, validate_stream_format, write_stereo,
+        GraphExchange, TapBufferRange, normalize_stereo, reset_graph_on_bypass,
+        validate_stream_format, write_stereo,
     };
     use objc2_core_audio_types::{
         AudioBuffer, AudioStreamBasicDescription, kAudioFormatFlagIsFloat,
         kAudioFormatFlagIsNonInterleaved, kAudioFormatLinearPCM,
     };
+    use std::cell::Cell;
     use tunic_dsp::{
         Configuration, FrequencyHz, GainDb, PeakingFilter, PreparedGraph, QualityFactor,
     };
@@ -768,6 +786,20 @@ mod tests {
 
         assert!(impulse[0] < 1.0);
         assert_eq!(impulse[0], impulse[1]);
+    }
+
+    #[test]
+    fn entering_bypass_clears_filter_history() {
+        let mut graph = peaking_graph(12.0);
+        let mut impulse = [1.0_f32, 1.0];
+        graph.process_interleaved_stereo(&mut impulse);
+        let was_bypassed = Cell::new(false);
+
+        reset_graph_on_bypass(&mut graph, &was_bypassed, true);
+        let mut silence = [0.0_f32, 0.0];
+        graph.process_interleaved_stereo(&mut silence);
+
+        assert_eq!(silence, [0.0, 0.0]);
     }
 
     #[test]

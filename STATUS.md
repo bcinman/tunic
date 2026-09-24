@@ -15,13 +15,15 @@ architecture.
   platform layers.
 - A Core Audio route built from a process tap, aggregate device, and IOProc.
 - System-audio capture and playback through the current default macOS output.
-- Default-output change observation and route rebuilding.
+- Default-output and nominal sample-rate change observation with route
+  rebuilding and graph preparation for the new rate.
 - Float32 input validation, stereo normalization, and support for output
   devices with additional channels.
 - A non-real-time engine thread with immutable snapshots, bypass toggling, and
   orderly shutdown.
 - An allocation-free stereo DSP graph with zero reported latency.
-- One validated peaking filter with configurable frequency, gain, and Q.
+- One validated peaking filter with configurable frequency, gain, and Q,
+  including post-quantization stability checks.
 - Live, real-time-safe graph replacement from the engine to the audio callback.
 - Configuration revisions published in engine snapshots.
 - A headless interactive CLI with:
@@ -31,6 +33,8 @@ architecture.
   - live peaking-filter set and clear commands;
   - optional post-DSP Float32 stereo WAV capture;
   - graceful quit and interrupt handling.
+- Filter history is cleared when bypass begins so stale ringing is not replayed
+  when processing resumes.
 - Automated formatting, Clippy, and workspace test tasks through `mise`.
 - Unit coverage for identity and peaking DSP, configuration validation and
   publication, audio buffer handling, command parsing, and WAV capture.

@@ -11,8 +11,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use block2::RcBlock;
 use objc2_core_audio::{
     AudioObjectAddPropertyListenerBlock, AudioObjectID, AudioObjectPropertyAddress,
-    AudioObjectRemovePropertyListenerBlock, kAudioHardwarePropertyDefaultOutputDevice,
-    kAudioObjectPropertyElementMain, kAudioObjectPropertyScopeGlobal, kAudioObjectSystemObject,
+    AudioObjectRemovePropertyListenerBlock, kAudioDevicePropertyNominalSampleRate,
+    kAudioHardwarePropertyDefaultOutputDevice, kAudioObjectPropertyElementMain,
+    kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyScopeOutput, kAudioObjectSystemObject,
 };
 use tunic_dsp::Configuration;
 use tunic_engine::{
@@ -27,7 +28,9 @@ use crate::route::Route;
 
 pub struct CoreAudioPlatform {
     route: Option<Route>,
-    listener: Option<DefaultOutputListener>,
+    default_output_listener: Option<PropertyListener>,
+    sample_rate_listener: Option<PropertyListener>,
+    events: Option<PlatformEventSink>,
     bypassed: Arc<AtomicBool>,
     output_sink: Option<Arc<dyn ProcessedOutputSink>>,
     configuration: Configuration,
@@ -38,7 +41,9 @@ impl CoreAudioPlatform {
     pub fn new() -> Self {
         Self {
             route: None,
-            listener: None,
+            default_output_listener: None,
+            sample_rate_listener: None,
+            events: None,
             bypassed: Arc::new(AtomicBool::new(false)),
             output_sink: None,
             configuration: Configuration::identity(),
@@ -47,10 +52,21 @@ impl CoreAudioPlatform {
 
     fn build_default_route(&mut self) -> Result<PlatformState, PlatformError> {
         let output_id = default_output_id()?;
+        let events = self
+            .events
+            .as_ref()
+            .ok_or_else(|| PlatformError::new("platform event sink is not configured"))?;
+        let sample_rate_listener = PropertyListener::new(
+            output_id,
+            sample_rate_property(),
+            events.clone(),
+            PlatformEvent::OutputSampleRateChanged,
+        )?;
+        let sample_rate_hz = sample_rate(output_id)?;
         let route = ActiveRoute {
             device_id: DeviceId::new(device_uid(output_id)?),
             device_name: device_name(output_id)?,
-            sample_rate_hz: sample_rate(output_id)?,
+            sample_rate_hz,
             channels: channel_count(output_id)?,
         };
         if let Some(output_sink) = &self.output_sink {
@@ -67,20 +83,29 @@ impl CoreAudioPlatform {
         let devices = list_output_devices()?;
         self.route = Some(Route::start(
             output_id,
+            sample_rate_hz,
             Arc::clone(&self.bypassed),
             self.output_sink.clone(),
             &self.configuration,
         )?);
+        self.sample_rate_listener = Some(sample_rate_listener);
         Ok(PlatformState { route, devices })
     }
 
     fn shutdown_resources(&mut self) -> Result<(), PlatformError> {
-        let listener_result = self
-            .listener
+        let default_listener_result = self
+            .default_output_listener
+            .take()
+            .map_or(Ok(()), |mut listener| listener.remove());
+        let sample_rate_listener_result = self
+            .sample_rate_listener
             .take()
             .map_or(Ok(()), |mut listener| listener.remove());
         let route_result = self.route.take().map_or(Ok(()), |mut route| route.stop());
-        combine_results(listener_result, route_result)
+        combine_results(
+            default_listener_result,
+            combine_results(sample_rate_listener_result, route_result),
+        )
     }
 }
 
@@ -99,7 +124,13 @@ impl AudioPlatform for CoreAudioPlatform {
     ) -> Result<PlatformState, PlatformError> {
         self.output_sink = output_sink;
         self.configuration = configuration.clone();
-        self.listener = Some(DefaultOutputListener::new(events)?);
+        self.events = Some(events.clone());
+        self.default_output_listener = Some(PropertyListener::new(
+            kAudioObjectSystemObject as AudioObjectID,
+            default_output_property(),
+            events,
+            PlatformEvent::DefaultOutputChanged,
+        )?);
         match self.build_default_route() {
             Ok(state) => Ok(state),
             Err(start_error) => {
@@ -140,30 +171,38 @@ impl Drop for CoreAudioPlatform {
 
 type ListenerBlock = RcBlock<dyn Fn(u32, NonNull<AudioObjectPropertyAddress>)>;
 
-struct DefaultOutputListener {
+struct PropertyListener {
+    object_id: AudioObjectID,
+    property: AudioObjectPropertyAddress,
     block: ListenerBlock,
     registered: bool,
 }
 
-impl DefaultOutputListener {
-    fn new(events: PlatformEventSink) -> Result<Self, PlatformError> {
+impl PropertyListener {
+    fn new(
+        object_id: AudioObjectID,
+        property: AudioObjectPropertyAddress,
+        events: PlatformEventSink,
+        event: PlatformEvent,
+    ) -> Result<Self, PlatformError> {
         let block = RcBlock::new(
             move |_address_count: u32, _addresses: NonNull<AudioObjectPropertyAddress>| {
-                let _ = events.send(PlatformEvent::DefaultOutputChanged);
+                let _ = events.send(event);
             },
         );
-        let property = default_output_property();
         // SAFETY: Core Audio copies the block and retains its captures until matching removal.
         let status = unsafe {
             AudioObjectAddPropertyListenerBlock(
-                kAudioObjectSystemObject as AudioObjectID,
+                object_id,
                 NonNull::from(&property),
                 None,
                 RcBlock::as_ptr(&block),
             )
         };
-        check_status("observe default output device", status)?;
+        check_status("observe audio property", status)?;
         Ok(Self {
+            object_id,
+            property,
             block,
             registered: true,
         })
@@ -173,23 +212,22 @@ impl DefaultOutputListener {
         if !self.registered {
             return Ok(());
         }
-        let property = default_output_property();
         // SAFETY: this is the same block, address, and queue used during registration.
         let status = unsafe {
             AudioObjectRemovePropertyListenerBlock(
-                kAudioObjectSystemObject as AudioObjectID,
-                NonNull::from(&property),
+                self.object_id,
+                NonNull::from(&self.property),
                 None,
                 RcBlock::as_ptr(&self.block),
             )
         };
-        check_status("stop observing default output device", status)?;
+        check_status("stop observing audio property", status)?;
         self.registered = false;
         Ok(())
     }
 }
 
-impl Drop for DefaultOutputListener {
+impl Drop for PropertyListener {
     fn drop(&mut self) {
         let _ = self.remove();
     }
@@ -207,6 +245,13 @@ fn default_output_property() -> AudioObjectPropertyAddress {
     address(
         kAudioHardwarePropertyDefaultOutputDevice,
         kAudioObjectPropertyScopeGlobal,
+    )
+}
+
+fn sample_rate_property() -> AudioObjectPropertyAddress {
+    address(
+        kAudioDevicePropertyNominalSampleRate,
+        kAudioObjectPropertyScopeOutput,
     )
 }
 

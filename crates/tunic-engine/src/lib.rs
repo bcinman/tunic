@@ -147,6 +147,7 @@ impl ConfigurationRevision {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PlatformEvent {
     DefaultOutputChanged,
+    OutputSampleRateChanged,
 }
 
 pub type PlatformEventSink = Sender<PlatformEvent>;
@@ -354,27 +355,29 @@ fn run_engine(
     loop {
         while let Ok(event) = event_rx.try_recv() {
             match event {
-                PlatformEvent::DefaultOutputChanged => match platform.rebuild_default_route() {
-                    Ok(state) => {
-                        let current = read_snapshot(&snapshot);
-                        let bypassed = current.bypassed;
-                        let configuration = current.configuration.clone();
-                        let configuration_revision = current.configuration_revision;
-                        drop(current);
-                        update_running_snapshot(
-                            &snapshot,
-                            state,
-                            bypassed,
-                            configuration,
-                            configuration_revision,
-                        );
+                PlatformEvent::DefaultOutputChanged | PlatformEvent::OutputSampleRateChanged => {
+                    match platform.rebuild_default_route() {
+                        Ok(state) => {
+                            let current = read_snapshot(&snapshot);
+                            let bypassed = current.bypassed;
+                            let configuration = current.configuration.clone();
+                            let configuration_revision = current.configuration_revision;
+                            drop(current);
+                            update_running_snapshot(
+                                &snapshot,
+                                state,
+                                bypassed,
+                                configuration,
+                                configuration_revision,
+                            );
+                        }
+                        Err(error) => {
+                            let mut current = write_snapshot(&snapshot);
+                            current.status = EngineStatus::Failed(error.to_string());
+                            current.route = None;
+                        }
                     }
-                    Err(error) => {
-                        let mut current = write_snapshot(&snapshot);
-                        current.status = EngineStatus::Failed(error.to_string());
-                        current.route = None;
-                    }
-                },
+                }
             }
         }
 
@@ -443,11 +446,13 @@ fn write_snapshot(
 #[cfg(test)]
 mod tests {
     use std::sync::{Arc, Mutex};
+    use std::thread;
+    use std::time::{Duration, Instant};
 
     use tunic_dsp::{Configuration, FrequencyHz, GainDb, PeakingFilter, QualityFactor};
 
     use super::{
-        ActiveRoute, AudioPlatform, DeviceId, Engine, EngineOptions, PlatformError,
+        ActiveRoute, AudioPlatform, DeviceId, Engine, EngineOptions, PlatformError, PlatformEvent,
         PlatformEventSink, PlatformState, ProcessedOutputSink,
     };
 
@@ -458,6 +463,8 @@ mod tests {
         let engine = Engine::start(EngineOptions::default(), move || FakePlatform {
             applied: platform_applied,
             reject_configuration: false,
+            events: None,
+            rebuild_sample_rate_hz: 48_000.0,
         })
         .unwrap();
         let configuration = Configuration::with_peaking_filter(PeakingFilter::new(
@@ -479,6 +486,8 @@ mod tests {
         let engine = Engine::start(EngineOptions::default(), || FakePlatform {
             applied: Arc::new(Mutex::new(Vec::new())),
             reject_configuration: true,
+            events: None,
+            rebuild_sample_rate_hz: 48_000.0,
         })
         .unwrap();
         let configuration = Configuration::with_peaking_filter(PeakingFilter::new(
@@ -494,23 +503,61 @@ mod tests {
         engine.shutdown().unwrap();
     }
 
+    #[test]
+    fn sample_rate_event_rebuilds_the_route() {
+        let events = Arc::new(Mutex::new(None));
+        let platform_events = Arc::clone(&events);
+        let engine = Engine::start(EngineOptions::default(), move || FakePlatform {
+            applied: Arc::new(Mutex::new(Vec::new())),
+            reject_configuration: false,
+            events: Some(platform_events),
+            rebuild_sample_rate_hz: 44_100.0,
+        })
+        .unwrap();
+        events
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .send(PlatformEvent::OutputSampleRateChanged)
+            .unwrap();
+
+        let deadline = Instant::now() + Duration::from_secs(1);
+        while engine
+            .snapshot()
+            .route
+            .is_none_or(|route| route.sample_rate_hz != 44_100.0)
+            && Instant::now() < deadline
+        {
+            thread::sleep(Duration::from_millis(10));
+        }
+
+        assert_eq!(engine.snapshot().route.unwrap().sample_rate_hz, 44_100.0);
+        engine.shutdown().unwrap();
+    }
+
     struct FakePlatform {
         applied: Arc<Mutex<Vec<Configuration>>>,
         reject_configuration: bool,
+        events: Option<Arc<Mutex<Option<PlatformEventSink>>>>,
+        rebuild_sample_rate_hz: f64,
     }
 
     impl AudioPlatform for FakePlatform {
         fn start(
             &mut self,
-            _events: PlatformEventSink,
+            events: PlatformEventSink,
             _output_sink: Option<Arc<dyn ProcessedOutputSink>>,
             _configuration: &Configuration,
         ) -> Result<PlatformState, PlatformError> {
-            Ok(platform_state())
+            if let Some(target) = &self.events {
+                *target.lock().unwrap() = Some(events);
+            }
+            Ok(platform_state(48_000.0))
         }
 
         fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError> {
-            Ok(platform_state())
+            Ok(platform_state(self.rebuild_sample_rate_hz))
         }
 
         fn set_bypassed(&mut self, _bypassed: bool) {}
@@ -531,12 +578,12 @@ mod tests {
         }
     }
 
-    fn platform_state() -> PlatformState {
+    fn platform_state(sample_rate_hz: f64) -> PlatformState {
         PlatformState {
             route: ActiveRoute {
                 device_id: DeviceId::new("fake"),
                 device_name: "Fake Output".into(),
-                sample_rate_hz: 48_000.0,
+                sample_rate_hz,
                 channels: 2,
             },
             devices: Vec::new(),

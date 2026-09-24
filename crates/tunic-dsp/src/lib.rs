@@ -224,9 +224,9 @@ impl StereoBiquad {
             a1: (-2.0 * cosine / a0) as f32,
             a2: ((1.0 - alpha / amplitude) / a0) as f32,
         };
-        if !coefficients.is_finite() {
+        if !coefficients.is_finite() || !coefficients.is_stable() {
             return Err(ConfigurationError::new(
-                "filter parameters do not produce finite coefficients",
+                "filter parameters do not produce a stable finite filter",
             ));
         }
         Ok(Self {
@@ -250,6 +250,12 @@ impl Coefficients {
         [self.b0, self.b1, self.b2, self.a1, self.a2]
             .into_iter()
             .all(f32::is_finite)
+    }
+
+    fn is_stable(self) -> bool {
+        let a1 = f64::from(self.a1);
+        let a2 = f64::from(self.a2);
+        a2.abs() < 1.0 && 1.0 + a1 + a2 > 0.0 && 1.0 - a1 + a2 > 0.0
     }
 }
 
@@ -362,6 +368,19 @@ mod tests {
         let filter = PeakingFilter::new(
             FrequencyHz::new(1_000.0).unwrap(),
             GainDb::new(f64::MAX).unwrap(),
+            QualityFactor::new(1.0).unwrap(),
+        );
+
+        assert!(
+            PreparedGraph::prepare(&Configuration::with_peaking_filter(filter), 48_000.0).is_err()
+        );
+    }
+
+    #[test]
+    fn preparation_rejects_coefficients_destabilized_by_f32_quantization() {
+        let filter = PeakingFilter::new(
+            FrequencyHz::new(1.0).unwrap(),
+            GainDb::new(6.0).unwrap(),
             QualityFactor::new(1.0).unwrap(),
         );
 
