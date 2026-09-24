@@ -8,14 +8,15 @@ use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const SAMPLE_RATE: u32 = 48_000;
-const LEFT_HZ: f32 = 997.0;
-const RIGHT_HZ: f32 = 7_999.0;
-const FILTER_GAIN_DB: f32 = 6.0;
-const BAND_GAIN_DB: f32 = FILTER_GAIN_DB / 2.0;
+const LEFT_HZ: f32 = 101.0;
+const RIGHT_HZ: f32 = 9_997.0;
+const SHELF_HZ: f32 = 1_000.0;
+const EXPECTED_CONTRAST_DB: f32 = 6.0;
+const SHELF_GAIN_DB: f32 = EXPECTED_CONTRAST_DB / 2.0;
 
 #[test]
 #[ignore = "uses the current macOS output device"]
-fn live_filter_changes_captured_audio() {
+fn shelf_filters_change_captured_gain_contrast() {
     let artifacts = Artifacts::new();
     write_probe(&artifacts.probe);
 
@@ -32,15 +33,15 @@ fn live_filter_changes_captured_audio() {
     let mut input = tunic.stdin.take().expect("capture Tunic stdin");
     writeln!(
         input,
-        "filter add --frequency {LEFT_HZ} --gain {BAND_GAIN_DB} --q 4"
+        "filter add low-shelf --frequency {SHELF_HZ} --gain {SHELF_GAIN_DB} --q 1"
     )
-    .expect("configure first peaking filter");
+    .expect("configure low-shelf filter");
     wait_for_output(&mut output, "Applied equalizer revision 1");
     writeln!(
         input,
-        "filter add --frequency {LEFT_HZ} --gain {BAND_GAIN_DB} --q 4"
+        "filter add high-shelf --frequency {SHELF_HZ} --gain -{SHELF_GAIN_DB} --q 1"
     )
-    .expect("configure second peaking filter");
+    .expect("configure high-shelf filter");
     wait_for_output(&mut output, "Applied equalizer revision 2");
 
     let playback = Command::new("/usr/bin/afplay")
@@ -137,15 +138,15 @@ fn verify_capture(path: &Path) {
     let right_frequency = positive_crossings(&right, first, last) as f32 / duration;
     let left_rms = rms(&left[first..=last]);
     let right_rms = rms(&right[first..=last]);
-    let measured_gain = left_rms / right_rms;
-    let expected_gain = 10.0_f32.powf(FILTER_GAIN_DB / 20.0);
+    let measured_contrast = left_rms / right_rms;
+    let expected_contrast = 10.0_f32.powf(EXPECTED_CONTRAST_DB / 20.0);
 
     println!(
-        "captured left={left_frequency:.1} Hz, right={right_frequency:.1} Hz, measured gain={measured_gain:.2}"
+        "captured left={left_frequency:.1} Hz, right={right_frequency:.1} Hz, measured low/high gain contrast={measured_contrast:.2}"
     );
     assert!((left_frequency - LEFT_HZ).abs() < 3.0);
     assert!((right_frequency - RIGHT_HZ).abs() < 3.0);
-    assert!((measured_gain - expected_gain).abs() < 0.1);
+    assert!((measured_contrast - expected_contrast).abs() < 0.1);
 }
 
 fn positive_crossings(samples: &[f32], first: usize, last: usize) -> usize {

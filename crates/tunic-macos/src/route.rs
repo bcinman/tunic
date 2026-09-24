@@ -760,7 +760,7 @@ mod tests {
         kAudioFormatFlagIsNonInterleaved, kAudioFormatLinearPCM,
     };
     use std::cell::Cell;
-    use tunic_dsp::{Equalizer, FrequencyHz, GainDb, PeakingFilter, PreparedGraph, QualityFactor};
+    use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, PreparedGraph, QualityFactor};
 
     #[test]
     fn graph_exchange_installs_the_latest_pending_graph() {
@@ -894,7 +894,7 @@ mod tests {
     }
 
     fn peaking_graph(gain_db: f64) -> PreparedGraph {
-        let equalizer = Equalizer::with_peaking_filter(PeakingFilter::new(
+        let equalizer = Equalizer::with_filter(Filter::peaking(
             FrequencyHz::new(1_000.0).unwrap(),
             GainDb::new(gain_db).unwrap(),
             QualityFactor::new(1.0).unwrap(),

@@ -1,9 +1,9 @@
 # Project Status
 
 Tunic is currently a working macOS headless multi-band equalizer prototype. It
-can capture system audio, apply live peaking filters, and render it to the
-current default output device. It is not yet a graphical application or a
-complete parametric equalizer.
+can capture system audio, apply live peaking and shelving filters, and render
+it to the current default output device. It is not yet a graphical application
+or a complete parametric equalizer.
 
 This file is the source of truth for implemented product capabilities. The
 crate READMEs and `STRUCTURE.md` also describe intended interfaces and future
@@ -22,28 +22,30 @@ architecture.
 - A non-real-time engine thread with immutable snapshots, bypass toggling, and
   orderly shutdown.
 - An allocation-free stereo DSP graph with zero reported latency.
-- An ordered cascade of validated peaking filters with configurable frequency,
-  gain, and Q, including post-quantization stability checks.
+- An ordered cascade of validated peaking, low-shelf, and high-shelf filters
+  with configurable frequency, gain, and Q, including post-quantization
+  stability checks.
 - Live, real-time-safe graph replacement from the engine to the audio callback.
 - Equalizer revisions published in engine snapshots.
 - A headless interactive CLI with:
   - engine and route status;
   - output-device listing and inspection;
   - processing bypass;
-  - live peaking-filter add, set, remove, and reset commands;
+  - live typed-filter add, set, remove, and reset commands;
   - optional post-DSP Float32 stereo WAV capture;
   - graceful quit and interrupt handling.
 - Filter history is cleared when bypass begins so stale ringing is not replayed
   when processing resumes.
 - Automated formatting, Clippy, and workspace test tasks through `mise`.
-- Unit coverage for identity and peaking DSP, equalizer validation and
-  publication, audio buffer handling, command parsing, and WAV capture.
-- An ignored hardware test that applies a live filter, plays a stereo probe
-  through the production route, and verifies its post-DSP gain.
+- Unit coverage for identity, peaking, and shelving DSP; equalizer validation
+  and publication; audio buffer handling; command parsing; and WAV capture.
+- An ignored hardware test that applies live low- and high-shelf filters, plays
+  a stereo probe through the production route, and verifies the combined
+  post-DSP low/high gain contrast.
 
 ## Not In Yet
 
-- Filter types other than peaking EQ.
+- Filter types other than peaking, low-shelf, and high-shelf EQ.
 - A versioned or serialized equalizer format.
 - Profiles, profile import/export, or per-device profile selection.
 - Persistent state or SQLite storage.
@@ -68,6 +70,10 @@ permanent exclusions from the product roadmap.
 - Supporting platforms other than macOS before the Core Audio path is stable.
 - Adding product-state features such as profiles and persistence before the
   processing path is proven.
+- Automatic route-rebuild recovery or retry until a rebuild failure is
+  reproduced through Core Audio. Fault injection confirms that the engine does
+  not retry, but normal and rapid output changes have not produced a platform
+  failure.
 - Optimizing or polishing distribution before the end-to-end product behavior
   is complete.
 

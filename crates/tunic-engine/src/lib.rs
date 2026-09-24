@@ -435,7 +435,7 @@ mod tests {
     use std::thread;
     use std::time::{Duration, Instant};
 
-    use tunic_dsp::{Equalizer, FrequencyHz, GainDb, PeakingFilter, QualityFactor};
+    use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, QualityFactor};
 
     use super::{
         ActiveRoute, AudioPlatform, DeviceId, Engine, EngineOptions, PlatformError, PlatformEvent,
@@ -453,13 +453,13 @@ mod tests {
             rebuild_sample_rate_hz: 48_000.0,
         })
         .unwrap();
-        let equalizer = Equalizer::with_peaking_filters(vec![
-            PeakingFilter::new(
+        let equalizer = Equalizer::with_filters(vec![
+            Filter::low_shelf(
                 FrequencyHz::new(100.0).unwrap(),
                 GainDb::new(3.0).unwrap(),
                 QualityFactor::new(0.7).unwrap(),
             ),
-            PeakingFilter::new(
+            Filter::high_shelf(
                 FrequencyHz::new(1_000.0).unwrap(),
                 GainDb::new(-6.0).unwrap(),
                 QualityFactor::new(1.5).unwrap(),
@@ -483,7 +483,7 @@ mod tests {
             rebuild_sample_rate_hz: 48_000.0,
         })
         .unwrap();
-        let equalizer = Equalizer::with_peaking_filter(PeakingFilter::new(
+        let equalizer = Equalizer::with_filter(Filter::peaking(
             FrequencyHz::new(1_000.0).unwrap(),
             GainDb::new(6.0).unwrap(),
             QualityFactor::new(1.0).unwrap(),

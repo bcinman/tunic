@@ -13,20 +13,20 @@
 
 ## Rough public interface
 
-The current implementation supports identity processing or an ordered cascade
-of peaking filters. Versioning, serialization, and additional filter types
-remain planned.
+The current implementation supports identity processing or an ordered mixed
+cascade of peaking, low-shelf, and high-shelf filters. Versioning,
+serialization, and additional filter types remain planned.
 
 ```rust
 pub struct Equalizer;
-pub struct PeakingFilter;
+pub enum Filter;
 pub struct PreparedGraph;
 
 impl Equalizer {
     pub fn identity() -> Self;
-    pub fn with_peaking_filter(filter: PeakingFilter) -> Self;
-    pub fn with_peaking_filters(filters: Vec<PeakingFilter>) -> Self;
-    pub fn peaking_filters(&self) -> &[PeakingFilter];
+    pub fn with_filter(filter: Filter) -> Self;
+    pub fn with_filters(filters: Vec<Filter>) -> Self;
+    pub fn filters(&self) -> &[Filter];
 }
 
 impl PreparedGraph {

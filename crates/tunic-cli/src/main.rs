@@ -10,8 +10,8 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use clap::{Parser, Subcommand};
-use tunic_dsp::{Equalizer, FrequencyHz, GainDb, PeakingFilter, QualityFactor};
+use clap::{Parser, Subcommand, ValueEnum};
+use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, QualityFactor};
 use tunic_engine::{
     Engine, EngineHandle, EngineOptions, EngineSnapshot, EngineStatus, OutputDevice,
     ProcessedOutputSink,
@@ -76,9 +76,11 @@ enum DeviceCommand {
 
 #[derive(Debug, Subcommand)]
 enum FilterCommand {
-    /// Add a peaking EQ band.
+    /// Add an EQ band.
     Add {
-        /// Center frequency in hertz.
+        /// Filter type.
+        kind: FilterKind,
+        /// Center or shelf frequency in hertz.
         #[arg(long)]
         frequency: f64,
         /// Gain in decibels.
@@ -88,11 +90,13 @@ enum FilterCommand {
         #[arg(long)]
         q: f64,
     },
-    /// Replace a peaking EQ band.
+    /// Replace an EQ band.
     Set {
         /// One-based band number shown by `status`.
         band: usize,
-        /// Center frequency in hertz.
+        /// Filter type.
+        kind: FilterKind,
+        /// Center or shelf frequency in hertz.
         #[arg(long)]
         frequency: f64,
         /// Gain in decibels.
@@ -102,13 +106,20 @@ enum FilterCommand {
         #[arg(long)]
         q: f64,
     },
-    /// Remove a peaking EQ band.
+    /// Remove an EQ band.
     Remove {
         /// One-based band number shown by `status`.
         band: usize,
     },
     /// Remove all EQ bands and return to identity processing.
     Reset,
+}
+
+#[derive(Clone, Copy, Debug, ValueEnum)]
+enum FilterKind {
+    Peaking,
+    LowShelf,
+    HighShelf,
 }
 
 fn main() {
@@ -245,18 +256,24 @@ fn equalizer_from_command(
     current: &Equalizer,
     command: FilterCommand,
 ) -> Result<Equalizer, String> {
-    let mut filters = current.peaking_filters().to_vec();
+    let mut filters = current.filters().to_vec();
     match command {
-        FilterCommand::Add { frequency, gain, q } => {
-            filters.push(peaking_filter(frequency, gain, q)?);
-        }
-        FilterCommand::Set {
-            band,
+        FilterCommand::Add {
+            kind,
             frequency,
             gain,
             q,
         } => {
-            let filter = peaking_filter(frequency, gain, q)?;
+            filters.push(filter(kind, frequency, gain, q)?);
+        }
+        FilterCommand::Set {
+            band,
+            kind,
+            frequency,
+            gain,
+            q,
+        } => {
+            let filter = filter(kind, frequency, gain, q)?;
             let Some(existing) = band.checked_sub(1).and_then(|index| filters.get_mut(index))
             else {
                 return Err(format!("filter band {band} does not exist"));
@@ -271,15 +288,18 @@ fn equalizer_from_command(
         }
         FilterCommand::Reset => filters.clear(),
     }
-    Ok(Equalizer::with_peaking_filters(filters))
+    Ok(Equalizer::with_filters(filters))
 }
 
-fn peaking_filter(frequency: f64, gain: f64, q: f64) -> Result<PeakingFilter, String> {
-    Ok(PeakingFilter::new(
-        FrequencyHz::new(frequency).map_err(|error| error.to_string())?,
-        GainDb::new(gain).map_err(|error| error.to_string())?,
-        QualityFactor::new(q).map_err(|error| error.to_string())?,
-    ))
+fn filter(kind: FilterKind, frequency: f64, gain: f64, q: f64) -> Result<Filter, String> {
+    let frequency = FrequencyHz::new(frequency).map_err(|error| error.to_string())?;
+    let gain = GainDb::new(gain).map_err(|error| error.to_string())?;
+    let quality_factor = QualityFactor::new(q).map_err(|error| error.to_string())?;
+    Ok(match kind {
+        FilterKind::Peaking => Filter::peaking(frequency, gain, quality_factor),
+        FilterKind::LowShelf => Filter::low_shelf(frequency, gain, quality_factor),
+        FilterKind::HighShelf => Filter::high_shelf(frequency, gain, quality_factor),
+    })
 }
 
 fn print_status(snapshot: &EngineSnapshot) {
@@ -306,7 +326,7 @@ fn print_status(snapshot: &EngineSnapshot) {
     } else {
         println!("Output: none");
     }
-    let filters = snapshot.equalizer.peaking_filters();
+    let filters = snapshot.equalizer.filters();
     if filters.is_empty() {
         println!(
             "Equalizer: identity (revision {})",
@@ -320,8 +340,13 @@ fn print_status(snapshot: &EngineSnapshot) {
             snapshot.equalizer_revision.get()
         );
         for (index, filter) in filters.iter().enumerate() {
+            let kind = match filter {
+                Filter::Peaking { .. } => "peaking",
+                Filter::LowShelf { .. } => "low-shelf",
+                Filter::HighShelf { .. } => "high-shelf",
+            };
             println!(
-                "  {}: peaking, {} Hz, {:+} dB, Q {}",
+                "  {}: {kind}, {} Hz, {:+} dB, Q {}",
                 index + 1,
                 filter.frequency().get(),
                 filter.gain().get(),
@@ -395,9 +420,12 @@ use clap::CommandFactory as _;
 
 #[cfg(test)]
 mod tests {
-    use super::{DeviceCommand, FilterCommand, SessionCli, SessionCommand, equalizer_from_command};
+    use super::{
+        DeviceCommand, FilterCommand, FilterKind, SessionCli, SessionCommand,
+        equalizer_from_command,
+    };
     use clap::Parser as _;
-    use tunic_dsp::Equalizer;
+    use tunic_dsp::{Equalizer, Filter};
 
     #[test]
     fn interactive_device_name_preserves_spaces() {
@@ -414,13 +442,14 @@ mod tests {
 
     #[test]
     fn parses_peaking_filter_with_negative_gain() {
-        let words = shlex::split("filter add --frequency 1000 --gain -6 --q 1.25").unwrap();
+        let words = shlex::split("filter add peaking --frequency 1000 --gain -6 --q 1.25").unwrap();
         let parsed = SessionCli::try_parse_from(words).unwrap();
 
         assert!(matches!(
             parsed.command,
             SessionCommand::Filter {
                 command: FilterCommand::Add {
+                    kind: FilterKind::Peaking,
                     frequency: 1000.0,
                     gain: -6.0,
                     q: 1.25,
@@ -434,6 +463,7 @@ mod tests {
         let result = equalizer_from_command(
             &Equalizer::identity(),
             FilterCommand::Add {
+                kind: FilterKind::LowShelf,
                 frequency: 0.0,
                 gain: 6.0,
                 q: 1.0,
@@ -448,6 +478,7 @@ mod tests {
         let first = equalizer_from_command(
             &Equalizer::identity(),
             FilterCommand::Add {
+                kind: FilterKind::LowShelf,
                 frequency: 100.0,
                 gain: 3.0,
                 q: 0.7,
@@ -457,6 +488,7 @@ mod tests {
         let second = equalizer_from_command(
             &first,
             FilterCommand::Add {
+                kind: FilterKind::HighShelf,
                 frequency: 1_000.0,
                 gain: -4.0,
                 q: 1.5,
@@ -467,6 +499,7 @@ mod tests {
             &second,
             FilterCommand::Set {
                 band: 1,
+                kind: FilterKind::Peaking,
                 frequency: 200.0,
                 gain: 6.0,
                 q: 1.0,
@@ -474,16 +507,18 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(changed.peaking_filters().len(), 2);
-        assert_eq!(changed.peaking_filters()[0].frequency().get(), 200.0);
-        assert_eq!(changed.peaking_filters()[1].frequency().get(), 1_000.0);
+        assert_eq!(changed.filters().len(), 2);
+        assert!(matches!(changed.filters()[0], Filter::Peaking { .. }));
+        assert_eq!(changed.filters()[0].frequency().get(), 200.0);
+        assert!(matches!(changed.filters()[1], Filter::HighShelf { .. }));
+        assert_eq!(changed.filters()[1].frequency().get(), 1_000.0);
 
         let removed = equalizer_from_command(&changed, FilterCommand::Remove { band: 1 }).unwrap();
-        assert_eq!(removed.peaking_filters().len(), 1);
-        assert_eq!(removed.peaking_filters()[0].frequency().get(), 1_000.0);
+        assert_eq!(removed.filters().len(), 1);
+        assert_eq!(removed.filters()[0].frequency().get(), 1_000.0);
 
         let reset = equalizer_from_command(&removed, FilterCommand::Reset).unwrap();
-        assert!(reset.peaking_filters().is_empty());
+        assert!(reset.filters().is_empty());
     }
 
     #[test]
@@ -491,6 +526,7 @@ mod tests {
         let equalizer = equalizer_from_command(
             &Equalizer::identity(),
             FilterCommand::Add {
+                kind: FilterKind::Peaking,
                 frequency: 100.0,
                 gain: 3.0,
                 q: 1.0,

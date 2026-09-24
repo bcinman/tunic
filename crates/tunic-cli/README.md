@@ -23,8 +23,8 @@ status
 device list
 device show [DEVICE]
 bypass
-filter add --frequency <HZ> --gain <DB> --q <Q>
-filter set <BAND> --frequency <HZ> --gain <DB> --q <Q>
+filter add <peaking|low-shelf|high-shelf> --frequency <HZ> --gain <DB> --q <Q>
+filter set <BAND> <peaking|low-shelf|high-shelf> --frequency <HZ> --gain <DB> --q <Q>
 filter remove <BAND>
 filter reset
 help
