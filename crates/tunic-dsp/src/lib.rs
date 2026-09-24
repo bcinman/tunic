@@ -3,6 +3,10 @@
 use std::f64::consts::TAU;
 use std::fmt;
 
+use serde::{Deserialize, Serialize};
+
+const EQUALIZER_DOCUMENT_VERSION: u32 = 1;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FrequencyHz(f64);
 
@@ -162,6 +166,130 @@ impl Equalizer {
     #[must_use]
     pub fn filters(&self) -> &[Filter] {
         &self.filters
+    }
+
+    pub fn parse_json(input: &str) -> Result<Self, EqualizerError> {
+        let document: EqualizerDocument = serde_json::from_str(input)
+            .map_err(|error| EqualizerError::new(format!("invalid equalizer JSON: {error}")))?;
+        if document.version != EQUALIZER_DOCUMENT_VERSION {
+            return Err(EqualizerError::new(format!(
+                "unsupported equalizer document version {}",
+                document.version
+            )));
+        }
+        let filters = document
+            .filters
+            .into_iter()
+            .map(Filter::try_from)
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(Self::with_filters(filters))
+    }
+
+    pub fn to_canonical_json(&self) -> Result<String, EqualizerError> {
+        let document = EqualizerDocument {
+            version: EQUALIZER_DOCUMENT_VERSION,
+            filters: self
+                .filters
+                .iter()
+                .copied()
+                .map(FilterDocument::from)
+                .collect(),
+        };
+        serde_json::to_string(&document)
+            .map_err(|error| EqualizerError::new(format!("serialize equalizer: {error}")))
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct EqualizerDocument {
+    version: u32,
+    filters: Vec<FilterDocument>,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(tag = "type", rename_all = "kebab-case", deny_unknown_fields)]
+enum FilterDocument {
+    Peaking {
+        frequency_hz: f64,
+        gain_db: f64,
+        q: f64,
+    },
+    LowShelf {
+        frequency_hz: f64,
+        gain_db: f64,
+        q: f64,
+    },
+    HighShelf {
+        frequency_hz: f64,
+        gain_db: f64,
+        q: f64,
+    },
+}
+
+impl From<Filter> for FilterDocument {
+    fn from(filter: Filter) -> Self {
+        let fields = (
+            filter.frequency().get(),
+            filter.gain().get(),
+            filter.quality_factor().get(),
+        );
+        match filter {
+            Filter::Peaking { .. } => Self::Peaking {
+                frequency_hz: fields.0,
+                gain_db: fields.1,
+                q: fields.2,
+            },
+            Filter::LowShelf { .. } => Self::LowShelf {
+                frequency_hz: fields.0,
+                gain_db: fields.1,
+                q: fields.2,
+            },
+            Filter::HighShelf { .. } => Self::HighShelf {
+                frequency_hz: fields.0,
+                gain_db: fields.1,
+                q: fields.2,
+            },
+        }
+    }
+}
+
+impl TryFrom<FilterDocument> for Filter {
+    type Error = EqualizerError;
+
+    fn try_from(filter: FilterDocument) -> Result<Self, Self::Error> {
+        let (kind, frequency_hz, gain_db, q) = match filter {
+            FilterDocument::Peaking {
+                frequency_hz,
+                gain_db,
+                q,
+            } => (Self::peaking as fn(_, _, _) -> _, frequency_hz, gain_db, q),
+            FilterDocument::LowShelf {
+                frequency_hz,
+                gain_db,
+                q,
+            } => (
+                Self::low_shelf as fn(_, _, _) -> _,
+                frequency_hz,
+                gain_db,
+                q,
+            ),
+            FilterDocument::HighShelf {
+                frequency_hz,
+                gain_db,
+                q,
+            } => (
+                Self::high_shelf as fn(_, _, _) -> _,
+                frequency_hz,
+                gain_db,
+                q,
+            ),
+        };
+        Ok(kind(
+            FrequencyHz::new(frequency_hz)?,
+            GainDb::new(gain_db)?,
+            QualityFactor::new(q)?,
+        ))
     }
 }
 
@@ -556,6 +684,49 @@ mod tests {
         assert!(FrequencyHz::new(f64::NAN).is_err());
         assert!(GainDb::new(f64::INFINITY).is_err());
         assert!(QualityFactor::new(-1.0).is_err());
+    }
+
+    #[test]
+    fn equalizer_json_round_trips_all_filter_types_in_order() {
+        let equalizer = Equalizer::with_filters(vec![
+            Filter::low_shelf(
+                FrequencyHz::new(80.0).unwrap(),
+                GainDb::new(2.5).unwrap(),
+                QualityFactor::new(0.7).unwrap(),
+            ),
+            Filter::peaking(
+                FrequencyHz::new(1_234.0).unwrap(),
+                GainDb::new(-4.5).unwrap(),
+                QualityFactor::new(1.25).unwrap(),
+            ),
+            Filter::high_shelf(
+                FrequencyHz::new(9_000.0).unwrap(),
+                GainDb::new(1.5).unwrap(),
+                QualityFactor::new(0.9).unwrap(),
+            ),
+        ]);
+
+        let json = equalizer.to_canonical_json().unwrap();
+
+        assert_eq!(Equalizer::parse_json(&json).unwrap(), equalizer);
+        assert_eq!(
+            json,
+            r#"{"version":1,"filters":[{"type":"low-shelf","frequency_hz":80.0,"gain_db":2.5,"q":0.7},{"type":"peaking","frequency_hz":1234.0,"gain_db":-4.5,"q":1.25},{"type":"high-shelf","frequency_hz":9000.0,"gain_db":1.5,"q":0.9}]}"#
+        );
+    }
+
+    #[test]
+    fn equalizer_json_rejects_unknown_versions_and_invalid_parameters() {
+        let unknown_version = r#"{"version":2,"filters":[]}"#;
+        let invalid_q = r#"{"version":1,"filters":[{"type":"peaking","frequency_hz":1000.0,"gain_db":3.0,"q":0.0}]}"#;
+
+        assert!(
+            Equalizer::parse_json(unknown_version)
+                .unwrap_err()
+                .to_string()
+                .contains("unsupported equalizer document version 2")
+        );
+        assert!(Equalizer::parse_json(invalid_q).is_err());
     }
 
     #[test]

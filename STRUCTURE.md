@@ -64,19 +64,21 @@ impl EngineHandle {
         equalizer: Equalizer,
     ) -> Result<(), SubmitError>;
 
-    pub fn save_equalizer(
-        &self,
-        equalizer: Equalizer,
-        expected_revision: EqualizerRevision,
-    ) -> Result<(), SubmitError>;
-
     pub fn preview_equalizer(
         &self,
         equalizer: Equalizer,
-        edit_revision: EditRevision,
-    ) -> Result<(), SubmitError>;
+        expected_revision: EditRevision,
+    ) -> Result<EditRevision, EngineError>;
 
-    pub fn discard_preview(&self) -> Result<(), SubmitError>;
+    pub fn save_equalizer(
+        &self,
+        expected_revision: EditRevision,
+    ) -> Result<EqualizerRevision, EngineError>;
+
+    pub fn discard_preview(
+        &self,
+        expected_revision: EditRevision,
+    ) -> Result<EditRevision, EngineError>;
 
     pub fn snapshots(&self) -> SnapshotReceiver;
     pub fn telemetry(&self) -> TelemetryReader;

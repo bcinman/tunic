@@ -1,13 +1,18 @@
 //! Authoritative product state and non-real-time coordination over portable
 //! processing provided by `tunic-dsp`.
 
+mod persistence;
+
 use std::fmt;
+use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use tunic_dsp::Equalizer;
+
+use crate::persistence::{ProfileStore, StoredProfile};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ProcessedOutputFormat {
@@ -44,6 +49,7 @@ pub trait ProcessedOutputSink: Send + Sync + 'static {
 pub struct EngineOptions {
     pub processed_output_sink: Option<Arc<dyn ProcessedOutputSink>>,
     pub equalizer: Equalizer,
+    pub database_path: Option<PathBuf>,
 }
 
 impl Default for EngineOptions {
@@ -51,6 +57,7 @@ impl Default for EngineOptions {
         Self {
             processed_output_sink: None,
             equalizer: Equalizer::identity(),
+            database_path: None,
         }
     }
 }
@@ -109,6 +116,8 @@ pub struct EngineSnapshot {
     pub devices: Vec<OutputDevice>,
     pub equalizer: Equalizer,
     pub equalizer_revision: EqualizerRevision,
+    pub edit_revision: EditRevision,
+    pub has_unsaved_changes: bool,
 }
 
 impl EngineSnapshot {
@@ -120,6 +129,8 @@ impl EngineSnapshot {
             devices: Vec::new(),
             equalizer,
             equalizer_revision: EqualizerRevision::INITIAL,
+            edit_revision: EditRevision::INITIAL,
+            has_unsaved_changes: false,
         }
     }
 }
@@ -137,6 +148,26 @@ impl EqualizerRevision {
 
     fn next(self) -> Self {
         Self(self.0.checked_add(1).expect("equalizer revision overflow"))
+    }
+
+    fn from_persisted(value: u64) -> Self {
+        Self(value)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct EditRevision(u64);
+
+impl EditRevision {
+    const INITIAL: Self = Self(0);
+
+    #[must_use]
+    pub fn get(self) -> u64 {
+        self.0
+    }
+
+    fn next(self) -> Self {
+        Self(self.0.checked_add(1).expect("edit revision overflow"))
     }
 }
 
@@ -198,7 +229,13 @@ impl std::error::Error for EngineError {}
 
 enum Command {
     ToggleBypass(Sender<bool>),
-    SetEqualizer(Equalizer, Sender<Result<EqualizerRevision, PlatformError>>),
+    PreviewEqualizer(
+        Equalizer,
+        EditRevision,
+        Sender<Result<EditRevision, EngineError>>,
+    ),
+    SaveEqualizer(EditRevision, Sender<Result<EqualizerRevision, EngineError>>),
+    DiscardPreview(EditRevision, Sender<Result<EditRevision, EngineError>>),
     Shutdown(Sender<Result<(), PlatformError>>),
 }
 
@@ -238,7 +275,7 @@ impl Engine {
             }),
             Ok(Err(error)) => {
                 let _ = worker.join();
-                Err(EngineError(error.to_string()))
+                Err(error)
             }
             Err(error) => {
                 let _ = worker.join();
@@ -269,15 +306,48 @@ impl EngineHandle {
             .map_err(|_| EngineError("engine stopped before applying bypass".into()))
     }
 
-    pub fn set_equalizer(&self, equalizer: Equalizer) -> Result<EqualizerRevision, EngineError> {
+    pub fn preview_equalizer(
+        &self,
+        equalizer: Equalizer,
+        expected_revision: EditRevision,
+    ) -> Result<EditRevision, EngineError> {
         let (result_tx, result_rx) = mpsc::channel();
         self.commands
-            .send(Command::SetEqualizer(equalizer, result_tx))
+            .send(Command::PreviewEqualizer(
+                equalizer,
+                expected_revision,
+                result_tx,
+            ))
             .map_err(|_| EngineError("engine is not running".into()))?;
         result_rx
             .recv()
-            .map_err(|_| EngineError("engine stopped before applying equalizer".into()))?
-            .map_err(|error| EngineError(error.to_string()))
+            .map_err(|_| EngineError("engine stopped before previewing equalizer".into()))?
+    }
+
+    pub fn save_equalizer(
+        &self,
+        expected_revision: EditRevision,
+    ) -> Result<EqualizerRevision, EngineError> {
+        let (result_tx, result_rx) = mpsc::channel();
+        self.commands
+            .send(Command::SaveEqualizer(expected_revision, result_tx))
+            .map_err(|_| EngineError("engine is not running".into()))?;
+        result_rx
+            .recv()
+            .map_err(|_| EngineError("engine stopped before saving equalizer".into()))?
+    }
+
+    pub fn discard_preview(
+        &self,
+        expected_revision: EditRevision,
+    ) -> Result<EditRevision, EngineError> {
+        let (result_tx, result_rx) = mpsc::channel();
+        self.commands
+            .send(Command::DiscardPreview(expected_revision, result_tx))
+            .map_err(|_| EngineError("engine is not running".into()))?;
+        result_rx
+            .recv()
+            .map_err(|_| EngineError("engine stopped before discarding equalizer preview".into()))?
     }
 
     pub fn shutdown(mut self) -> Result<(), EngineError> {
@@ -318,51 +388,151 @@ fn run_engine(
     options: EngineOptions,
     commands: Receiver<Command>,
     snapshot: Arc<RwLock<EngineSnapshot>>,
-    startup: mpsc::SyncSender<Result<(), PlatformError>>,
+    startup: mpsc::SyncSender<Result<(), EngineError>>,
 ) {
+    let mut store = match options.database_path.as_deref() {
+        Some(path) => match ProfileStore::open(path) {
+            Ok(store) => Some(store),
+            Err(error) => {
+                let _ = startup.send(Err(EngineError(error.to_string())));
+                return;
+            }
+        },
+        None => None,
+    };
+    let initial_profile = match &store {
+        Some(store) => match store.load_default_profile() {
+            Ok(profile) => SavedEqualizer::from(profile),
+            Err(error) => {
+                let _ = startup.send(Err(EngineError(error.to_string())));
+                return;
+            }
+        },
+        None => SavedEqualizer {
+            profile_id: None,
+            equalizer: options.equalizer,
+            revision: EqualizerRevision::INITIAL,
+        },
+    };
     let (events, event_rx) = mpsc::channel();
-    match platform.start(events, options.processed_output_sink, &options.equalizer) {
+    let initial_equalizer = initial_profile.equalizer.clone();
+    match platform.start(
+        events,
+        options.processed_output_sink,
+        &initial_profile.equalizer,
+    ) {
         Ok(state) => {
+            let selected_profile = match resolve_profile(store.as_ref(), &state, &initial_profile) {
+                Ok(profile) => profile,
+                Err(error) => {
+                    let _ = platform.shutdown();
+                    let _ = startup.send(Err(error));
+                    return;
+                }
+            };
+            if selected_profile.equalizer != initial_equalizer
+                && let Err(error) = platform.set_equalizer(&selected_profile.equalizer)
+            {
+                let _ = platform.shutdown();
+                let _ = startup.send(Err(EngineError(error.to_string())));
+                return;
+            }
             update_running_snapshot(
                 &snapshot,
                 state,
                 false,
-                options.equalizer,
-                EqualizerRevision::INITIAL,
+                selected_profile.equalizer.clone(),
+                selected_profile.revision,
+                EditRevision::INITIAL,
+                false,
             );
             let _ = startup.send(Ok(()));
+            run_commands(
+                platform,
+                store.as_mut(),
+                selected_profile,
+                commands,
+                event_rx,
+                snapshot,
+            );
         }
         Err(error) => {
-            let _ = startup.send(Err(error));
-            return;
+            let _ = startup.send(Err(EngineError(error.to_string())));
         }
     }
+}
 
+fn run_commands(
+    mut platform: impl AudioPlatform,
+    mut store: Option<&mut ProfileStore>,
+    mut saved_equalizer: SavedEqualizer,
+    commands: Receiver<Command>,
+    event_rx: Receiver<PlatformEvent>,
+    snapshot: Arc<RwLock<EngineSnapshot>>,
+) {
     loop {
         while let Ok(event) = event_rx.try_recv() {
+            let state = match platform.rebuild_default_route() {
+                Ok(state) => state,
+                Err(error) => {
+                    fail_snapshot(&snapshot, error.to_string());
+                    continue;
+                }
+            };
             match event {
-                PlatformEvent::DefaultOutputChanged | PlatformEvent::OutputSampleRateChanged => {
-                    match platform.rebuild_default_route() {
-                        Ok(state) => {
-                            let current = read_snapshot(&snapshot);
-                            let bypassed = current.bypassed;
-                            let equalizer = current.equalizer.clone();
-                            let equalizer_revision = current.equalizer_revision;
-                            drop(current);
+                PlatformEvent::DefaultOutputChanged => {
+                    let current = read_snapshot(&snapshot);
+                    let bypassed = current.bypassed;
+                    let current_equalizer = current.equalizer.clone();
+                    let mut edit_revision = current.edit_revision;
+                    let has_unsaved_changes = current.has_unsaved_changes;
+                    drop(current);
+                    match resolve_profile(store.as_deref(), &state, &saved_equalizer) {
+                        Ok(profile) => {
+                            let profile_changed = saved_equalizer.profile_id != profile.profile_id;
+                            if current_equalizer != profile.equalizer
+                                && let Err(error) = platform.set_equalizer(&profile.equalizer)
+                            {
+                                fail_snapshot(&snapshot, error.to_string());
+                                continue;
+                            }
+                            if profile_changed
+                                || has_unsaved_changes
+                                || current_equalizer != profile.equalizer
+                            {
+                                edit_revision = edit_revision.next();
+                            }
                             update_running_snapshot(
                                 &snapshot,
                                 state,
                                 bypassed,
-                                equalizer,
-                                equalizer_revision,
+                                profile.equalizer.clone(),
+                                profile.revision,
+                                edit_revision,
+                                false,
                             );
+                            saved_equalizer = profile;
                         }
-                        Err(error) => {
-                            let mut current = write_snapshot(&snapshot);
-                            current.status = EngineStatus::Failed(error.to_string());
-                            current.route = None;
-                        }
+                        Err(error) => fail_snapshot(&snapshot, error.to_string()),
                     }
+                }
+                PlatformEvent::OutputSampleRateChanged => {
+                    let current = read_snapshot(&snapshot);
+                    let bypassed = current.bypassed;
+                    let equalizer = current.equalizer.clone();
+                    let equalizer_revision = current.equalizer_revision;
+                    let edit_revision = current.edit_revision;
+                    let has_unsaved_changes = current.has_unsaved_changes;
+                    drop(current);
+                    update_running_snapshot(
+                        &snapshot,
+                        state,
+                        bypassed,
+                        equalizer,
+                        equalizer_revision,
+                        edit_revision,
+                        has_unsaved_changes,
+                    );
                 }
             }
         }
@@ -374,14 +544,79 @@ fn run_engine(
                 write_snapshot(&snapshot).bypassed = bypassed;
                 let _ = result.send(bypassed);
             }
-            Ok(Command::SetEqualizer(equalizer, result)) => {
-                let applied = platform.set_equalizer(&equalizer).map(|()| {
-                    let mut current = write_snapshot(&snapshot);
-                    current.equalizer = equalizer;
-                    current.equalizer_revision = current.equalizer_revision.next();
-                    current.equalizer_revision
-                });
-                let _ = result.send(applied);
+            Ok(Command::PreviewEqualizer(equalizer, expected_revision, result)) => {
+                let current_revision = read_snapshot(&snapshot).edit_revision;
+                let previewed = if current_revision != expected_revision {
+                    Err(stale_edit_revision(expected_revision, current_revision))
+                } else if read_snapshot(&snapshot).equalizer == equalizer {
+                    Ok(current_revision)
+                } else {
+                    platform
+                        .set_equalizer(&equalizer)
+                        .map_err(|error| EngineError(error.to_string()))
+                        .map(|()| {
+                            let mut current = write_snapshot(&snapshot);
+                            current.equalizer = equalizer;
+                            current.edit_revision = current.edit_revision.next();
+                            current.has_unsaved_changes =
+                                current.equalizer != saved_equalizer.equalizer;
+                            current.edit_revision
+                        })
+                };
+                let _ = result.send(previewed);
+            }
+            Ok(Command::SaveEqualizer(expected_revision, result)) => {
+                let current = read_snapshot(&snapshot);
+                let current_revision = current.edit_revision;
+                let has_unsaved_changes = current.has_unsaved_changes;
+                let equalizer = current.equalizer.clone();
+                let equalizer_revision = current.equalizer_revision;
+                drop(current);
+                let saved = if current_revision != expected_revision {
+                    Err(stale_edit_revision(expected_revision, current_revision))
+                } else if !has_unsaved_changes {
+                    Ok(equalizer_revision)
+                } else {
+                    let persisted_revision = match (&mut store, &saved_equalizer.profile_id) {
+                        (Some(store), Some(profile_id)) => store
+                            .save_profile(profile_id, &equalizer, equalizer_revision.get())
+                            .map(EqualizerRevision::from_persisted)
+                            .map_err(|error| EngineError(error.to_string())),
+                        _ => Ok(equalizer_revision.next()),
+                    };
+                    persisted_revision.inspect(|&revision| {
+                        saved_equalizer.equalizer = equalizer;
+                        saved_equalizer.revision = revision;
+                        let mut current = write_snapshot(&snapshot);
+                        current.equalizer_revision = revision;
+                        current.edit_revision = current.edit_revision.next();
+                        current.has_unsaved_changes = false;
+                    })
+                };
+                let _ = result.send(saved);
+            }
+            Ok(Command::DiscardPreview(expected_revision, result)) => {
+                let current = read_snapshot(&snapshot);
+                let current_revision = current.edit_revision;
+                let has_unsaved_changes = current.has_unsaved_changes;
+                drop(current);
+                let discarded = if current_revision != expected_revision {
+                    Err(stale_edit_revision(expected_revision, current_revision))
+                } else if !has_unsaved_changes {
+                    Ok(current_revision)
+                } else {
+                    platform
+                        .set_equalizer(&saved_equalizer.equalizer)
+                        .map_err(|error| EngineError(error.to_string()))
+                        .map(|()| {
+                            let mut current = write_snapshot(&snapshot);
+                            current.equalizer = saved_equalizer.equalizer.clone();
+                            current.edit_revision = current.edit_revision.next();
+                            current.has_unsaved_changes = false;
+                            current.edit_revision
+                        })
+                };
+                let _ = result.send(discarded);
             }
             Ok(Command::Shutdown(result)) => {
                 let shutdown = platform.shutdown();
@@ -400,12 +635,53 @@ fn run_engine(
     }
 }
 
+#[derive(Clone)]
+struct SavedEqualizer {
+    profile_id: Option<String>,
+    equalizer: Equalizer,
+    revision: EqualizerRevision,
+}
+
+impl From<StoredProfile> for SavedEqualizer {
+    fn from(profile: StoredProfile) -> Self {
+        Self {
+            profile_id: Some(profile.id),
+            equalizer: profile.equalizer,
+            revision: EqualizerRevision::from_persisted(profile.revision),
+        }
+    }
+}
+
+fn resolve_profile(
+    store: Option<&ProfileStore>,
+    state: &PlatformState,
+    fallback: &SavedEqualizer,
+) -> Result<SavedEqualizer, EngineError> {
+    store.map_or_else(
+        || Ok(fallback.clone()),
+        |store| {
+            store
+                .load_profile_for_device(state.route.device_id.as_str())
+                .map(SavedEqualizer::from)
+                .map_err(|error| EngineError(error.to_string()))
+        },
+    )
+}
+
+fn fail_snapshot(snapshot: &RwLock<EngineSnapshot>, error: String) {
+    let mut current = write_snapshot(snapshot);
+    current.status = EngineStatus::Failed(error);
+    current.route = None;
+}
+
 fn update_running_snapshot(
     snapshot: &RwLock<EngineSnapshot>,
     state: PlatformState,
     bypassed: bool,
     equalizer: Equalizer,
     equalizer_revision: EqualizerRevision,
+    edit_revision: EditRevision,
+    has_unsaved_changes: bool,
 ) {
     *write_snapshot(snapshot) = EngineSnapshot {
         status: EngineStatus::Running,
@@ -414,7 +690,17 @@ fn update_running_snapshot(
         devices: state.devices,
         equalizer,
         equalizer_revision,
+        edit_revision,
+        has_unsaved_changes,
     };
+}
+
+fn stale_edit_revision(expected: EditRevision, current: EditRevision) -> EngineError {
+    EngineError(format!(
+        "equalizer edit is stale: expected revision {}, current revision is {}",
+        expected.get(),
+        current.get()
+    ))
 }
 
 fn read_snapshot(
@@ -431,9 +717,10 @@ fn write_snapshot(
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
     use std::sync::{Arc, Mutex};
     use std::thread;
-    use std::time::{Duration, Instant};
+    use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
     use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, QualityFactor};
 
@@ -443,7 +730,7 @@ mod tests {
     };
 
     #[test]
-    fn publishes_equalizer_only_after_the_platform_accepts_it() {
+    fn publishes_preview_only_after_the_platform_accepts_it() {
         let applied = Arc::new(Mutex::new(Vec::new()));
         let platform_applied = Arc::clone(&applied);
         let engine = Engine::start(EngineOptions::default(), move || FakePlatform {
@@ -466,16 +753,106 @@ mod tests {
             ),
         ]);
 
-        let revision = engine.set_equalizer(equalizer.clone()).unwrap();
+        let revision = engine
+            .preview_equalizer(equalizer.clone(), engine.snapshot().edit_revision)
+            .unwrap();
 
         assert_eq!(revision.get(), 1);
-        assert_eq!(engine.snapshot().equalizer, equalizer);
+        let snapshot = engine.snapshot();
+        assert_eq!(snapshot.equalizer, equalizer);
+        assert_eq!(snapshot.equalizer_revision.get(), 0);
+        assert!(snapshot.has_unsaved_changes);
         assert_eq!(applied.lock().unwrap().as_slice(), &[equalizer]);
         engine.shutdown().unwrap();
     }
 
     #[test]
-    fn preserves_the_snapshot_when_the_platform_rejects_an_equalizer() {
+    fn save_commits_the_preview_and_discard_restores_it() {
+        let applied = Arc::new(Mutex::new(Vec::new()));
+        let platform_applied = Arc::clone(&applied);
+        let engine = Engine::start(EngineOptions::default(), move || FakePlatform {
+            applied: platform_applied,
+            reject_equalizer: false,
+            events: None,
+            rebuild_sample_rate_hz: 48_000.0,
+        })
+        .unwrap();
+        let saved = Equalizer::with_filter(Filter::low_shelf(
+            FrequencyHz::new(100.0).unwrap(),
+            GainDb::new(3.0).unwrap(),
+            QualityFactor::new(0.7).unwrap(),
+        ));
+        let discarded = Equalizer::with_filter(Filter::high_shelf(
+            FrequencyHz::new(8_000.0).unwrap(),
+            GainDb::new(-4.0).unwrap(),
+            QualityFactor::new(1.0).unwrap(),
+        ));
+
+        let preview_revision = engine
+            .preview_equalizer(saved.clone(), engine.snapshot().edit_revision)
+            .unwrap();
+        let equalizer_revision = engine.save_equalizer(preview_revision).unwrap();
+
+        let snapshot = engine.snapshot();
+        assert_eq!(equalizer_revision.get(), 1);
+        assert_eq!(snapshot.edit_revision.get(), 2);
+        assert!(!snapshot.has_unsaved_changes);
+
+        let preview_revision = engine
+            .preview_equalizer(discarded.clone(), snapshot.edit_revision)
+            .unwrap();
+        let discarded_revision = engine.discard_preview(preview_revision).unwrap();
+
+        let snapshot = engine.snapshot();
+        assert_eq!(discarded_revision.get(), 4);
+        assert_eq!(snapshot.equalizer, saved);
+        assert_eq!(snapshot.equalizer_revision.get(), 1);
+        assert!(!snapshot.has_unsaved_changes);
+        assert_eq!(
+            applied.lock().unwrap().as_slice(),
+            &[saved.clone(), discarded, saved]
+        );
+        engine.shutdown().unwrap();
+    }
+
+    #[test]
+    fn rejects_an_edit_based_on_a_stale_revision() {
+        let applied = Arc::new(Mutex::new(Vec::new()));
+        let platform_applied = Arc::clone(&applied);
+        let engine = Engine::start(EngineOptions::default(), move || FakePlatform {
+            applied: platform_applied,
+            reject_equalizer: false,
+            events: None,
+            rebuild_sample_rate_hz: 48_000.0,
+        })
+        .unwrap();
+        let original_revision = engine.snapshot().edit_revision;
+        let first = Equalizer::with_filter(Filter::peaking(
+            FrequencyHz::new(500.0).unwrap(),
+            GainDb::new(3.0).unwrap(),
+            QualityFactor::new(1.0).unwrap(),
+        ));
+        let stale = Equalizer::with_filter(Filter::peaking(
+            FrequencyHz::new(2_000.0).unwrap(),
+            GainDb::new(-3.0).unwrap(),
+            QualityFactor::new(1.0).unwrap(),
+        ));
+
+        engine
+            .preview_equalizer(first.clone(), original_revision)
+            .unwrap();
+        let error = engine
+            .preview_equalizer(stale, original_revision)
+            .unwrap_err();
+
+        assert!(error.to_string().contains("edit is stale"));
+        assert_eq!(engine.snapshot().equalizer, first.clone());
+        assert_eq!(applied.lock().unwrap().as_slice(), &[first]);
+        engine.shutdown().unwrap();
+    }
+
+    #[test]
+    fn preserves_the_snapshot_when_the_platform_rejects_a_preview() {
         let engine = Engine::start(EngineOptions::default(), || FakePlatform {
             applied: Arc::new(Mutex::new(Vec::new())),
             reject_equalizer: true,
@@ -489,10 +866,16 @@ mod tests {
             QualityFactor::new(1.0).unwrap(),
         ));
 
-        assert!(engine.set_equalizer(equalizer).is_err());
+        assert!(
+            engine
+                .preview_equalizer(equalizer, engine.snapshot().edit_revision)
+                .is_err()
+        );
         let snapshot = engine.snapshot();
         assert_eq!(snapshot.equalizer, Equalizer::identity());
         assert_eq!(snapshot.equalizer_revision.get(), 0);
+        assert_eq!(snapshot.edit_revision.get(), 0);
+        assert!(!snapshot.has_unsaved_changes);
         engine.shutdown().unwrap();
     }
 
@@ -507,6 +890,14 @@ mod tests {
             rebuild_sample_rate_hz: 44_100.0,
         })
         .unwrap();
+        let preview = Equalizer::with_filter(Filter::peaking(
+            FrequencyHz::new(750.0).unwrap(),
+            GainDb::new(2.0).unwrap(),
+            QualityFactor::new(1.0).unwrap(),
+        ));
+        let preview_revision = engine
+            .preview_equalizer(preview.clone(), engine.snapshot().edit_revision)
+            .unwrap();
         events
             .lock()
             .unwrap()
@@ -525,8 +916,109 @@ mod tests {
             thread::sleep(Duration::from_millis(10));
         }
 
-        assert_eq!(engine.snapshot().route.unwrap().sample_rate_hz, 44_100.0);
+        let snapshot = engine.snapshot();
+        assert_eq!(snapshot.route.unwrap().sample_rate_hz, 44_100.0);
+        assert_eq!(snapshot.equalizer, preview);
+        assert_eq!(snapshot.edit_revision, preview_revision);
+        assert!(snapshot.has_unsaved_changes);
         engine.shutdown().unwrap();
+    }
+
+    #[test]
+    fn profile_database_restores_saves_and_resolves_device_assignments() {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "tunic-engine-{}-{nonce}.sqlite3",
+            std::process::id()
+        ));
+        let equalizer = Equalizer::with_filter(Filter::high_shelf(
+            FrequencyHz::new(6_000.0).unwrap(),
+            GainDb::new(-2.5).unwrap(),
+            QualityFactor::new(0.8).unwrap(),
+        ));
+        let engine = Engine::start(
+            EngineOptions {
+                database_path: Some(path.clone()),
+                ..EngineOptions::default()
+            },
+            || FakePlatform {
+                applied: Arc::new(Mutex::new(Vec::new())),
+                reject_equalizer: false,
+                events: None,
+                rebuild_sample_rate_hz: 48_000.0,
+            },
+        )
+        .unwrap();
+        let edit_revision = engine
+            .preview_equalizer(equalizer.clone(), engine.snapshot().edit_revision)
+            .unwrap();
+        engine.save_equalizer(edit_revision).unwrap();
+        engine.shutdown().unwrap();
+
+        let restored = Engine::start(
+            EngineOptions {
+                database_path: Some(path.clone()),
+                ..EngineOptions::default()
+            },
+            || FakePlatform {
+                applied: Arc::new(Mutex::new(Vec::new())),
+                reject_equalizer: false,
+                events: None,
+                rebuild_sample_rate_hz: 48_000.0,
+            },
+        )
+        .unwrap();
+
+        let snapshot = restored.snapshot();
+        assert_eq!(snapshot.equalizer, equalizer);
+        assert_eq!(snapshot.equalizer_revision.get(), 1);
+        assert!(!snapshot.has_unsaved_changes);
+        restored.shutdown().unwrap();
+
+        let assigned_equalizer = Equalizer::with_filter(Filter::low_shelf(
+            FrequencyHz::new(120.0).unwrap(),
+            GainDb::new(4.0).unwrap(),
+            QualityFactor::new(0.7).unwrap(),
+        ));
+        let connection = rusqlite::Connection::open(&path).unwrap();
+        connection
+            .execute(
+                "INSERT INTO profiles (id, name, equalizer_json, revision)
+                 VALUES ('assigned', 'Assigned', ?1, 3)",
+                [assigned_equalizer.to_canonical_json().unwrap()],
+            )
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO device_profile_assignments (device_id, profile_id)
+                 VALUES ('fake', 'assigned')",
+                [],
+            )
+            .unwrap();
+        drop(connection);
+
+        let assigned = Engine::start(
+            EngineOptions {
+                database_path: Some(path.clone()),
+                ..EngineOptions::default()
+            },
+            || FakePlatform {
+                applied: Arc::new(Mutex::new(Vec::new())),
+                reject_equalizer: false,
+                events: None,
+                rebuild_sample_rate_hz: 48_000.0,
+            },
+        )
+        .unwrap();
+
+        let snapshot = assigned.snapshot();
+        assert_eq!(snapshot.equalizer, assigned_equalizer);
+        assert_eq!(snapshot.equalizer_revision.get(), 3);
+        assigned.shutdown().unwrap();
+        fs::remove_file(path).unwrap();
     }
 
     struct FakePlatform {

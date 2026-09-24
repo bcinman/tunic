@@ -34,6 +34,9 @@ enum Command {
         /// Capture processed stereo output as a Float32 WAV file.
         #[arg(long, value_name = "PATH")]
         capture: Option<PathBuf>,
+        /// Store Tunic state in this directory.
+        #[arg(long, value_name = "DIRECTORY")]
+        data_directory: Option<PathBuf>,
     },
 }
 
@@ -60,6 +63,10 @@ enum SessionCommand {
         #[command(subcommand)]
         command: FilterCommand,
     },
+    /// Persist the current equalizer preview.
+    Save,
+    /// Restore the last persisted equalizer.
+    Discard,
     /// Show interactive commands.
     Help,
     /// Shut down Tunic.
@@ -131,11 +138,18 @@ fn main() {
 
 fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
-        Command::Start { capture } => start_session(capture),
+        Command::Start {
+            capture,
+            data_directory,
+        } => start_session(capture, data_directory),
     }
 }
 
-fn start_session(capture_path: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+fn start_session(
+    capture_path: Option<PathBuf>,
+    data_directory: Option<PathBuf>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let data_directory = data_directory.map_or_else(default_data_directory, Ok)?;
     let capture = capture_path
         .as_ref()
         .map(|path| Arc::new(WavCapture::new(path)));
@@ -145,6 +159,7 @@ fn start_session(capture_path: Option<PathBuf>) -> Result<(), Box<dyn std::error
     let engine = Engine::start(
         EngineOptions {
             processed_output_sink: output_sink,
+            database_path: Some(data_directory.join("tunic.sqlite3")),
             ..EngineOptions::default()
         },
         CoreAudioPlatform::new,
@@ -184,6 +199,19 @@ fn start_session(capture_path: Option<PathBuf>) -> Result<(), Box<dyn std::error
     capture_result?;
     println!("Tunic stopped.");
     Ok(())
+}
+
+fn default_data_directory() -> io::Result<PathBuf> {
+    let home = std::env::var_os("HOME").ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::NotFound,
+            "HOME is not set; pass --data-directory",
+        )
+    })?;
+    Ok(PathBuf::from(home)
+        .join("Library")
+        .join("Application Support")
+        .join("Tunic"))
 }
 
 fn read_input(lines: mpsc::Sender<Option<String>>) {
@@ -239,10 +267,30 @@ fn handle_line(engine: &EngineHandle, line: &str) -> Result<bool, Box<dyn std::e
                     return Ok(false);
                 }
             };
-            match engine.set_equalizer(equalizer) {
+            match engine.preview_equalizer(equalizer, snapshot.edit_revision) {
                 Ok(revision) => {
-                    println!("Applied equalizer revision {}.", revision.get());
+                    println!("Previewing equalizer edit revision {}.", revision.get());
                 }
+                Err(error) => eprintln!("error: {error}"),
+            }
+        }
+        SessionCommand::Save => {
+            let snapshot = engine.snapshot();
+            match engine.save_equalizer(snapshot.edit_revision) {
+                Ok(revision) if snapshot.has_unsaved_changes => {
+                    println!("Saved equalizer revision {}.", revision.get());
+                }
+                Ok(_) => println!("No equalizer changes to save."),
+                Err(error) => eprintln!("error: {error}"),
+            }
+        }
+        SessionCommand::Discard => {
+            let snapshot = engine.snapshot();
+            match engine.discard_preview(snapshot.edit_revision) {
+                Ok(revision) if snapshot.has_unsaved_changes => {
+                    println!("Discarded preview at edit revision {}.", revision.get());
+                }
+                Ok(_) => println!("No equalizer changes to discard."),
                 Err(error) => eprintln!("error: {error}"),
             }
         }
@@ -329,15 +377,27 @@ fn print_status(snapshot: &EngineSnapshot) {
     let filters = snapshot.equalizer.filters();
     if filters.is_empty() {
         println!(
-            "Equalizer: identity (revision {})",
-            snapshot.equalizer_revision.get()
+            "Equalizer: identity (saved revision {}, edit revision {}{})",
+            snapshot.equalizer_revision.get(),
+            snapshot.edit_revision.get(),
+            if snapshot.has_unsaved_changes {
+                ", unsaved"
+            } else {
+                ""
+            }
         );
     } else {
         println!(
-            "Equalizer: {} {} (revision {})",
+            "Equalizer: {} {} (saved revision {}, edit revision {}{})",
             filters.len(),
             if filters.len() == 1 { "band" } else { "bands" },
-            snapshot.equalizer_revision.get()
+            snapshot.equalizer_revision.get(),
+            snapshot.edit_revision.get(),
+            if snapshot.has_unsaved_changes {
+                ", unsaved"
+            } else {
+                ""
+            }
         );
         for (index, filter) in filters.iter().enumerate() {
             let kind = match filter {
@@ -421,11 +481,25 @@ use clap::CommandFactory as _;
 #[cfg(test)]
 mod tests {
     use super::{
-        DeviceCommand, FilterCommand, FilterKind, SessionCli, SessionCommand,
+        Cli, Command, DeviceCommand, FilterCommand, FilterKind, SessionCli, SessionCommand,
         equalizer_from_command,
     };
     use clap::Parser as _;
     use tunic_dsp::{Equalizer, Filter};
+
+    #[test]
+    fn parses_a_custom_data_directory() {
+        let parsed =
+            Cli::try_parse_from(["tunic", "start", "--data-directory", "/tmp/tunic-test"]).unwrap();
+
+        assert!(matches!(
+            parsed.command,
+            Command::Start {
+                data_directory: Some(path),
+                ..
+            } if path == std::path::Path::new("/tmp/tunic-test")
+        ));
+    }
 
     #[test]
     fn interactive_device_name_preserves_spaces() {

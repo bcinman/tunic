@@ -16,33 +16,57 @@ const SHELF_GAIN_DB: f32 = EXPECTED_CONTRAST_DB / 2.0;
 
 #[test]
 #[ignore = "uses the current macOS output device"]
-fn shelf_filters_change_captured_gain_contrast() {
+fn saved_shelf_filters_survive_restart_and_change_captured_gain_contrast() {
     let artifacts = Artifacts::new();
     write_probe(&artifacts.probe);
 
     let mut tunic = Command::new(env!("CARGO_BIN_EXE_tunic"))
-        .args(["start", "--capture"])
-        .arg(&artifacts.capture)
+        .arg("start")
+        .arg("--data-directory")
+        .arg(&artifacts.data_directory)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .spawn()
         .expect("start Tunic");
     let mut output = BufReader::new(tunic.stdout.take().expect("capture Tunic stdout"));
-    wait_for_output(&mut output, "Capturing processed output");
+    wait_for_output(&mut output, "Tunic is processing system audio");
     let mut input = tunic.stdin.take().expect("capture Tunic stdin");
     writeln!(
         input,
         "filter add low-shelf --frequency {SHELF_HZ} --gain {SHELF_GAIN_DB} --q 1"
     )
     .expect("configure low-shelf filter");
-    wait_for_output(&mut output, "Applied equalizer revision 1");
+    wait_for_output(&mut output, "Previewing equalizer edit revision 1");
     writeln!(
         input,
         "filter add high-shelf --frequency {SHELF_HZ} --gain -{SHELF_GAIN_DB} --q 1"
     )
     .expect("configure high-shelf filter");
-    wait_for_output(&mut output, "Applied equalizer revision 2");
+    wait_for_output(&mut output, "Previewing equalizer edit revision 2");
+    input.write_all(b"save\n").expect("save equalizer");
+    wait_for_output(&mut output, "Saved equalizer revision 1");
+    input.write_all(b"quit\n").expect("stop Tunic");
+    let status = tunic.wait().expect("wait for Tunic");
+    assert!(status.success(), "Tunic failed with {status}");
+
+    let mut tunic = Command::new(env!("CARGO_BIN_EXE_tunic"))
+        .args(["start", "--capture"])
+        .arg(&artifacts.capture)
+        .arg("--data-directory")
+        .arg(&artifacts.data_directory)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::inherit())
+        .spawn()
+        .expect("restart Tunic");
+    let mut output = BufReader::new(tunic.stdout.take().expect("capture Tunic stdout"));
+    wait_for_output(&mut output, "Capturing processed output");
+    wait_for_output(
+        &mut output,
+        "Equalizer: 2 bands (saved revision 1, edit revision 0)",
+    );
+    let mut input = tunic.stdin.take().expect("capture Tunic stdin");
 
     let playback = Command::new("/usr/bin/afplay")
         .arg(&artifacts.probe)
@@ -162,6 +186,7 @@ fn rms(samples: &[f32]) -> f32 {
 struct Artifacts {
     probe: PathBuf,
     capture: PathBuf,
+    data_directory: PathBuf,
 }
 
 impl Artifacts {
@@ -174,6 +199,7 @@ impl Artifacts {
         Self {
             probe: std::env::temp_dir().join(format!("{stem}-probe.wav")),
             capture: std::env::temp_dir().join(format!("{stem}-capture.wav")),
+            data_directory: std::env::temp_dir().join(format!("{stem}-data")),
         }
     }
 }
@@ -182,5 +208,6 @@ impl Drop for Artifacts {
     fn drop(&mut self) {
         let _ = fs::remove_file(&self.probe);
         let _ = fs::remove_file(&self.capture);
+        let _ = fs::remove_dir_all(&self.data_directory);
     }
 }

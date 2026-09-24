@@ -2,8 +2,7 @@
 
 **Responsibility:** Portable audio-processing definitions and algorithms.
 
-- Defines and validates the equalizer; versioning and
-  serialization are planned.
+- Defines, validates, and serializes the versioned equalizer document.
 - Rejects invalid filter parameters and sample-rate-specific equalizers.
 - Prepares processing graphs for a specific sample rate.
 - Processes arbitrary stereo frame counts without allocation.
@@ -14,8 +13,8 @@
 ## Rough public interface
 
 The current implementation supports identity processing or an ordered mixed
-cascade of peaking, low-shelf, and high-shelf filters. Versioning,
-serialization, and additional filter types remain planned.
+cascade of peaking, low-shelf, and high-shelf filters. Additional filter types
+remain planned.
 
 ```rust
 pub struct Equalizer;
@@ -27,6 +26,8 @@ impl Equalizer {
     pub fn with_filter(filter: Filter) -> Self;
     pub fn with_filters(filters: Vec<Filter>) -> Self;
     pub fn filters(&self) -> &[Filter];
+    pub fn parse_json(input: &str) -> Result<Self, EqualizerError>;
+    pub fn to_canonical_json(&self) -> Result<String, EqualizerError>;
 }
 
 impl PreparedGraph {

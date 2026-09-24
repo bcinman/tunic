@@ -5,6 +5,7 @@
 - Owns profiles and per-device preferences.
 - Owns SQLite persistence.
 - Tracks desired state, observed output, and active processing state.
+- Owns the persisted equalizer and in-memory live preview.
 - Serializes user requests and platform events.
 - Coordinates route preparation, activation, retirement, retries, and shutdown.
 - Publishes immutable state snapshots and latest telemetry.
@@ -33,19 +34,21 @@ impl EngineHandle {
         equalizer: Equalizer,
     ) -> Result<(), SubmitError>;
 
-    pub fn save_equalizer(
-        &self,
-        equalizer: Equalizer,
-        expected_revision: EqualizerRevision,
-    ) -> Result<(), SubmitError>;
-
     pub fn preview_equalizer(
         &self,
         equalizer: Equalizer,
-        edit_revision: EditRevision,
-    ) -> Result<(), SubmitError>;
+        expected_revision: EditRevision,
+    ) -> Result<EditRevision, EngineError>;
 
-    pub fn discard_preview(&self) -> Result<(), SubmitError>;
+    pub fn save_equalizer(
+        &self,
+        expected_revision: EditRevision,
+    ) -> Result<EqualizerRevision, EngineError>;
+
+    pub fn discard_preview(
+        &self,
+        expected_revision: EditRevision,
+    ) -> Result<EditRevision, EngineError>;
 
     pub fn snapshots(&self) -> SnapshotReceiver;
     pub fn telemetry(&self) -> TelemetryReader;
@@ -77,5 +80,14 @@ pub trait AudioPlatform: Send + 'static {
 ```
 
 Commands, events, effects, and reducer details can remain private to the engine.
+
+## Persistence
+
+When `EngineOptions::database_path` is set, the engine creates a versioned
+SQLite database containing profiles, the fallback profile selection, and
+per-device profile assignments. A fresh database contains one `Default`
+profile. Equalizers are stored as versioned JSON documents, while profile
+revisions and relationships remain relational. The CLI stores this database at
+`~/Library/Application Support/Tunic/tunic.sqlite3` by default.
 
 See the [workspace structure](../../STRUCTURE.md) for the complete crate layout and dependency direction.

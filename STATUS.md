@@ -26,12 +26,18 @@ architecture.
   with configurable frequency, gain, and Q, including post-quantization
   stability checks.
 - Live, real-time-safe graph replacement from the engine to the audio callback.
-- Equalizer revisions published in engine snapshots.
+- Versioned JSON equalizer documents with strict validation on load.
+- A SQLite profile store with a seeded fallback profile, per-device assignment
+  schema, optimistic saved revisions, and automatic schema versioning.
+- In-memory previews with live save and discard workflows. Saved equalizers are
+  restored across restarts, while previews remain ephemeral.
+- Saved equalizer and edit revisions published in engine snapshots.
 - A headless interactive CLI with:
   - engine and route status;
   - output-device listing and inspection;
   - processing bypass;
   - live typed-filter add, set, remove, and reset commands;
+  - persistent equalizer save and discard commands;
   - optional post-DSP Float32 stereo WAV capture;
   - graceful quit and interrupt handling.
 - Filter history is cleared when bypass begins so stale ringing is not replayed
@@ -46,10 +52,8 @@ architecture.
 ## Not In Yet
 
 - Filter types other than peaking, low-shelf, and high-shelf EQ.
-- A versioned or serialized equalizer format.
-- Profiles, profile import/export, or per-device profile selection.
-- Persistent state or SQLite storage.
-- Live equalizer preview, save, and discard workflows.
+- User-facing profile management, profile import/export, or per-device profile
+  assignment commands.
 - Telemetry, meters, or snapshot streaming.
 - Automatic recovery or retry after route rebuild failures.
 - Route handoff, crossfading, or sample-rate conversion.
@@ -68,8 +72,6 @@ permanent exclusions from the product roadmap.
 - Building the graphical application before the engine and DSP contracts are
   proven through the headless client.
 - Supporting platforms other than macOS before the Core Audio path is stable.
-- Adding product-state features such as profiles and persistence before the
-  processing path is proven.
 - Automatic route-rebuild recovery or retry until a rebuild failure is
   reproduced through Core Audio. Fault injection confirms that the engine does
   not retry, but normal and rapid output changes have not produced a platform
