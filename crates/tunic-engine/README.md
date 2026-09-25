@@ -185,9 +185,10 @@ require any preview to be saved or discarded first.
 ## Telemetry
 
 The engine owns a lock-free latest-value channel for post-DSP stereo peak/RMS
-levels and a fixed 28-band spectrum from 31.5 Hz through 16 kHz. The platform
-publishes smoothed, decaying measurements from its real-time audio callback
-only while at least one `TelemetryReader` exists. Readers act as meter
+levels and a fixed 256-point spectrum from 20 Hz through 20 kHz. `tunic-dsp`
+owns the portable analysis and smoothing; the active platform feeds it
+normalized post-DSP samples and publishes each result from its real-time audio
+callback only while at least one `TelemetryReader` exists. Readers act as meter
 subscriptions: cloning one keeps the same subscription alive, and dropping the
 last clone disables measurement when no other reader exists. Telemetry is
 intentionally separate from engine snapshots and commands so a meter can poll
@@ -198,7 +199,7 @@ and poll `try_latest()`. The platform receives `TelemetryPublisher` during
 startup. It calls `active_generation()` before doing measurement work and
 publishes a `TelemetryFrame` for that generation; publications for inactive or
 superseded generations are ignored. `TelemetryFrame` contains `StereoLevels`
-and `Spectrum`, while `SPECTRUM_FREQUENCIES_HZ` defines the center frequency of
-each of the `SPECTRUM_BAND_COUNT` bands.
+and `Spectrum`, while `spectrum_frequency_hz` maps each of the
+`SPECTRUM_POINT_COUNT` logarithmically spaced points to its center frequency.
 
 See the [workspace structure](../../STRUCTURE.md) for the complete crate layout and dependency direction.

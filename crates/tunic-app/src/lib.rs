@@ -16,6 +16,7 @@ use gpui::{
 use tunic_dsp::{Equalizer, Filter, FilterKind, FrequencyHz, GainDb, PreparedGraph, QualityFactor};
 use tunic_engine::{
     EditRevision, Engine, EngineHandle, EngineOptions, EngineSnapshot, EngineStatus,
+    SPECTRUM_POINT_COUNT, Spectrum, TelemetryReader,
 };
 use tunic_macos::CoreAudioPlatform;
 
@@ -144,6 +145,7 @@ fn show_main_window(cx: &mut App, state: Entity<TunicView>) -> gpui::Result<()> 
 struct TunicView {
     engine: Option<EngineHandle>,
     snapshot: EngineSnapshot,
+    spectrum: Entity<SpectrumView>,
     graph_bounds: Rc<Cell<Bounds<Pixels>>>,
     dragging_filter: Option<(usize, EditRevision)>,
     pending_drag_preview: Option<DragPreview>,
@@ -151,6 +153,43 @@ struct TunicView {
     editor_error: Option<String>,
     _refresh_task: Task<()>,
     _drag_preview_task: Task<()>,
+}
+
+struct SpectrumView {
+    telemetry: TelemetryReader,
+    spectrum: Spectrum,
+    _refresh_task: Task<()>,
+}
+
+impl SpectrumView {
+    fn new(telemetry: TelemetryReader, cx: &mut Context<Self>) -> Self {
+        let refresh_task = cx.spawn(async move |this, cx| {
+            loop {
+                cx.background_executor()
+                    .timer(Duration::from_micros(16_667))
+                    .await;
+                if this
+                    .update(cx, |this, cx| {
+                        let Some(frame) = this.telemetry.try_latest() else {
+                            return;
+                        };
+                        if frame.spectrum != this.spectrum {
+                            this.spectrum = frame.spectrum;
+                            cx.notify();
+                        }
+                    })
+                    .is_err()
+                {
+                    break;
+                }
+            }
+        });
+        Self {
+            telemetry,
+            spectrum: Spectrum::default(),
+            _refresh_task: refresh_task,
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -174,6 +213,7 @@ impl DragPreview {
 impl TunicView {
     fn new(engine: EngineHandle, cx: &mut Context<Self>) -> Self {
         let snapshot = engine.snapshot();
+        let spectrum = cx.new(|cx| SpectrumView::new(engine.subscribe_telemetry(), cx));
         let refresh_task = cx.spawn(async move |this, cx| {
             loop {
                 cx.background_executor()
@@ -224,6 +264,7 @@ impl TunicView {
         Self {
             engine: Some(engine),
             snapshot,
+            spectrum,
             graph_bounds: Rc::new(Cell::new(Bounds::default())),
             dragging_filter: None,
             pending_drag_preview: None,
@@ -487,6 +528,51 @@ impl TunicView {
     }
 }
 
+impl Render for SpectrumView {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        let spectrum = self.spectrum;
+        canvas(
+            move |bounds, _, _| {
+                let mut fill = PathBuilder::fill();
+                fill.move_to(point(bounds.left(), bounds.bottom()));
+                for (index, amplitude) in spectrum.points.into_iter().enumerate() {
+                    let x = bounds.left() + bounds.size.width * spectrum_point_ratio(index);
+                    let y =
+                        bounds.top() + bounds.size.height * spectrum_amplitude_to_ratio(amplitude);
+                    fill.line_to(point(x, y));
+                }
+                fill.line_to(point(bounds.right(), bounds.bottom()));
+                fill.close();
+
+                let mut curve = PathBuilder::stroke(px(1.0));
+                for (index, amplitude) in spectrum.points.into_iter().enumerate() {
+                    let x = bounds.left() + bounds.size.width * spectrum_point_ratio(index);
+                    let y =
+                        bounds.top() + bounds.size.height * spectrum_amplitude_to_ratio(amplitude);
+                    if index == 0 {
+                        curve.move_to(point(x, y));
+                    } else {
+                        curve.line_to(point(x, y));
+                    }
+                }
+                (fill.build().ok(), curve.build().ok())
+            },
+            |_, (fill, curve), window, _| {
+                if let Some(fill) = fill {
+                    window.paint_path(fill, rgba(0x297ca638));
+                }
+                if let Some(curve) = curve {
+                    window.paint_path(curve, rgba(0x5cc8ff78));
+                }
+            },
+        )
+        .absolute()
+        .top(px(0.0))
+        .left(px(0.0))
+        .size_full()
+    }
+}
+
 impl Render for TunicView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let (status, status_color, route) =
@@ -562,6 +648,7 @@ impl Render for TunicView {
                     .bg(rgb(0x0d1117))
                     .border_1()
                     .border_color(rgb(0x3a404a))
+                    .child(self.spectrum.clone())
                     .child(
                         canvas(
                             move |bounds, _, _| {
@@ -890,6 +977,7 @@ const MIN_GAIN_DB: f64 = -24.0;
 const MAX_GAIN_DB: f64 = 24.0;
 const MIN_Q: f64 = 0.1;
 const MAX_Q: f64 = 10.0;
+const SPECTRUM_FLOOR_DB: f32 = -72.0;
 
 fn parameter_control<F>(
     label: &'static str,
@@ -972,6 +1060,19 @@ fn gain_at_ratio(ratio: f64) -> f64 {
     MAX_GAIN_DB - ratio * (MAX_GAIN_DB - MIN_GAIN_DB)
 }
 
+fn spectrum_amplitude_to_ratio(amplitude: f32) -> f32 {
+    let decibels = if amplitude > 0.0 {
+        20.0 * amplitude.log10()
+    } else {
+        SPECTRUM_FLOOR_DB
+    };
+    -decibels.clamp(SPECTRUM_FLOOR_DB, 0.0) / -SPECTRUM_FLOOR_DB
+}
+
+fn spectrum_point_ratio(index: usize) -> f32 {
+    index as f32 / (SPECTRUM_POINT_COUNT - 1) as f32
+}
+
 fn filter_position(bounds: Bounds<Pixels>, filter: Filter) -> gpui::Point<Pixels> {
     point(
         bounds.left() + bounds.size.width * frequency_to_ratio(filter.frequency().get()) as f32,
@@ -1047,7 +1148,7 @@ mod tests {
     use super::{
         DragPreview, MAX_FREQUENCY_HZ, MAX_GAIN_DB, MIN_FREQUENCY_HZ, MIN_GAIN_DB,
         frequency_at_ratio, frequency_to_ratio, make_filter, parameters_at_position,
-        status_content,
+        spectrum_amplitude_to_ratio, status_content,
     };
     use tunic_dsp::{Equalizer, FilterKind};
     use tunic_engine::{
@@ -1085,6 +1186,14 @@ mod tests {
         assert_eq!(right_frequency, MAX_FREQUENCY_HZ);
         assert_eq!(top_gain, MAX_GAIN_DB);
         assert_eq!(bottom_gain, MIN_GAIN_DB);
+    }
+
+    #[test]
+    fn spectrum_projection_maps_dbfs_to_the_graph_height() {
+        assert_eq!(spectrum_amplitude_to_ratio(1.0), 0.0);
+        assert!((spectrum_amplitude_to_ratio(0.001) - 5.0 / 6.0).abs() < 1e-6);
+        assert_eq!(spectrum_amplitude_to_ratio(0.0), 1.0);
+        assert_eq!(spectrum_amplitude_to_ratio(2.0), 0.0);
     }
 
     #[test]

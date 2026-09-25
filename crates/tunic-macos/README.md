@@ -9,7 +9,8 @@
 - Negotiates stream formats.
 - Owns capture/render transport and resampling, using `tunic-dsp` for portable
   graph publication and crossfades.
-- Publishes callback-safe smoothed level and RTA telemetry.
+- Feeds normalized post-DSP samples to the `tunic-dsp` analyzer and publishes
+  its results through the callback-safe engine telemetry channel.
 - Guarantees ordered activation, handoff, retirement, and teardown.
 - Contains no profile, persistence, or UI policy.
 

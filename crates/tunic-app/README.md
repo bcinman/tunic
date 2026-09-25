@@ -4,9 +4,10 @@
 
 The GPUI-CE application starts the production engine and provides a graphical
 parametric equalizer editor. Its response graph supports direct frequency/gain
-dragging; band rows provide filter-type, frequency, gain, Q, and removal
-controls. Drag previews are coalesced while preserving the final pointer value.
-Changes preview live and can be saved or reverted. Run it with:
+dragging and overlays the live post-EQ spectrum behind the response curve; band
+rows provide filter-type, frequency, gain, Q, and removal controls. Drag
+previews are coalesced while preserving the final pointer value. Changes
+preview live and can be saved or reverted. Run it with:
 
 ```console
 mise run app

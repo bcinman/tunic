@@ -36,10 +36,10 @@ architecture.
   restored across restarts, while previews remain ephemeral.
 - Saved equalizer and edit revisions published in engine snapshots.
 - Ordered engine snapshot subscriptions with immediate initial-state delivery.
-- Demand-driven, real-time-safe post-DSP stereo peak/RMS and 28-band RTA
-  measurement, with attack smoothing and controlled dB decay, published at 30
-  Hz through a lock-free latest-value engine telemetry reader only while a
-  meter consumer is active.
+- Demand-driven, real-time-safe post-DSP stereo peak/RMS and 256-point spectrum
+  measurement in the portable DSP crate, with attack smoothing and controlled
+  dB decay, published at 60 Hz through a lock-free latest-value engine telemetry
+  reader only while a meter consumer is active.
 - A headless interactive CLI with:
   - engine and route status;
   - continuous engine snapshot watching;
@@ -52,20 +52,20 @@ architecture.
   - optional post-DSP Float32 stereo WAV capture;
   - graceful quit and interrupt handling.
 - A GPUI-CE desktop application with live engine and output-route status,
-  equalizer bypass, and a logarithmic response graph. Filters can be added,
-  dragged to edit frequency/gain, adjusted by type/frequency/gain/Q controls,
-  removed, previewed live, saved, or reverted. Drag previews coalesce to the
-  latest value at a controlled rate and always flush the final value. Closing
-  its window keeps processing active, and Dock reactivation or Window > Show
-  Tunic opens it again.
+  equalizer bypass, and a logarithmic response graph with a live post-EQ
+  spectrum backdrop. Filters can be added, dragged to edit frequency/gain,
+  adjusted by type/frequency/gain/Q controls, removed, previewed live, saved,
+  or reverted. Drag previews coalesce to the latest value at a controlled rate
+  and always flush the final value. Closing its window keeps processing active,
+  and Dock reactivation or Window > Show Tunic opens it again.
 - Filter history is cleared when bypass begins so stale ringing is not replayed
   when processing resumes.
 - Automated formatting, Clippy, and workspace test tasks through `mise`.
 - A Criterion DSP processing benchmark covering 0, 5, 10, and 20 filters at
   common buffer lengths and sample rates.
 - Unit coverage for identity, peaking, and shelving DSP; equalizer validation
-  and publication; audio buffer handling; telemetry calculation and
-  publication; command parsing; and WAV capture.
+  and publication; portable telemetry analysis; platform audio buffer handling;
+  telemetry publication; command parsing; and WAV capture.
 - An ignored hardware test that applies live low- and high-shelf filters, plays
   a stereo probe through the production route, and verifies telemetry plus the
   combined post-DSP low/high gain contrast.
@@ -76,7 +76,7 @@ architecture.
 - Profile import/export.
 - Automatic recovery or retry after route rebuild failures.
 - Route handoff, crossfading, or sample-rate conversion.
-- Graphical profile management or telemetry.
+- Graphical profile management or peak/RMS meters.
 - Linux or Windows audio backends.
 - Packaging, signing, release automation, or end-user installation.
 - Most of the command surface documented in `crates/tunic-cli/README.md`; only

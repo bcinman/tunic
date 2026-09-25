@@ -126,6 +126,8 @@ Commands, events, effects, and reducer details can remain private to the engine.
 - Owns real-time-safe latest-graph publication, retirement, and smooth graph
   replacement for every platform callback.
 - Processes arbitrary stereo frame counts without allocation.
+- Owns portable, callback-safe peak/RMS and spectrum analysis over normalized
+  post-DSP stereo samples.
 - Supports reset, bypass integration, and latency reporting.
 - Contains mathematical, impulse-response, and frequency-response tests.
 - Knows nothing about devices, GPUI, profiles, persistence, or Core Audio.
@@ -165,7 +167,8 @@ impl PreparedGraph {
 - Negotiates stream formats.
 - Owns capture/render transport and resampling, using the portable DSP graph
   processor for publication and crossfades.
-- Publishes callback-safe telemetry.
+- Feeds normalized post-DSP samples to the portable analyzer and publishes its
+  results through the callback-safe telemetry channel.
 - Guarantees ordered activation, handoff, retirement, and teardown.
 - Contains no profile, persistence, or UI policy.
 

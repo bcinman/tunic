@@ -3,7 +3,9 @@
 Portable, allocation-free stereo equalization. The crate provides validated
 peaking, low-shelf, and high-shelf filters, versioned JSON documents, a
 stateful processing graph with zero reported latency, and real-time-safe smooth
-graph replacement for platform audio callbacks.
+graph replacement for platform audio callbacks. It also owns the portable
+post-DSP analyzer used by every platform: stereo peak/RMS levels and a smoothed
+256-point logarithmic spectrum produced without callback-time allocation.
 
 ```rust
 use tunic_dsp::{
@@ -55,3 +57,9 @@ processing installs the latest graph and crossfades from the previous graph
 using preallocated scratch space. `GraphProcessor::process` and `reset` do not
 allocate, free, or lock. Platform crates only need to prepare and publish graphs
 and pass normalized stereo frames to the processor.
+
+`Analyzer::new` prepares level and spectrum analysis for a stream's sample
+rate. Platform callbacks pass normalized interleaved stereo samples to
+`observe`; it returns an `AnalysisFrame` at 60 Hz once its 4096-point FFT is
+ready. `reset` clears accumulated levels, FFT history, and smoothing when a
+meter subscription changes.

@@ -16,8 +16,11 @@ use tunic_dsp::Equalizer;
 
 use crate::persistence::{ProfileStore, StoredCatalog, StoredProfile};
 pub use crate::telemetry::{
-    ChannelLevels, SPECTRUM_BAND_COUNT, SPECTRUM_FREQUENCIES_HZ, Spectrum, StereoLevels,
     TelemetryFrame, TelemetryGeneration, TelemetryPublisher, TelemetryReader,
+};
+pub use tunic_dsp::{
+    ChannelLevels, SPECTRUM_MAX_FREQUENCY_HZ, SPECTRUM_MIN_FREQUENCY_HZ, SPECTRUM_POINT_COUNT,
+    Spectrum, StereoLevels, spectrum_frequency_hz,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]

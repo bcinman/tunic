@@ -1,32 +1,9 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use tunic_dsp::{ChannelLevels, SPECTRUM_POINT_COUNT, Spectrum, StereoLevels};
 
 const ACTIVE_READER_MASK: u64 = u32::MAX as u64;
 const GENERATION_INCREMENT: u64 = 1_u64 << 32;
-
-pub const SPECTRUM_BAND_COUNT: usize = 28;
-pub const SPECTRUM_FREQUENCIES_HZ: [f32; SPECTRUM_BAND_COUNT] = [
-    31.5, 40.0, 50.0, 63.0, 80.0, 100.0, 125.0, 160.0, 200.0, 250.0, 315.0, 400.0, 500.0, 630.0,
-    800.0, 1_000.0, 1_250.0, 1_600.0, 2_000.0, 2_500.0, 3_150.0, 4_000.0, 5_000.0, 6_300.0,
-    8_000.0, 10_000.0, 12_500.0, 16_000.0,
-];
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct ChannelLevels {
-    pub peak: f32,
-    pub rms: f32,
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct StereoLevels {
-    pub left: ChannelLevels,
-    pub right: ChannelLevels,
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Spectrum {
-    pub bands: [f32; SPECTRUM_BAND_COUNT],
-}
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct TelemetryFrame {
@@ -172,7 +149,7 @@ struct SharedTelemetry {
     left_rms: AtomicU32,
     right_peak: AtomicU32,
     right_rms: AtomicU32,
-    spectrum: [AtomicU32; SPECTRUM_BAND_COUNT],
+    spectrum: [AtomicU32; SPECTRUM_POINT_COUNT],
 }
 
 impl Default for SharedTelemetry {
@@ -200,7 +177,7 @@ impl SharedTelemetry {
             .store(frame.levels.right.peak.to_bits(), Ordering::SeqCst);
         self.right_rms
             .store(frame.levels.right.rms.to_bits(), Ordering::SeqCst);
-        for (target, value) in self.spectrum.iter().zip(frame.spectrum.bands) {
+        for (target, value) in self.spectrum.iter().zip(frame.spectrum.points) {
             target.store(value.to_bits(), Ordering::SeqCst);
         }
     }
@@ -218,7 +195,7 @@ impl SharedTelemetry {
                 },
             },
             spectrum: Spectrum {
-                bands: std::array::from_fn(|index| {
+                points: std::array::from_fn(|index| {
                     f32::from_bits(self.spectrum[index].load(Ordering::SeqCst))
                 }),
             },
@@ -230,7 +207,8 @@ impl SharedTelemetry {
 mod tests {
     use std::sync::atomic::Ordering;
 
-    use super::{ChannelLevels, Spectrum, StereoLevels, TelemetryFrame, channel};
+    use super::{TelemetryFrame, channel};
+    use tunic_dsp::{ChannelLevels, Spectrum, StereoLevels};
 
     #[test]
     fn reader_returns_the_latest_complete_publication() {
@@ -248,7 +226,7 @@ mod tests {
                 },
             },
             spectrum: Spectrum {
-                bands: std::array::from_fn(|index| index as f32 / 100.0),
+                points: std::array::from_fn(|index| index as f32 / 100.0),
             },
         };
 

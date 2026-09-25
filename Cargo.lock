@@ -6010,6 +6010,7 @@ name = "tunic-dsp"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "rustfft",
  "serde",
  "serde_json",
 ]
@@ -6032,7 +6033,6 @@ dependencies = [
  "objc2-core-audio-types",
  "objc2-core-foundation",
  "objc2-foundation 0.3.2",
- "rustfft",
  "tunic-dsp",
  "tunic-engine",
 ]

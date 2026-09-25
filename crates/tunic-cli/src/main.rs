@@ -15,7 +15,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, QualityFactor};
 use tunic_engine::{
     Engine, EngineHandle, EngineOptions, EngineSnapshot, EngineStatus, OutputDevice,
-    ProcessedOutputSink, Profile, ProfileId, SPECTRUM_BAND_COUNT, Spectrum, TelemetryFrame,
+    ProcessedOutputSink, Profile, ProfileId, SPECTRUM_POINT_COUNT, Spectrum, TelemetryFrame,
     TelemetryReader,
 };
 use tunic_macos::CoreAudioPlatform;
@@ -882,6 +882,15 @@ fn format_telemetry(frame: TelemetryFrame) -> String {
 fn format_spectrum(spectrum: Spectrum) -> String {
     const ROWS: usize = 10;
     const DB_PER_ROW: f32 = 6.0;
+    const TERMINAL_BAND_COUNT: usize = 28;
+    let bands: [f32; TERMINAL_BAND_COUNT] = std::array::from_fn(|index| {
+        let first = index * SPECTRUM_POINT_COUNT / TERMINAL_BAND_COUNT;
+        let last = (index + 1) * SPECTRUM_POINT_COUNT / TERMINAL_BAND_COUNT;
+        spectrum.points[first..last]
+            .iter()
+            .copied()
+            .fold(0.0, f32::max)
+    });
     let mut output = String::new();
     for row in 0..ROWS {
         let threshold = if row == 0 {
@@ -890,7 +899,7 @@ fn format_spectrum(spectrum: Spectrum) -> String {
             -(row as f32) * DB_PER_ROW
         };
         output.push_str(&format!("{threshold:>3.0} |"));
-        for amplitude in spectrum.bands {
+        for amplitude in bands {
             if decibels_full_scale(amplitude) >= threshold {
                 output.push_str("█ ");
             } else {
@@ -900,7 +909,7 @@ fn format_spectrum(spectrum: Spectrum) -> String {
         output.push('\n');
     }
     output.push_str("    +");
-    output.push_str(&"--".repeat(SPECTRUM_BAND_COUNT));
+    output.push_str(&"--".repeat(TERMINAL_BAND_COUNT));
     output.push('\n');
     output.push_str("     32    63    125   250   500   1k    2k    4k    8k    16k");
     output
@@ -944,7 +953,9 @@ mod tests {
     };
     use clap::Parser as _;
     use tunic_dsp::Equalizer;
-    use tunic_engine::{ChannelLevels, ProfileId, Spectrum, StereoLevels, TelemetryFrame};
+    use tunic_engine::{
+        ChannelLevels, ProfileId, SPECTRUM_POINT_COUNT, Spectrum, StereoLevels, TelemetryFrame,
+    };
 
     #[test]
     fn formats_asymmetric_linear_levels_as_dbfs() {
@@ -960,7 +971,13 @@ mod tests {
                 },
             },
             spectrum: Spectrum {
-                bands: std::array::from_fn(|index| if index == 15 { 1.0 } else { 0.0 }),
+                points: std::array::from_fn(|index| {
+                    if index == 15 * SPECTRUM_POINT_COUNT / 28 {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                }),
             },
         };
         let output = format_telemetry(frame);
