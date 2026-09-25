@@ -1,8 +1,9 @@
 # `tunic-dsp`
 
 Portable, allocation-free stereo equalization. The crate provides validated
-peaking, low-shelf, and high-shelf filters, versioned JSON documents, and a
-stateful processing graph with zero reported latency.
+peaking, low-shelf, and high-shelf filters, versioned JSON documents, a
+stateful processing graph with zero reported latency, and real-time-safe smooth
+graph replacement for platform audio callbacks.
 
 ```rust
 use tunic_dsp::{
@@ -47,3 +48,10 @@ export format.
 `PreparedGraph::process` mutates any number of `[left, right]` frames without
 allocating. `PreparedGraph::identity` creates an empty graph. Call `reset` to
 clear filter history; `latency_frames` currently returns zero.
+
+`GraphProcessor::new` pairs a callback-owned processor with a cloneable
+`GraphPublisher`. Publishing coalesces superseded graphs off the audio thread;
+processing installs the latest graph and crossfades from the previous graph
+using preallocated scratch space. `GraphProcessor::process` and `reset` do not
+allocate, free, or lock. Platform crates only need to prepare and publish graphs
+and pass normalized stereo frames to the processor.

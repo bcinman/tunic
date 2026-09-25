@@ -6,6 +6,7 @@ use crate::{Equalizer, EqualizerError, Filter, FilterKind};
 #[derive(Debug, Default)]
 pub struct PreparedGraph {
     filters: Vec<StereoBiquad>,
+    sample_rate_hz: f64,
 }
 
 impl PreparedGraph {
@@ -26,7 +27,10 @@ impl PreparedGraph {
             .copied()
             .map(|filter| StereoBiquad::prepare(filter, sample_rate_hz))
             .collect::<Result<_, _>>()?;
-        Ok(Self { filters })
+        Ok(Self {
+            filters,
+            sample_rate_hz,
+        })
     }
 
     /// Process stereo frames in place without allocating.
@@ -49,6 +53,28 @@ impl PreparedGraph {
     #[must_use]
     pub fn latency_frames(&self) -> usize {
         0
+    }
+
+    /// Returns the cascade's magnitude response in decibels at `frequency_hz`.
+    ///
+    /// An identity graph has a flat 0 dB response at every positive frequency.
+    #[must_use]
+    pub fn response_db_at(&self, frequency_hz: f64) -> f64 {
+        if !frequency_hz.is_finite() || frequency_hz <= 0.0 {
+            return f64::NEG_INFINITY;
+        }
+        if self.filters.is_empty() {
+            return 0.0;
+        }
+        if frequency_hz >= self.sample_rate_hz / 2.0 {
+            return f64::NEG_INFINITY;
+        }
+
+        let angular_frequency = TAU * frequency_hz / self.sample_rate_hz;
+        self.filters
+            .iter()
+            .map(|filter| filter.left.coefficients.response_db_at(angular_frequency))
+            .sum()
     }
 }
 
@@ -159,6 +185,21 @@ impl Coefficients {
         let a2 = f64::from(self.a2);
         a2.abs() < 1.0 && 1.0 + a1 + a2 > 0.0 && 1.0 - a1 + a2 > 0.0
     }
+
+    fn response_db_at(self, angular_frequency: f64) -> f64 {
+        let cosine = angular_frequency.cos();
+        let sine = angular_frequency.sin();
+        let cosine_double = (2.0 * angular_frequency).cos();
+        let sine_double = (2.0 * angular_frequency).sin();
+        let [b0, b1, b2, a1, a2] = [self.b0, self.b1, self.b2, self.a1, self.a2].map(f64::from);
+        let numerator_real = b0 + b1 * cosine + b2 * cosine_double;
+        let numerator_imaginary = -b1 * sine - b2 * sine_double;
+        let denominator_real = 1.0 + a1 * cosine + a2 * cosine_double;
+        let denominator_imaginary = -a1 * sine - a2 * sine_double;
+        let magnitude_squared = (numerator_real.powi(2) + numerator_imaginary.powi(2))
+            / (denominator_real.powi(2) + denominator_imaginary.powi(2));
+        10.0 * magnitude_squared.log10()
+    }
 }
 
 #[derive(Debug)]
@@ -233,6 +274,29 @@ mod tests {
         let expected_gain = 10.0_f32.powf(6.0 / 20.0);
         assert!((left_rms / (1.0 / 2.0_f32.sqrt()) - expected_gain).abs() < 0.01);
         assert!((left_rms / right_rms - 4.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn response_reports_cascade_gain_and_rejects_out_of_band_frequencies() {
+        let center = FrequencyHz::new(1_000.0).unwrap();
+        let equalizer = Equalizer::with_filters(vec![
+            Filter::peaking(
+                center,
+                GainDb::new(6.0).unwrap(),
+                QualityFactor::new(1.0).unwrap(),
+            ),
+            Filter::peaking(
+                center,
+                GainDb::new(-2.0).unwrap(),
+                QualityFactor::new(1.0).unwrap(),
+            ),
+        ]);
+        let graph = PreparedGraph::prepare(&equalizer, 48_000.0).unwrap();
+
+        assert!((graph.response_db_at(1_000.0) - 4.0).abs() < 0.001);
+        assert!(graph.response_db_at(24_000.0).is_infinite());
+        assert!(graph.response_db_at(0.0).is_infinite());
+        assert_eq!(PreparedGraph::identity().response_db_at(1_000.0), 0.0);
     }
 
     #[test]

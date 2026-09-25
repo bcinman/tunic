@@ -2,8 +2,8 @@
 
 Tunic is currently a working macOS multi-band equalizer prototype. It can
 capture system audio, apply live peaking and shelving filters, and render it to
-the current default output device. Its initial graphical application exposes
-route status and bypass; it is not yet a complete parametric equalizer.
+the current default output device. Its graphical application provides a live
+parametric equalizer editor alongside route status and bypass.
 
 This file is the source of truth for implemented product capabilities. The
 crate READMEs and `STRUCTURE.md` also describe intended interfaces and future
@@ -25,7 +25,8 @@ architecture.
 - An ordered cascade of validated peaking, low-shelf, and high-shelf filters
   with configurable frequency, gain, and Q, including post-quantization
   stability checks.
-- Live, real-time-safe graph replacement from the engine to the audio callback.
+- Live, real-time-safe graph replacement from the engine to the audio callback,
+  with a short crossfade that preserves continuity between filter graphs.
 - Versioned JSON equalizer documents with strict validation on load.
 - A SQLite profile store with a seeded fallback profile, per-device assignment
   schema, optimistic saved revisions, and automatic schema versioning.
@@ -50,8 +51,13 @@ architecture.
   - persistent equalizer save and discard commands;
   - optional post-DSP Float32 stereo WAV capture;
   - graceful quit and interrupt handling.
-- A minimal GPUI-CE desktop application with live engine and output-route
-  status plus an equalizer bypass control.
+- A GPUI-CE desktop application with live engine and output-route status,
+  equalizer bypass, and a logarithmic response graph. Filters can be added,
+  dragged to edit frequency/gain, adjusted by type/frequency/gain/Q controls,
+  removed, previewed live, saved, or reverted. Drag previews coalesce to the
+  latest value at a controlled rate and always flush the final value. Closing
+  its window keeps processing active, and Dock reactivation or Window > Show
+  Tunic opens it again.
 - Filter history is cleared when bypass begins so stale ringing is not replayed
   when processing resumes.
 - Automated formatting, Clippy, and workspace test tasks through `mise`.
@@ -70,8 +76,7 @@ architecture.
 - Profile import/export.
 - Automatic recovery or retry after route rebuild failures.
 - Route handoff, crossfading, or sample-rate conversion.
-- Graphical profile management, equalizer editing, or telemetry.
-- Closing and reopening the desktop window while keeping the engine alive.
+- Graphical profile management or telemetry.
 - Linux or Windows audio backends.
 - Packaging, signing, release automation, or end-user installation.
 - Most of the command surface documented in `crates/tunic-cli/README.md`; only

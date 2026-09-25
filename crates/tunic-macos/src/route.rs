@@ -5,7 +5,7 @@ use std::num::NonZeroUsize;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::ptr::NonNull;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
 
@@ -33,7 +33,7 @@ use objc2_core_audio_types::{
 use objc2_core_foundation::CFDictionary;
 use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSObject, NSString, NSUUID};
 use rustfft::{Fft, FftPlanner, num_complex::Complex32};
-use tunic_dsp::{Equalizer, PreparedGraph};
+use tunic_dsp::{Equalizer, GraphProcessor, GraphPublisher, PreparedGraph};
 use tunic_engine::{
     BypassControl, ChannelLevels, PlatformError, ProcessedOutputSink, SPECTRUM_BAND_COUNT,
     SPECTRUM_FREQUENCIES_HZ, Spectrum, StereoLevels, TelemetryFrame, TelemetryGeneration,
@@ -68,7 +68,7 @@ pub(crate) struct Route {
     started: bool,
     active: Arc<AtomicBool>,
     sample_rate_hz: f64,
-    graph_updates: Arc<GraphExchange>,
+    graph_updates: GraphPublisher,
     _block: IoBlock,
     _description: Retained<CATapDescription>,
 }
@@ -184,14 +184,18 @@ impl Route {
         let active = Arc::new(AtomicBool::new(true));
         let callback_active = Arc::clone(&active);
         let scratch = RefCell::new(Box::new([0.0_f32; SCRATCH_FRAME_CAPACITY * 2]));
-        let graph = RefCell::new(prepared_graph);
+        let (graph_updates, graph) = GraphProcessor::new(
+            prepared_graph,
+            sample_rate_hz,
+            NonZeroUsize::new(SCRATCH_FRAME_CAPACITY).expect("scratch capacity is nonzero"),
+        )
+        .map_err(|error| PlatformError::new(error.to_string()))?;
+        let graph = RefCell::new(graph);
         let processed_output = RefCell::new(ProcessedOutputObservers::new(
             output_sink,
             telemetry,
             sample_rate_hz,
         ));
-        let graph_updates = Arc::new(GraphExchange::new());
-        let callback_graph_updates = Arc::clone(&graph_updates);
         let callback_bypassed = Cell::new(false);
         let block = RcBlock::new(
             move |_now: NonNull<AudioTimeStamp>,
@@ -212,7 +216,6 @@ impl Route {
                     ) else {
                         return;
                     };
-                    callback_graph_updates.install_latest(&mut graph);
                     let is_bypassed = bypass.is_bypassed();
                     reset_graph_on_bypass(&mut graph, &callback_bypassed, is_bypassed);
                     render_audio(
@@ -329,91 +332,9 @@ impl Route {
     }
 }
 
-fn reset_graph_on_bypass(graph: &mut PreparedGraph, was_bypassed: &Cell<bool>, is_bypassed: bool) {
+fn reset_graph_on_bypass(graph: &mut GraphProcessor, was_bypassed: &Cell<bool>, is_bypassed: bool) {
     if is_bypassed && !was_bypassed.replace(is_bypassed) {
         graph.reset();
-    }
-}
-
-struct GraphExchange {
-    pending: AtomicPtr<GraphNode>,
-    retired: AtomicPtr<GraphNode>,
-}
-
-impl GraphExchange {
-    fn new() -> Self {
-        Self {
-            pending: AtomicPtr::new(std::ptr::null_mut()),
-            retired: AtomicPtr::new(std::ptr::null_mut()),
-        }
-    }
-
-    /// Publish from the non-real-time engine thread.
-    fn publish(&self, graph: PreparedGraph) {
-        self.reclaim_retired();
-        let update = Box::into_raw(Box::new(GraphNode {
-            graph,
-            next: std::ptr::null_mut(),
-        }));
-        let superseded = self.pending.swap(update, Ordering::AcqRel);
-        if !superseded.is_null() {
-            // SAFETY: the producer won ownership of the pending node in the swap.
-            drop(unsafe { Box::from_raw(superseded) });
-        }
-        self.reclaim_retired();
-    }
-
-    /// Install on the real-time callback without locking, allocating, or freeing.
-    fn install_latest(&self, current: &mut PreparedGraph) {
-        let update = self.pending.swap(std::ptr::null_mut(), Ordering::AcqRel);
-        if update.is_null() {
-            return;
-        }
-        // SAFETY: the callback won ownership of the pending node in the swap.
-        let node = unsafe { &mut *update };
-        std::mem::swap(current, &mut node.graph);
-        let mut head = self.retired.load(Ordering::Acquire);
-        loop {
-            node.next = head;
-            match self.retired.compare_exchange_weak(
-                head,
-                update,
-                Ordering::Release,
-                Ordering::Acquire,
-            ) {
-                Ok(_) => return,
-                Err(actual) => head = actual,
-            }
-        }
-    }
-
-    fn reclaim_retired(&self) {
-        let retired = self.retired.swap(std::ptr::null_mut(), Ordering::AcqRel);
-        // SAFETY: the producer owns the detached retired list.
-        unsafe { drop_nodes(retired) };
-    }
-}
-
-impl Drop for GraphExchange {
-    fn drop(&mut self) {
-        // The IOProc block owns an Arc, so final drop cannot run during a callback.
-        unsafe {
-            drop_nodes(*self.pending.get_mut());
-            drop_nodes(*self.retired.get_mut());
-        }
-    }
-}
-
-struct GraphNode {
-    graph: PreparedGraph,
-    next: *mut GraphNode,
-}
-
-unsafe fn drop_nodes(mut node: *mut GraphNode) {
-    while !node.is_null() {
-        // SAFETY: the caller owns every node in this detached list.
-        let boxed = unsafe { Box::from_raw(node) };
-        node = boxed.next;
     }
 }
 
@@ -655,7 +576,7 @@ fn render_audio(
     output: *mut AudioBufferList,
     tap_buffers: TapBufferRange,
     scratch: &mut [f32],
-    graph: &mut PreparedGraph,
+    graph: &mut GraphProcessor,
     bypassed: bool,
     processed_output: &mut ProcessedOutputObservers,
 ) {
@@ -1116,15 +1037,18 @@ const fn size_of<T>() -> usize {
 #[cfg(test)]
 mod tests {
     use super::{
-        GraphExchange, LevelMeter, SpectrumMeter, TapBufferRange, normalize_stereo,
-        reset_graph_on_bypass, validate_stream_format, write_stereo,
+        LevelMeter, SpectrumMeter, TapBufferRange, normalize_stereo, reset_graph_on_bypass,
+        validate_stream_format, write_stereo,
     };
     use objc2_core_audio_types::{
         AudioBuffer, AudioStreamBasicDescription, kAudioFormatFlagIsFloat,
         kAudioFormatFlagIsNonInterleaved, kAudioFormatLinearPCM,
     };
     use std::cell::Cell;
-    use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, PreparedGraph, QualityFactor};
+    use std::num::NonZeroUsize;
+    use tunic_dsp::{
+        Equalizer, Filter, FrequencyHz, GainDb, GraphProcessor, PreparedGraph, QualityFactor,
+    };
     use tunic_engine::{ChannelLevels, Spectrum, StereoLevels};
 
     #[test]
@@ -1230,32 +1154,22 @@ mod tests {
     }
 
     #[test]
-    fn graph_exchange_installs_the_latest_pending_graph() {
-        let exchange = GraphExchange::new();
-        exchange.publish(peaking_graph(6.0));
-        exchange.publish(peaking_graph(-6.0));
-        let mut current = PreparedGraph::identity();
-        let mut impulse = [1.0_f32, 1.0];
-
-        exchange.install_latest(&mut current);
-        current.process(std::slice::from_mut(&mut impulse));
-
-        assert!(impulse[0] < 1.0);
-        assert_eq!(impulse[0], impulse[1]);
-    }
-
-    #[test]
     fn entering_bypass_clears_filter_history() {
-        let mut graph = peaking_graph(12.0);
-        let mut impulse = [1.0_f32, 1.0];
-        graph.process(std::slice::from_mut(&mut impulse));
+        let (_, mut graph) = GraphProcessor::new(
+            peaking_graph(12.0),
+            48_000.0,
+            NonZeroUsize::new(64).unwrap(),
+        )
+        .unwrap();
+        let mut impulse = [[1.0_f32, 1.0]];
+        graph.process(&mut impulse);
         let was_bypassed = Cell::new(false);
 
         reset_graph_on_bypass(&mut graph, &was_bypassed, true);
-        let mut silence = [0.0_f32, 0.0];
-        graph.process(std::slice::from_mut(&mut silence));
+        let mut silence = [[0.0_f32, 0.0]];
+        graph.process(&mut silence);
 
-        assert_eq!(silence, [0.0, 0.0]);
+        assert_eq!(silence, [[0.0, 0.0]]);
     }
 
     #[test]

@@ -7,7 +7,8 @@
 - Manages system-audio permissions.
 - Owns process taps, aggregate devices, IOProcs, and callback contexts.
 - Negotiates stream formats.
-- Owns capture/render transport, resampling, graph publication, and crossfades.
+- Owns capture/render transport and resampling, using `tunic-dsp` for portable
+  graph publication and crossfades.
 - Publishes callback-safe smoothed level and RTA telemetry.
 - Guarantees ordered activation, handoff, retirement, and teardown.
 - Contains no profile, persistence, or UI policy.

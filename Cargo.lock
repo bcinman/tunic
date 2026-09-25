@@ -5988,6 +5988,7 @@ version = "0.1.0"
 dependencies = [
  "gpui-platform-gpui-unofficial",
  "gpui-unofficial",
+ "tunic-dsp",
  "tunic-engine",
  "tunic-macos",
 ]

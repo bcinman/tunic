@@ -123,6 +123,8 @@ Commands, events, effects, and reducer details can remain private to the engine.
 - Defines the versioned equalizer.
 - Validates and canonicalizes equalizers.
 - Prepares processing graphs for a specific sample rate.
+- Owns real-time-safe latest-graph publication, retirement, and smooth graph
+  replacement for every platform callback.
 - Processes arbitrary stereo frame counts without allocation.
 - Supports reset, bypass integration, and latency reporting.
 - Contains mathematical, impulse-response, and frequency-response tests.
@@ -161,7 +163,8 @@ impl PreparedGraph {
 - Manages system-audio permissions.
 - Owns process taps, aggregate devices, IOProcs, and callback contexts.
 - Negotiates stream formats.
-- Owns capture/render transport, resampling, graph publication, and crossfades.
+- Owns capture/render transport and resampling, using the portable DSP graph
+  processor for publication and crossfades.
 - Publishes callback-safe telemetry.
 - Guarantees ordered activation, handoff, retirement, and teardown.
 - Contains no profile, persistence, or UI policy.
