@@ -6,7 +6,6 @@ mod route;
 
 use std::ptr::NonNull;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 use block2::RcBlock;
 use objc2_core_audio::{
@@ -17,8 +16,9 @@ use objc2_core_audio::{
 };
 use tunic_dsp::Equalizer;
 use tunic_engine::{
-    ActiveRoute, AudioPlatform, DeviceId, PlatformError, PlatformEvent, PlatformEventSink,
-    PlatformState, ProcessedOutputFormat, ProcessedOutputSink, TelemetryPublisher,
+    ActiveRoute, AudioPlatform, BypassControl, DeviceId, PlatformError, PlatformEvent,
+    PlatformEventSink, PlatformState, ProcessedOutputFormat, ProcessedOutputSink,
+    TelemetryPublisher,
 };
 
 use crate::devices::{
@@ -31,7 +31,7 @@ pub struct CoreAudioPlatform {
     default_output_listener: Option<PropertyListener>,
     sample_rate_listener: Option<PropertyListener>,
     events: Option<PlatformEventSink>,
-    bypassed: Arc<AtomicBool>,
+    bypass: BypassControl,
     output_sink: Option<Arc<dyn ProcessedOutputSink>>,
     telemetry: Option<TelemetryPublisher>,
     equalizer: Equalizer,
@@ -45,7 +45,7 @@ impl CoreAudioPlatform {
             default_output_listener: None,
             sample_rate_listener: None,
             events: None,
-            bypassed: Arc::new(AtomicBool::new(false)),
+            bypass: BypassControl::default(),
             output_sink: None,
             telemetry: None,
             equalizer: Equalizer::identity(),
@@ -90,7 +90,7 @@ impl CoreAudioPlatform {
         self.route = Some(Route::start(
             output_id,
             sample_rate_hz,
-            Arc::clone(&self.bypassed),
+            self.bypass.clone(),
             self.output_sink.clone(),
             telemetry.clone(),
             &self.equalizer,
@@ -129,10 +129,12 @@ impl AudioPlatform for CoreAudioPlatform {
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
         telemetry: TelemetryPublisher,
         equalizer: &Equalizer,
+        bypass: BypassControl,
     ) -> Result<PlatformState, PlatformError> {
         self.output_sink = output_sink;
         self.telemetry = Some(telemetry);
         self.equalizer = equalizer.clone();
+        self.bypass = bypass;
         self.events = Some(events.clone());
         self.default_output_listener = Some(PropertyListener::new(
             kAudioObjectSystemObject as AudioObjectID,
@@ -151,10 +153,6 @@ impl AudioPlatform for CoreAudioPlatform {
 
     fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError> {
         self.build_default_route()
-    }
-
-    fn set_bypassed(&mut self, bypassed: bool) {
-        self.bypassed.store(bypassed, Ordering::Relaxed);
     }
 
     fn set_equalizer(&mut self, equalizer: &Equalizer) -> Result<(), PlatformError> {

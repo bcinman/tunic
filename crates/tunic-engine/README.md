@@ -63,7 +63,7 @@ impl EngineHandle {
     pub fn subscribe_snapshots(&self) -> SnapshotReceiver;
     pub fn subscribe_telemetry(&self) -> TelemetryReader;
 
-    pub fn toggle_bypass(&self) -> Result<bool, EngineError>;
+    pub fn toggle_bypass(&self) -> bool;
 
     pub fn preview_equalizer(
         &self,
@@ -139,9 +139,9 @@ pub trait AudioPlatform: 'static {
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
         telemetry: TelemetryPublisher,
         equalizer: &Equalizer,
+        bypass: BypassControl,
     ) -> Result<PlatformState, PlatformError>;
     fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError>;
-    fn set_bypassed(&mut self, bypassed: bool);
     fn set_equalizer(&mut self, equalizer: &Equalizer) -> Result<(), PlatformError>;
     fn shutdown(&mut self) -> Result<(), PlatformError>;
 }
@@ -150,9 +150,10 @@ pub trait AudioPlatform: 'static {
 `PlatformState` reports the active route and available output devices after a
 successful start or rebuild. The platform sends `DefaultOutputChanged` and
 `OutputSampleRateChanged` through `PlatformEventSink`; the engine then requests
-a route rebuild and updates its state. `PlatformError::new` lets platform
-implementations preserve contextual error messages without exposing their
-internal error types.
+a route rebuild and updates its state. `BypassControl` is shared directly with
+the real-time route so bypass never waits behind engine-thread work.
+`PlatformError::new` lets platform implementations preserve contextual error
+messages without exposing their internal error types.
 
 ## Processed output
 

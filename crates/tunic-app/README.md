@@ -2,6 +2,13 @@
 
 **Responsibility:** GPUI application lifecycle and presentation.
 
+The initial GPUI-CE application starts the production engine, displays live
+route status, and toggles equalizer bypass. Run it with:
+
+```console
+mise run app
+```
+
 - Owns the application-scoped engine handle.
 - Creates, closes, and reopens the normal application window.
 - Keeps the engine alive while no window is open.

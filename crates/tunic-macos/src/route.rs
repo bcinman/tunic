@@ -35,7 +35,7 @@ use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSObject, NSString, NSUU
 use rustfft::{Fft, FftPlanner, num_complex::Complex32};
 use tunic_dsp::{Equalizer, PreparedGraph};
 use tunic_engine::{
-    ChannelLevels, PlatformError, ProcessedOutputSink, SPECTRUM_BAND_COUNT,
+    BypassControl, ChannelLevels, PlatformError, ProcessedOutputSink, SPECTRUM_BAND_COUNT,
     SPECTRUM_FREQUENCIES_HZ, Spectrum, StereoLevels, TelemetryFrame, TelemetryGeneration,
     TelemetryPublisher,
 };
@@ -97,7 +97,7 @@ impl Route {
     pub(crate) fn start(
         output_id: AudioObjectID,
         sample_rate_hz: f64,
-        bypassed: Arc<AtomicBool>,
+        bypass: BypassControl,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
         telemetry: TelemetryPublisher,
         equalizer: &Equalizer,
@@ -105,7 +105,7 @@ impl Route {
         Self::start_inner(
             output_id,
             sample_rate_hz,
-            bypassed,
+            bypass,
             output_sink,
             telemetry,
             equalizer,
@@ -115,7 +115,7 @@ impl Route {
     fn start_inner(
         output_id: AudioObjectID,
         sample_rate_hz: f64,
-        bypassed: Arc<AtomicBool>,
+        bypass: BypassControl,
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
         telemetry: TelemetryPublisher,
         equalizer: &Equalizer,
@@ -213,7 +213,7 @@ impl Route {
                         return;
                     };
                     callback_graph_updates.install_latest(&mut graph);
-                    let is_bypassed = bypassed.load(Ordering::Relaxed);
+                    let is_bypassed = bypass.is_bypassed();
                     reset_graph_on_bypass(&mut graph, &callback_bypassed, is_bypassed);
                     render_audio(
                         input.as_ptr(),

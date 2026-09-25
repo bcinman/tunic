@@ -6,6 +6,7 @@ mod telemetry;
 
 use std::fmt;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, RecvError, RecvTimeoutError, Sender, TryRecvError};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
@@ -184,6 +185,7 @@ impl SnapshotReceiver {
 struct SnapshotState {
     current: RwLock<EngineSnapshot>,
     subscribers: Mutex<Vec<Sender<EngineSnapshot>>>,
+    bypass: BypassControl,
 }
 
 impl SnapshotState {
@@ -191,6 +193,7 @@ impl SnapshotState {
         Self {
             current: RwLock::new(snapshot),
             subscribers: Mutex::new(Vec::new()),
+            bypass: BypassControl::default(),
         }
     }
 
@@ -202,13 +205,14 @@ impl SnapshotState {
         self.read().clone()
     }
 
-    fn publish(&self, snapshot: EngineSnapshot) {
+    fn publish(&self, mut snapshot: EngineSnapshot) {
         let mut subscribers = self
             .subscribers
             .lock()
             .expect("engine snapshot subscriber lock poisoned");
         let changed = {
             let mut current = self.current.write().expect("engine snapshot lock poisoned");
+            snapshot.bypassed = current.bypassed;
             if *current == snapshot {
                 false
             } else {
@@ -219,6 +223,25 @@ impl SnapshotState {
         if changed {
             subscribers.retain(|subscriber| subscriber.send(snapshot.clone()).is_ok());
         }
+    }
+
+    fn toggle_bypass(&self) -> bool {
+        let toggled_to = self.bypass.toggle();
+        let mut subscribers = self
+            .subscribers
+            .lock()
+            .expect("engine snapshot subscriber lock poisoned");
+        let snapshot = {
+            let mut current = self.current.write().expect("engine snapshot lock poisoned");
+            let bypassed = self.bypass.is_bypassed();
+            if current.bypassed == bypassed {
+                return toggled_to;
+            }
+            current.bypassed = bypassed;
+            current.clone()
+        };
+        subscribers.retain(|subscriber| subscriber.send(snapshot.clone()).is_ok());
+        toggled_to
     }
 
     fn subscribe(&self) -> SnapshotReceiver {
@@ -305,6 +328,20 @@ pub enum PlatformEvent {
 
 pub type PlatformEventSink = Sender<PlatformEvent>;
 
+#[derive(Clone, Default)]
+pub struct BypassControl(Arc<AtomicBool>);
+
+impl BypassControl {
+    #[must_use]
+    pub fn is_bypassed(&self) -> bool {
+        self.0.load(Ordering::Relaxed)
+    }
+
+    fn toggle(&self) -> bool {
+        !self.0.fetch_xor(true, Ordering::Relaxed)
+    }
+}
+
 #[derive(Debug)]
 pub struct PlatformError(String);
 
@@ -330,9 +367,9 @@ pub trait AudioPlatform: 'static {
         output_sink: Option<Arc<dyn ProcessedOutputSink>>,
         telemetry: TelemetryPublisher,
         equalizer: &Equalizer,
+        bypass: BypassControl,
     ) -> Result<PlatformState, PlatformError>;
     fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError>;
-    fn set_bypassed(&mut self, bypassed: bool);
     fn set_equalizer(&mut self, equalizer: &Equalizer) -> Result<(), PlatformError>;
     fn shutdown(&mut self) -> Result<(), PlatformError>;
 }
@@ -355,7 +392,6 @@ impl fmt::Display for EngineError {
 impl std::error::Error for EngineError {}
 
 enum Command {
-    ToggleBypass(Sender<bool>),
     PreviewEqualizer(
         Equalizer,
         EditRevision,
@@ -390,6 +426,7 @@ impl Engine {
             options.equalizer.clone(),
         )));
         let worker_snapshot = Arc::clone(&snapshot);
+        let worker_bypass = snapshot.bypass.clone();
         let (telemetry_publisher, telemetry) = telemetry::channel();
         let (commands, command_rx) = mpsc::channel();
         let (startup_tx, startup_rx) = mpsc::sync_channel(1);
@@ -403,6 +440,7 @@ impl Engine {
                     telemetry_publisher,
                     command_rx,
                     worker_snapshot,
+                    worker_bypass,
                     startup_tx,
                 );
             })
@@ -445,8 +483,8 @@ impl EngineHandle {
         self.telemetry.subscribe()
     }
 
-    pub fn toggle_bypass(&self) -> Result<bool, EngineError> {
-        self.request(Command::ToggleBypass, "applying bypass")
+    pub fn toggle_bypass(&self) -> bool {
+        self.snapshot.toggle_bypass()
     }
 
     pub fn preview_equalizer(
@@ -572,6 +610,7 @@ fn run_engine(
     telemetry: TelemetryPublisher,
     commands: Receiver<Command>,
     snapshot: Arc<SnapshotState>,
+    bypass: BypassControl,
     startup: mpsc::SyncSender<Result<(), EngineError>>,
 ) {
     let mut store = match options.database_path.as_deref() {
@@ -605,6 +644,7 @@ fn run_engine(
         options.processed_output_sink,
         telemetry,
         &initial_profile.equalizer,
+        bypass.clone(),
     ) {
         Ok(state) => {
             let selected_profile = match resolve_profile(store.as_ref(), &state, &initial_profile) {
@@ -638,7 +678,7 @@ fn run_engine(
             update_running_snapshot(
                 &mut current,
                 state,
-                false,
+                bypass.is_bypassed(),
                 selected_profile.equalizer.clone(),
                 selected_profile.revision,
                 EditRevision::INITIAL,
@@ -675,6 +715,7 @@ fn run_commands(
     event_rx: Receiver<PlatformEvent>,
     snapshot: Arc<SnapshotState>,
 ) {
+    let bypass = snapshot.bypass.clone();
     loop {
         while let Ok(event) = event_rx.try_recv() {
             let state = match platform.rebuild_default_route() {
@@ -686,7 +727,7 @@ fn run_commands(
             };
             match event {
                 PlatformEvent::DefaultOutputChanged => {
-                    let bypassed = current.bypassed;
+                    let bypassed = bypass.is_bypassed();
                     let current_equalizer = current.equalizer.clone();
                     let mut edit_revision = current.edit_revision;
                     let has_unsaved_changes = current.has_unsaved_changes;
@@ -724,7 +765,7 @@ fn run_commands(
                     }
                 }
                 PlatformEvent::OutputSampleRateChanged => {
-                    let bypassed = current.bypassed;
+                    let bypassed = bypass.is_bypassed();
                     let equalizer = current.equalizer.clone();
                     let equalizer_revision = current.equalizer_revision;
                     let edit_revision = current.edit_revision;
@@ -744,13 +785,6 @@ fn run_commands(
         }
 
         match commands.recv_timeout(Duration::from_millis(50)) {
-            Ok(Command::ToggleBypass(result)) => {
-                let bypassed = !current.bypassed;
-                platform.set_bypassed(bypassed);
-                current.bypassed = bypassed;
-                snapshot.publish(current.clone());
-                let _ = result.send(bypassed);
-            }
             Ok(Command::PreviewEqualizer(equalizer, expected_revision, result)) => {
                 let current_revision = current.edit_revision;
                 let previewed = if current_revision != expected_revision {
@@ -1147,9 +1181,9 @@ mod tests {
     use tunic_dsp::{Equalizer, Filter, FrequencyHz, GainDb, QualityFactor};
 
     use super::{
-        ActiveRoute, AudioPlatform, DeviceId, Engine, EngineOptions, EngineStatus, PlatformError,
-        PlatformEvent, PlatformEventSink, PlatformState, ProcessedOutputSink, ProfileId,
-        TelemetryPublisher,
+        ActiveRoute, AudioPlatform, BypassControl, DeviceId, Engine, EngineOptions, EngineStatus,
+        PlatformError, PlatformEvent, PlatformEventSink, PlatformState, ProcessedOutputSink,
+        ProfileId, TelemetryPublisher,
     };
 
     #[test]
@@ -1172,9 +1206,9 @@ mod tests {
             Err(std::sync::mpsc::TryRecvError::Empty)
         );
 
-        assert!(engine.toggle_bypass().unwrap());
+        assert!(engine.toggle_bypass());
         assert!(snapshots.recv().unwrap().bypassed);
-        assert!(!engine.toggle_bypass().unwrap());
+        assert!(!engine.toggle_bypass());
         assert!(!snapshots.recv().unwrap().bypassed);
 
         engine.shutdown().unwrap();
@@ -1182,6 +1216,45 @@ mod tests {
         assert_eq!(stopped.status, EngineStatus::Stopped);
         assert!(stopped.active_route().is_none());
         assert!(snapshots.recv().is_err());
+    }
+
+    #[test]
+    fn bypass_does_not_wait_for_a_route_rebuild() {
+        let (event_sink_tx, event_sink_rx) = std::sync::mpsc::sync_channel(1);
+        let (rebuild_entered_tx, rebuild_entered_rx) = std::sync::mpsc::sync_channel(1);
+        let (release_rebuild_tx, release_rebuild_rx) = std::sync::mpsc::sync_channel(1);
+        let engine = Engine::start(EngineOptions::default(), move || BlockingRebuildPlatform {
+            event_sink: event_sink_tx,
+            rebuild_entered: rebuild_entered_tx,
+            release_rebuild: release_rebuild_rx,
+        })
+        .unwrap();
+        let (event_sink, platform_bypass) = event_sink_rx.recv().unwrap();
+        event_sink
+            .send(PlatformEvent::DefaultOutputChanged)
+            .unwrap();
+        rebuild_entered_rx.recv().unwrap();
+        let (toggle_done_tx, toggle_done_rx) = std::sync::mpsc::sync_channel(1);
+        let toggle = thread::spawn(move || {
+            let bypassed = engine.toggle_bypass();
+            toggle_done_tx.send((engine, bypassed)).unwrap();
+        });
+
+        let completed = toggle_done_rx.recv_timeout(Duration::from_secs(1));
+        if completed.is_err() {
+            release_rebuild_tx.send(()).unwrap();
+            let (engine, _) = toggle_done_rx.recv().unwrap();
+            toggle.join().unwrap();
+            engine.shutdown().unwrap();
+            panic!("bypass waited for the route rebuild");
+        }
+        let (engine, bypassed) = completed.unwrap();
+        assert!(bypassed);
+        assert!(platform_bypass.is_bypassed());
+
+        release_rebuild_tx.send(()).unwrap();
+        toggle.join().unwrap();
+        engine.shutdown().unwrap();
     }
 
     #[test]
@@ -1730,6 +1803,7 @@ mod tests {
             _output_sink: Option<Arc<dyn ProcessedOutputSink>>,
             _telemetry: TelemetryPublisher,
             _equalizer: &Equalizer,
+            _bypass: BypassControl,
         ) -> Result<PlatformState, PlatformError> {
             if let Some(target) = &self.events {
                 *target.lock().unwrap() = Some(events);
@@ -1741,13 +1815,45 @@ mod tests {
             Ok(platform_state(self.rebuild_sample_rate_hz))
         }
 
-        fn set_bypassed(&mut self, _bypassed: bool) {}
-
         fn set_equalizer(&mut self, equalizer: &Equalizer) -> Result<(), PlatformError> {
             if self.reject_equalizer {
                 return Err(PlatformError::new("equalizer rejected"));
             }
             self.applied.lock().unwrap().push(equalizer.clone());
+            Ok(())
+        }
+
+        fn shutdown(&mut self) -> Result<(), PlatformError> {
+            Ok(())
+        }
+    }
+
+    struct BlockingRebuildPlatform {
+        event_sink: std::sync::mpsc::SyncSender<(PlatformEventSink, BypassControl)>,
+        rebuild_entered: std::sync::mpsc::SyncSender<()>,
+        release_rebuild: std::sync::mpsc::Receiver<()>,
+    }
+
+    impl AudioPlatform for BlockingRebuildPlatform {
+        fn start(
+            &mut self,
+            events: PlatformEventSink,
+            _output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+            _telemetry: TelemetryPublisher,
+            _equalizer: &Equalizer,
+            bypass: BypassControl,
+        ) -> Result<PlatformState, PlatformError> {
+            self.event_sink.send((events, bypass)).unwrap();
+            Ok(platform_state(48_000.0))
+        }
+
+        fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError> {
+            self.rebuild_entered.send(()).unwrap();
+            self.release_rebuild.recv().unwrap();
+            Ok(platform_state(48_000.0))
+        }
+
+        fn set_equalizer(&mut self, _equalizer: &Equalizer) -> Result<(), PlatformError> {
             Ok(())
         }
 

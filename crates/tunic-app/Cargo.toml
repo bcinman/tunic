@@ -3,5 +3,11 @@ name = "tunic-app"
 version.workspace = true
 edition.workspace = true
 
+[dependencies]
+gpui.workspace = true
+gpui-platform.workspace = true
+tunic-engine.workspace = true
+tunic-macos.workspace = true
+
 [lints]
 workspace = true

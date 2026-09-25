@@ -1,9 +1,9 @@
 # Project Status
 
-Tunic is currently a working macOS headless multi-band equalizer prototype. It
-can capture system audio, apply live peaking and shelving filters, and render
-it to the current default output device. It is not yet a graphical application
-or a complete parametric equalizer.
+Tunic is currently a working macOS multi-band equalizer prototype. It can
+capture system audio, apply live peaking and shelving filters, and render it to
+the current default output device. Its initial graphical application exposes
+route status and bypass; it is not yet a complete parametric equalizer.
 
 This file is the source of truth for implemented product capabilities. The
 crate READMEs and `STRUCTURE.md` also describe intended interfaces and future
@@ -19,8 +19,8 @@ architecture.
   rebuilding and graph preparation for the new rate.
 - Float32 input validation, stereo normalization, and support for output
   devices with additional channels.
-- A non-real-time engine thread with immutable snapshots, bypass toggling, and
-  orderly shutdown.
+- A non-real-time engine thread with immutable snapshots and orderly shutdown,
+  plus atomic bypass control that cannot queue behind route rebuilds.
 - An allocation-free stereo DSP graph with zero reported latency.
 - An ordered cascade of validated peaking, low-shelf, and high-shelf filters
   with configurable frequency, gain, and Q, including post-quantization
@@ -50,6 +50,8 @@ architecture.
   - persistent equalizer save and discard commands;
   - optional post-DSP Float32 stereo WAV capture;
   - graceful quit and interrupt handling.
+- A minimal GPUI-CE desktop application with live engine and output-route
+  status plus an equalizer bypass control.
 - Filter history is cleared when bypass begins so stale ringing is not replayed
   when processing resumes.
 - Automated formatting, Clippy, and workspace test tasks through `mise`.
@@ -68,7 +70,8 @@ architecture.
 - Profile import/export.
 - Automatic recovery or retry after route rebuild failures.
 - Route handoff, crossfading, or sample-rate conversion.
-- A GPUI application; `tunic-app` is currently a placeholder crate.
+- Graphical profile management, equalizer editing, or telemetry.
+- Closing and reopening the desktop window while keeping the engine alive.
 - Linux or Windows audio backends.
 - Packaging, signing, release automation, or end-user installation.
 - Most of the command surface documented in `crates/tunic-cli/README.md`; only

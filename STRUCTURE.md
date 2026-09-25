@@ -36,7 +36,9 @@ Everything else can remain internal GPUI entities, views, and actions.
 - Owns profiles and per-device preferences.
 - Owns SQLite persistence.
 - Tracks desired state, observed output, and active processing state.
-- Serializes user requests and platform events.
+- Publishes bypass through a shared atomic control so the real-time route does
+  not wait on engine-thread work.
+- Serializes non-real-time user requests and platform events.
 - Coordinates route preparation, activation, retirement, retries, and shutdown.
 - Publishes immutable state snapshots and latest telemetry.
 - Defines the platform-audio contract implemented by macOS and future platforms.
@@ -55,7 +57,7 @@ impl Engine {
 }
 
 impl EngineHandle {
-    pub fn toggle_bypass(&self) -> Result<bool, EngineError>;
+    pub fn toggle_bypass(&self) -> bool;
     pub fn create_profile(&self, name: String) -> Result<ProfileId, EngineError>;
     pub fn rename_profile(&self, id: ProfileId, name: String) -> Result<(), EngineError>;
     pub fn delete_profile(&self, id: ProfileId) -> Result<(), EngineError>;

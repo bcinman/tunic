@@ -25,6 +25,10 @@ depends = ["fmt", "lint", "test"]
 description = "Run the Tunic CLI"
 run = "cargo run -p tunic-cli --"
 
+[tasks.app]
+description = "Run the Tunic desktop app"
+run = "cargo run -p tunic-app"
+
 [tasks.capture]
 description = "Run Tunic and capture processed output"
 run = "cargo run -p tunic-cli -- start --capture"

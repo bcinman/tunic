@@ -424,7 +424,7 @@ fn handle_line(
             SessionAction::Continue
         }
         SessionCommand::Bypass => {
-            let bypassed = engine.toggle_bypass()?;
+            let bypassed = engine.toggle_bypass();
             println!(
                 "Processing is {}.",
                 if bypassed { "bypassed" } else { "active" }
