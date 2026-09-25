@@ -38,7 +38,6 @@ pub(crate) fn list_output_devices() -> Result<Vec<OutputDevice>, PlatformError> 
         });
     }
 
-    devices.sort_by(|left, right| left.name.cmp(&right.name));
     Ok(devices)
 }
 

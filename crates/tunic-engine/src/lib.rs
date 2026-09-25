@@ -1,7 +1,8 @@
-//! Authoritative product state and non-real-time coordination over portable
+//! Authoritative product coordination and the portable real-time shell over
 //! processing provided by `tunic-dsp`.
 
 mod persistence;
+mod realtime;
 mod telemetry;
 
 use std::fmt;
@@ -18,6 +19,7 @@ use crate::persistence::{ProfileStore, StoredCatalog, StoredProfile};
 pub use crate::telemetry::{
     TelemetryFrame, TelemetryGeneration, TelemetryPublisher, TelemetryReader,
 };
+pub use realtime::{RealtimeProcessor, RealtimePublisher};
 pub use tunic_dsp::{
     ChannelLevels, SPECTRUM_MAX_FREQUENCY_HZ, SPECTRUM_MIN_FREQUENCY_HZ, SPECTRUM_POINT_COUNT,
     Spectrum, StereoLevels, spectrum_frequency_hz,
@@ -372,15 +374,30 @@ pub trait AudioPlatform: 'static {
         equalizer: &Equalizer,
         bypass: BypassControl,
     ) -> Result<PlatformState, PlatformError>;
-    fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError>;
+    fn rebuild_default_route(
+        &mut self,
+        equalizer: &Equalizer,
+    ) -> Result<PlatformState, PlatformError>;
     fn set_equalizer(&mut self, equalizer: &Equalizer) -> Result<(), PlatformError>;
     fn shutdown(&mut self) -> Result<(), PlatformError>;
 }
 
 #[derive(Debug)]
 pub struct PlatformState {
-    pub route: ActiveRoute,
-    pub devices: Vec<OutputDevice>,
+    route: ActiveRoute,
+    devices: Vec<OutputDevice>,
+}
+
+impl PlatformState {
+    #[must_use]
+    pub fn new(route: ActiveRoute, mut devices: Vec<OutputDevice>) -> Self {
+        devices.sort_by(|left, right| {
+            left.name
+                .cmp(&right.name)
+                .then_with(|| left.id.as_str().cmp(right.id.as_str()))
+        });
+        Self { route, devices }
+    }
 }
 
 #[derive(Debug)]
@@ -721,7 +738,7 @@ fn run_commands(
     let bypass = snapshot.bypass.clone();
     loop {
         while let Ok(event) = event_rx.try_recv() {
-            let state = match platform.rebuild_default_route() {
+            let state = match platform.rebuild_default_route(&current.equalizer) {
                 Ok(state) => state,
                 Err(error) => {
                     fail_snapshot(&mut current, &snapshot, error.to_string());
@@ -1185,9 +1202,44 @@ mod tests {
 
     use super::{
         ActiveRoute, AudioPlatform, BypassControl, DeviceId, Engine, EngineOptions, EngineStatus,
-        PlatformError, PlatformEvent, PlatformEventSink, PlatformState, ProcessedOutputSink,
-        ProfileId, TelemetryPublisher,
+        OutputDevice, PlatformError, PlatformEvent, PlatformEventSink, PlatformState,
+        ProcessedOutputSink, ProfileId, TelemetryPublisher,
     };
+
+    #[test]
+    fn platform_state_orders_devices_by_name_then_id() {
+        let route = ActiveRoute {
+            device_id: DeviceId::new("active"),
+            device_name: "Active".into(),
+            sample_rate_hz: 48_000.0,
+            channels: 2,
+        };
+        let device = |id: &str, name: &str| OutputDevice {
+            id: DeviceId::new(id),
+            name: name.into(),
+            sample_rate_hz: 48_000.0,
+            channels: 2,
+            is_default: false,
+        };
+
+        let state = PlatformState::new(
+            route,
+            vec![
+                device("z", "Studio"),
+                device("monitor", "Monitor"),
+                device("a", "Studio"),
+            ],
+        );
+
+        assert_eq!(
+            state
+                .devices
+                .iter()
+                .map(|device| device.id.as_str())
+                .collect::<Vec<_>>(),
+            ["monitor", "a", "z"]
+        );
+    }
 
     #[test]
     fn snapshot_subscription_delivers_initial_and_changed_state_in_order() {
@@ -1478,8 +1530,10 @@ mod tests {
     fn sample_rate_event_rebuilds_the_route() {
         let events = Arc::new(Mutex::new(None));
         let platform_events = Arc::clone(&events);
+        let applied = Arc::new(Mutex::new(Vec::new()));
+        let platform_applied = Arc::clone(&applied);
         let engine = Engine::start(EngineOptions::default(), move || FakePlatform {
-            applied: Arc::new(Mutex::new(Vec::new())),
+            applied: platform_applied,
             reject_equalizer: false,
             events: Some(platform_events),
             rebuild_sample_rate_hz: 44_100.0,
@@ -1516,6 +1570,10 @@ mod tests {
         assert_eq!(snapshot.equalizer, preview);
         assert_eq!(snapshot.edit_revision, preview_revision);
         assert!(snapshot.has_unsaved_changes);
+        assert_eq!(
+            applied.lock().unwrap().as_slice(),
+            &[preview.clone(), preview]
+        );
         engine.shutdown().unwrap();
     }
 
@@ -1814,7 +1872,11 @@ mod tests {
             Ok(platform_state(48_000.0))
         }
 
-        fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError> {
+        fn rebuild_default_route(
+            &mut self,
+            equalizer: &Equalizer,
+        ) -> Result<PlatformState, PlatformError> {
+            self.applied.lock().unwrap().push(equalizer.clone());
             Ok(platform_state(self.rebuild_sample_rate_hz))
         }
 
@@ -1850,7 +1912,10 @@ mod tests {
             Ok(platform_state(48_000.0))
         }
 
-        fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError> {
+        fn rebuild_default_route(
+            &mut self,
+            _equalizer: &Equalizer,
+        ) -> Result<PlatformState, PlatformError> {
             self.rebuild_entered.send(()).unwrap();
             self.release_rebuild.recv().unwrap();
             Ok(platform_state(48_000.0))
@@ -1866,14 +1931,14 @@ mod tests {
     }
 
     fn platform_state(sample_rate_hz: f64) -> PlatformState {
-        PlatformState {
-            route: ActiveRoute {
+        PlatformState::new(
+            ActiveRoute {
                 device_id: DeviceId::new("fake"),
                 device_name: "Fake Output".into(),
                 sample_rate_hz,
                 channels: 2,
             },
-            devices: Vec::new(),
-        }
+            Vec::new(),
+        )
     }
 }

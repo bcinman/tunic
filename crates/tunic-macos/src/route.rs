@@ -1,4 +1,4 @@
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::ffi::{CStr, c_void};
 use std::num::NonZeroUsize;
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -31,9 +31,9 @@ use objc2_core_audio_types::{
 };
 use objc2_core_foundation::CFDictionary;
 use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSObject, NSString, NSUUID};
-use tunic_dsp::{Analyzer, Equalizer, GraphProcessor, GraphPublisher, PreparedGraph};
+use tunic_dsp::Equalizer;
 use tunic_engine::{
-    BypassControl, PlatformError, ProcessedOutputSink, TelemetryFrame, TelemetryGeneration,
+    BypassControl, PlatformError, ProcessedOutputSink, RealtimeProcessor, RealtimePublisher,
     TelemetryPublisher,
 };
 
@@ -58,8 +58,7 @@ pub(crate) struct Route {
     tap_id: AudioObjectID,
     started: bool,
     active: Arc<AtomicBool>,
-    sample_rate_hz: f64,
-    graph_updates: GraphPublisher,
+    graph_updates: RealtimePublisher,
     _block: IoBlock,
     _description: Retained<CATapDescription>,
 }
@@ -111,8 +110,6 @@ impl Route {
         telemetry: TelemetryPublisher,
         equalizer: &Equalizer,
     ) -> Result<Self, PlatformError> {
-        let prepared_graph = PreparedGraph::prepare(equalizer, sample_rate_hz)
-            .map_err(|error| PlatformError::new(error.to_string()))?;
         let output_uid = device_uid(output_id)?;
         let excluded_process = current_process_object().into_iter().collect::<Vec<_>>();
         let process_numbers = excluded_process
@@ -175,19 +172,16 @@ impl Route {
         let active = Arc::new(AtomicBool::new(true));
         let callback_active = Arc::clone(&active);
         let scratch = RefCell::new(Box::new([0.0_f32; SCRATCH_FRAME_CAPACITY * 2]));
-        let (graph_updates, graph) = GraphProcessor::new(
-            prepared_graph,
+        let (graph_updates, processor) = RealtimeProcessor::new(
+            equalizer,
             sample_rate_hz,
             NonZeroUsize::new(SCRATCH_FRAME_CAPACITY).expect("scratch capacity is nonzero"),
-        )
-        .map_err(|error| PlatformError::new(error.to_string()))?;
-        let graph = RefCell::new(graph);
-        let processed_output = RefCell::new(ProcessedOutputObservers::new(
+            bypass,
             output_sink,
             telemetry,
-            sample_rate_hz,
-        ));
-        let callback_bypassed = Cell::new(false);
+        )
+        .map_err(|error| PlatformError::new(error.to_string()))?;
+        let processor = RefCell::new(processor);
         let block = RcBlock::new(
             move |_now: NonNull<AudioTimeStamp>,
                   input: NonNull<AudioBufferList>,
@@ -200,23 +194,17 @@ impl Route {
                     if !callback_active.load(Ordering::Acquire) {
                         return;
                     }
-                    let (Ok(mut scratch), Ok(mut graph), Ok(mut processed_output)) = (
-                        scratch.try_borrow_mut(),
-                        graph.try_borrow_mut(),
-                        processed_output.try_borrow_mut(),
-                    ) else {
+                    let (Ok(mut scratch), Ok(mut processor)) =
+                        (scratch.try_borrow_mut(), processor.try_borrow_mut())
+                    else {
                         return;
                     };
-                    let is_bypassed = bypass.is_bypassed();
-                    reset_graph_on_bypass(&mut graph, &callback_bypassed, is_bypassed);
                     render_audio(
                         input.as_ptr(),
                         output.as_ptr(),
                         tap_buffers,
                         &mut scratch[..],
-                        &mut graph,
-                        is_bypassed,
-                        &mut processed_output,
+                        &mut processor,
                     );
                 }));
             },
@@ -250,7 +238,6 @@ impl Route {
             tap_id,
             started: false,
             active,
-            sample_rate_hz,
             graph_updates,
             _block: block,
             _description: description,
@@ -267,10 +254,9 @@ impl Route {
     }
 
     pub(crate) fn set_equalizer(&self, equalizer: &Equalizer) -> Result<(), PlatformError> {
-        let graph = PreparedGraph::prepare(equalizer, self.sample_rate_hz)
-            .map_err(|error| PlatformError::new(error.to_string()))?;
-        self.graph_updates.publish(graph);
-        Ok(())
+        self.graph_updates
+            .set_equalizer(equalizer)
+            .map_err(|error| PlatformError::new(error.to_string()))
     }
 
     pub(crate) fn stop(&mut self) -> Result<(), PlatformError> {
@@ -320,12 +306,6 @@ impl Route {
         }
 
         errors_to_result(errors)
-    }
-}
-
-fn reset_graph_on_bypass(graph: &mut GraphProcessor, was_bypassed: &Cell<bool>, is_bypassed: bool) {
-    if is_bypassed && !was_bypassed.replace(is_bypassed) {
-        graph.reset();
     }
 }
 
@@ -567,9 +547,7 @@ fn render_audio(
     output: *mut AudioBufferList,
     tap_buffers: TapBufferRange,
     scratch: &mut [f32],
-    graph: &mut GraphProcessor,
-    bypassed: bool,
-    processed_output: &mut ProcessedOutputObservers,
+    processor: &mut RealtimeProcessor,
 ) {
     if input.is_null() || output.is_null() {
         return;
@@ -592,57 +570,10 @@ fn render_audio(
     if frames == 0 {
         return;
     }
-    if !bypassed {
-        graph.process(scratch[..frames * 2].as_chunks_mut::<2>().0);
-    }
-    if write_stereo(&scratch[..frames * 2], output_buffers, frames) {
-        processed_output.observe(&scratch[..frames * 2]);
-    }
-}
-
-struct ProcessedOutputObservers {
-    output_sink: Option<Arc<dyn ProcessedOutputSink>>,
-    telemetry: TelemetryPublisher,
-    telemetry_generation: Option<TelemetryGeneration>,
-    analyzer: Analyzer,
-}
-
-impl ProcessedOutputObservers {
-    fn new(
-        output_sink: Option<Arc<dyn ProcessedOutputSink>>,
-        telemetry: TelemetryPublisher,
-        sample_rate_hz: f64,
-    ) -> Self {
-        Self {
-            output_sink,
-            telemetry,
-            telemetry_generation: None,
-            analyzer: Analyzer::new(sample_rate_hz),
-        }
-    }
-
-    fn observe(&mut self, samples: &[f32]) {
-        if let Some(generation) = self.telemetry.active_generation() {
-            if self.telemetry_generation != Some(generation) {
-                self.analyzer.reset();
-                self.telemetry_generation = Some(generation);
-            }
-            if let Some(frame) = self.analyzer.observe(samples) {
-                self.telemetry.publish(
-                    generation,
-                    TelemetryFrame {
-                        levels: frame.levels,
-                        spectrum: frame.spectrum,
-                    },
-                );
-            }
-        } else {
-            self.telemetry_generation = None;
-        }
-        if let Some(output_sink) = &self.output_sink {
-            output_sink.write(samples);
-        }
-    }
+    let samples = &mut scratch[..frames * 2];
+    processor.process(samples, |samples| {
+        write_stereo(samples, output_buffers, frames)
+    });
 }
 
 fn writable_frames(buffers: &[AudioBuffer]) -> usize {
@@ -734,38 +665,11 @@ const fn size_of<T>() -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        TapBufferRange, normalize_stereo, reset_graph_on_bypass, validate_stream_format,
-        write_stereo,
-    };
+    use super::{TapBufferRange, normalize_stereo, validate_stream_format, write_stereo};
     use objc2_core_audio_types::{
         AudioBuffer, AudioStreamBasicDescription, kAudioFormatFlagIsFloat,
         kAudioFormatFlagIsNonInterleaved, kAudioFormatLinearPCM,
     };
-    use std::cell::Cell;
-    use std::num::NonZeroUsize;
-    use tunic_dsp::{
-        Equalizer, Filter, FrequencyHz, GainDb, GraphProcessor, PreparedGraph, QualityFactor,
-    };
-
-    #[test]
-    fn entering_bypass_clears_filter_history() {
-        let (_, mut graph) = GraphProcessor::new(
-            peaking_graph(12.0),
-            48_000.0,
-            NonZeroUsize::new(64).unwrap(),
-        )
-        .unwrap();
-        let mut impulse = [[1.0_f32, 1.0]];
-        graph.process(&mut impulse);
-        let was_bypassed = Cell::new(false);
-
-        reset_graph_on_bypass(&mut graph, &was_bypassed, true);
-        let mut silence = [[0.0_f32, 0.0]];
-        graph.process(&mut silence);
-
-        assert_eq!(silence, [[0.0, 0.0]]);
-    }
 
     #[test]
     fn normalizes_asymmetric_planar_input_to_interleaved_stereo() {
@@ -867,14 +771,5 @@ mod tests {
             mBitsPerChannel: 32,
             mReserved: 0,
         }
-    }
-
-    fn peaking_graph(gain_db: f64) -> PreparedGraph {
-        let equalizer = Equalizer::with_filter(Filter::peaking(
-            FrequencyHz::new(1_000.0).unwrap(),
-            GainDb::new(gain_db).unwrap(),
-            QualityFactor::new(1.0).unwrap(),
-        ));
-        PreparedGraph::prepare(&equalizer, 48_000.0).unwrap()
     }
 }

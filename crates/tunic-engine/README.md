@@ -1,12 +1,15 @@
 # `tunic-engine`
 
-**Responsibility:** Authoritative product state and non-real-time coordination.
+**Responsibility:** Authoritative product state, non-real-time coordination,
+and the portable real-time shell used by platform callbacks.
 
 - Owns profiles and per-device preferences.
 - Owns SQLite persistence.
 - Tracks desired state, observed output, and active processing state.
 - Owns the persisted equalizer and in-memory live preview.
 - Serializes user requests and platform events.
+- Owns callback-safe bypass transitions, graph processing, capture fanout, and
+  telemetry observation over normalized stereo samples.
 - Requests route rebuilds after default-output and sample-rate changes.
 - Coordinates bypass, equalizer updates, and orderly shutdown with the platform.
 - Publishes immutable state snapshots and latest telemetry.
@@ -141,7 +144,10 @@ pub trait AudioPlatform: 'static {
         equalizer: &Equalizer,
         bypass: BypassControl,
     ) -> Result<PlatformState, PlatformError>;
-    fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError>;
+    fn rebuild_default_route(
+        &mut self,
+        equalizer: &Equalizer,
+    ) -> Result<PlatformState, PlatformError>;
     fn set_equalizer(&mut self, equalizer: &Equalizer) -> Result<(), PlatformError>;
     fn shutdown(&mut self) -> Result<(), PlatformError>;
 }
@@ -162,6 +168,13 @@ calls `configure(ProcessedOutputFormat)` when creating a route and calls
 `write(&[f32])` with interleaved stereo samples from the real-time audio thread.
 `write` must not block or allocate. Sink setup failures use
 `OutputSinkError::new` and fail route construction.
+
+`RealtimeProcessor` is the portable callback shell. A platform creates one for
+each native route, normalizes its input to interleaved stereo, and calls
+`process` with a native-buffer writer. The processor owns bypass transition
+resets, graph processing and crossfades, capture fanout, telemetry demand, and
+analyzer lifecycle. `RealtimePublisher` prepares and publishes later equalizer
+updates for the route's sample rate.
 
 ## Persistence
 

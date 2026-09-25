@@ -7,10 +7,9 @@
 - Manages system-audio permissions.
 - Owns process taps, aggregate devices, IOProcs, and callback contexts.
 - Negotiates stream formats.
-- Owns capture/render transport and resampling, using `tunic-dsp` for portable
-  graph publication and crossfades.
-- Feeds normalized post-DSP samples to the `tunic-dsp` analyzer and publishes
-  its results through the callback-safe engine telemetry channel.
+- Owns native capture/render transport and buffer normalization.
+- Invokes the engine's portable real-time shell and writes processed stereo
+  samples back to Core Audio.
 - Guarantees ordered activation, handoff, retirement, and teardown.
 - Contains no profile, persistence, or UI policy.
 
@@ -20,9 +19,7 @@
 pub struct CoreAudioPlatform;
 
 impl CoreAudioPlatform {
-    pub fn new(
-        options: CoreAudioOptions,
-    ) -> Result<Self, CoreAudioError>;
+    pub fn new() -> Self;
 }
 
 impl AudioPlatform for CoreAudioPlatform {
@@ -33,9 +30,7 @@ impl AudioPlatform for CoreAudioPlatform {
 The app wires it directly into the engine:
 
 ```rust
-let platform = CoreAudioPlatform::new(audio_options)?;
-let engine = Engine::start(engine_options, platform)?;
-tunic_app::run_with_engine(engine)?;
+let engine = Engine::start(engine_options, CoreAudioPlatform::new)?;
 ```
 
 See the [workspace structure](../../STRUCTURE.md) for the complete crate layout and dependency direction.

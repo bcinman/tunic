@@ -31,13 +31,16 @@ Everything else can remain internal GPUI entities, views, and actions.
 
 ## `tunic-engine`
 
-**Responsibility:** Authoritative product state and non-real-time coordination.
+**Responsibility:** Authoritative product state, non-real-time coordination,
+and the portable real-time shell used by platform callbacks.
 
 - Owns profiles and per-device preferences.
 - Owns SQLite persistence.
 - Tracks desired state, observed output, and active processing state.
 - Publishes bypass through a shared atomic control so the real-time route does
   not wait on engine-thread work.
+- Owns portable callback policy: bypass transitions, graph processing, capture
+  fanout, telemetry demand, and analyzer resets.
 - Serializes non-real-time user requests and platform events.
 - Coordinates route preparation, activation, retirement, retries, and shutdown.
 - Publishes immutable state snapshots and latest telemetry.
@@ -95,21 +98,20 @@ impl EngineHandle {
 ### Platform contract
 
 ```rust
-pub trait AudioPlatform: Send + 'static {
-    fn start(&mut self, events: PlatformEventSink)
-        -> Result<(), PlatformError>;
-
-    fn prepare_route(
+pub trait AudioPlatform: 'static {
+    fn start(
         &mut self,
-        request: PrepareRouteRequest,
-    ) -> Result<(), PlatformError>;
-
-    fn activate_route(
+        events: PlatformEventSink,
+        output_sink: Option<Arc<dyn ProcessedOutputSink>>,
+        telemetry: TelemetryPublisher,
+        equalizer: &Equalizer,
+        bypass: BypassControl,
+    ) -> Result<PlatformState, PlatformError>;
+    fn rebuild_default_route(
         &mut self,
-        request: ActivateRouteRequest,
-    ) -> Result<(), PlatformError>;
-
-    fn retire_route(&mut self, route: RouteId);
+        equalizer: &Equalizer,
+    ) -> Result<PlatformState, PlatformError>;
+    fn set_equalizer(&mut self, equalizer: &Equalizer) -> Result<(), PlatformError>;
     fn shutdown(&mut self) -> Result<(), PlatformError>;
 }
 ```
@@ -165,10 +167,9 @@ impl PreparedGraph {
 - Manages system-audio permissions.
 - Owns process taps, aggregate devices, IOProcs, and callback contexts.
 - Negotiates stream formats.
-- Owns capture/render transport and resampling, using the portable DSP graph
-  processor for publication and crossfades.
-- Feeds normalized post-DSP samples to the portable analyzer and publishes its
-  results through the callback-safe telemetry channel.
+- Owns native capture/render transport.
+- Normalizes native buffers, invokes the real-time shell, and writes processed
+  samples back to Core Audio.
 - Guarantees ordered activation, handoff, retirement, and teardown.
 - Contains no profile, persistence, or UI policy.
 

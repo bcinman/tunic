@@ -34,7 +34,6 @@ pub struct CoreAudioPlatform {
     bypass: BypassControl,
     output_sink: Option<Arc<dyn ProcessedOutputSink>>,
     telemetry: Option<TelemetryPublisher>,
-    equalizer: Equalizer,
 }
 
 impl CoreAudioPlatform {
@@ -48,11 +47,13 @@ impl CoreAudioPlatform {
             bypass: BypassControl::default(),
             output_sink: None,
             telemetry: None,
-            equalizer: Equalizer::identity(),
         }
     }
 
-    fn build_default_route(&mut self) -> Result<PlatformState, PlatformError> {
+    fn build_default_route(
+        &mut self,
+        equalizer: &Equalizer,
+    ) -> Result<PlatformState, PlatformError> {
         let output_id = default_output_id()?;
         let events = self
             .events
@@ -93,10 +94,10 @@ impl CoreAudioPlatform {
             self.bypass.clone(),
             self.output_sink.clone(),
             telemetry.clone(),
-            &self.equalizer,
+            equalizer,
         )?);
         self.sample_rate_listener = Some(sample_rate_listener);
-        Ok(PlatformState { route, devices })
+        Ok(PlatformState::new(route, devices))
     }
 
     fn shutdown_resources(&mut self) -> Result<(), PlatformError> {
@@ -133,7 +134,6 @@ impl AudioPlatform for CoreAudioPlatform {
     ) -> Result<PlatformState, PlatformError> {
         self.output_sink = output_sink;
         self.telemetry = Some(telemetry);
-        self.equalizer = equalizer.clone();
         self.bypass = bypass;
         self.events = Some(events.clone());
         self.default_output_listener = Some(PropertyListener::new(
@@ -142,7 +142,7 @@ impl AudioPlatform for CoreAudioPlatform {
             events,
             PlatformEvent::DefaultOutputChanged,
         )?);
-        match self.build_default_route() {
+        match self.build_default_route(equalizer) {
             Ok(state) => Ok(state),
             Err(start_error) => {
                 let cleanup = self.shutdown_resources();
@@ -151,8 +151,11 @@ impl AudioPlatform for CoreAudioPlatform {
         }
     }
 
-    fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError> {
-        self.build_default_route()
+    fn rebuild_default_route(
+        &mut self,
+        equalizer: &Equalizer,
+    ) -> Result<PlatformState, PlatformError> {
+        self.build_default_route(equalizer)
     }
 
     fn set_equalizer(&mut self, equalizer: &Equalizer) -> Result<(), PlatformError> {
@@ -160,9 +163,7 @@ impl AudioPlatform for CoreAudioPlatform {
             .route
             .as_ref()
             .ok_or_else(|| PlatformError::new("no active output route"))?;
-        route.set_equalizer(equalizer)?;
-        self.equalizer = equalizer.clone();
-        Ok(())
+        route.set_equalizer(equalizer)
     }
 
     fn shutdown(&mut self) -> Result<(), PlatformError> {

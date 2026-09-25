@@ -1233,19 +1233,22 @@ mod tests {
                 sample_rate_hz: 48_000.0,
                 channels: 2,
             };
-            Ok(PlatformState {
-                devices: vec![OutputDevice {
+            Ok(PlatformState::new(
+                route.clone(),
+                vec![OutputDevice {
                     id: route.device_id.clone(),
                     name: route.device_name.clone(),
                     sample_rate_hz: route.sample_rate_hz,
                     channels: route.channels,
                     is_default: true,
                 }],
-                route,
-            })
+            ))
         }
 
-        fn rebuild_default_route(&mut self) -> Result<PlatformState, PlatformError> {
+        fn rebuild_default_route(
+            &mut self,
+            _equalizer: &Equalizer,
+        ) -> Result<PlatformState, PlatformError> {
             unreachable!("this test does not rebuild the route")
         }
 

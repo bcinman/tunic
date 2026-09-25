@@ -40,6 +40,9 @@ architecture.
   measurement in the portable DSP crate, with attack smoothing and controlled
   dB decay, published at 60 Hz through a lock-free latest-value engine telemetry
   reader only while a meter consumer is active.
+- A portable engine-owned real-time shell for bypass transitions, graph
+  processing, output capture, and telemetry observation; platform callbacks
+  only normalize native buffers, invoke it, and write samples back.
 - A headless interactive CLI with:
   - engine and route status;
   - continuous engine snapshot watching;
