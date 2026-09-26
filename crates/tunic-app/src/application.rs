@@ -16,7 +16,7 @@ use crate::{AppConfig, AppError};
 
 actions!(tunic, [CloseWindow, Quit, ShowWindow]);
 
-const MAIN_WINDOW_WIDTH: f32 = 768.0;
+const MAIN_WINDOW_WIDTH: f32 = 748.0;
 const TRAFFIC_LIGHT_INSET: f32 = 18.0;
 
 pub fn run(config: AppConfig) -> Result<(), AppError> {
