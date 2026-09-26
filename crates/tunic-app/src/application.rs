@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use gpui::{
     App, AppContext, Bounds, Entity, KeyBinding, Menu, MenuItem, WindowBounds, WindowOptions,
-    actions, px, size,
+    actions, point, px, size,
 };
 use tunic_engine::{Engine, EngineOptions};
 use tunic_macos::CoreAudioPlatform;
@@ -12,6 +12,9 @@ use crate::editor::TunicView;
 use crate::{AppConfig, AppError};
 
 actions!(tunic, [CloseWindow, Quit, ShowWindow]);
+
+const MAIN_WINDOW_WIDTH: f32 = 768.0;
+const TRAFFIC_LIGHT_INSET: f32 = 18.0;
 
 pub fn run(config: AppConfig) -> Result<(), AppError> {
     let engine = Engine::start(
@@ -87,12 +90,16 @@ fn show_main_window(cx: &mut App, state: Entity<TunicView>) -> gpui::Result<()> 
         return Ok(());
     }
 
-    let bounds = Bounds::centered(None, size(px(980.), px(720.)), cx);
+    let bounds = Bounds::centered(None, size(px(MAIN_WINDOW_WIDTH), px(720.)), cx);
     cx.open_window(
         WindowOptions {
             window_bounds: Some(WindowBounds::Windowed(bounds)),
             titlebar: Some(gpui::TitlebarOptions {
-                title: Some("Tunic".into()),
+                appears_transparent: true,
+                traffic_light_position: Some(point(
+                    px(TRAFFIC_LIGHT_INSET),
+                    px(TRAFFIC_LIGHT_INSET),
+                )),
                 ..Default::default()
             }),
             ..Default::default()
