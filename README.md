@@ -2,26 +2,6 @@
 
 An opinionated cross-platform parametric equalizer.
 
-## Features
-
-- System-wide audio capture, equalization, and playback on macOS.
-- Live peaking, low-shelf, and high-shelf filters with configurable frequency, gain, and Q.
-- Persistent profiles with defaults and per-output-device assignments.
-- Live equalizer previews with save and discard workflows.
-- A graphical response editor for adding, adjusting, removing, saving, and
-  reverting filters.
-- Processing bypass plus stereo peak, RMS, and real-time spectrum metering.
-- An interactive CLI for filter editing, profile management, device inspection, and WAV capture.
-- Automatic adaptation to default-output and sample-rate changes.
-
-## Coming Soon
-
-- Additional equalizer filter types.
-- Profile import and export.
-- Smoother route handoff, recovery, and sample-rate conversion.
-- Linux and Windows audio backends.
-- Signed, installable releases.
-
 ## Crates
 
 | Crate | Provides |
