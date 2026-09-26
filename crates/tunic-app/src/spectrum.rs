@@ -1,11 +1,15 @@
 use std::time::Duration;
 
 use gpui::{
-    Context, IntoElement, PathBuilder, Render, Task, Window, canvas, point, prelude::*, px, rgba,
+    Bounds, ContentMask, Context, IntoElement, PathBuilder, Render, Task, Window, canvas, point,
+    prelude::*, px, rgba, size,
 };
 use tunic_engine::{SPECTRUM_POINT_COUNT, Spectrum, TelemetryReader};
 
 const SPECTRUM_FLOOR_DB: f32 = -72.0;
+const SPECTRUM_FADE_BANDS: usize = 96;
+const SPECTRUM_FILL_MAX_ALPHA: u8 = 56;
+const SPECTRUM_CURVE_MAX_ALPHA: u8 = 120;
 
 pub(super) struct SpectrumView {
     telemetry: TelemetryReader,
@@ -73,12 +77,45 @@ impl Render for SpectrumView {
                 }
                 (fill.build().ok(), curve.build().ok())
             },
-            |_, (fill, curve), window, _| {
-                if let Some(fill) = fill {
-                    window.paint_path(fill, rgba(0x297ca638));
-                }
-                if let Some(curve) = curve {
-                    window.paint_path(curve, rgba(0x5cc8ff78));
+            |bounds, (fill, curve), window, _| {
+                for band in 0..SPECTRUM_FADE_BANDS {
+                    let top_ratio = band as f32 / SPECTRUM_FADE_BANDS as f32;
+                    let bottom_ratio = (band + 1) as f32 / SPECTRUM_FADE_BANDS as f32;
+                    let vertical_ratio = (top_ratio + bottom_ratio) / 2.0;
+                    let fill_alpha = spectrum_fade_alpha(vertical_ratio, SPECTRUM_FILL_MAX_ALPHA);
+                    let curve_alpha = spectrum_fade_alpha(vertical_ratio, SPECTRUM_CURVE_MAX_ALPHA);
+                    if fill_alpha == 0 && curve_alpha == 0 {
+                        continue;
+                    }
+
+                    let top = bounds.top() + bounds.size.height * top_ratio;
+                    let height = bounds.size.height * (bottom_ratio - top_ratio);
+                    window.with_content_mask(
+                        Some(ContentMask {
+                            bounds: Bounds {
+                                origin: point(bounds.left(), top),
+                                size: size(bounds.size.width, height),
+                            },
+                        }),
+                        |window| {
+                            if let Some(fill) = fill.as_ref()
+                                && fill_alpha > 0
+                            {
+                                window.paint_path(
+                                    fill.clone(),
+                                    rgba(0x297ca600 | u32::from(fill_alpha)),
+                                );
+                            }
+                            if let Some(curve) = curve.as_ref()
+                                && curve_alpha > 0
+                            {
+                                window.paint_path(
+                                    curve.clone(),
+                                    rgba(0x5cc8ff00 | u32::from(curve_alpha)),
+                                );
+                            }
+                        },
+                    );
                 }
             },
         )
@@ -102,9 +139,17 @@ fn spectrum_point_ratio(index: usize) -> f32 {
     index as f32 / (SPECTRUM_POINT_COUNT - 1) as f32
 }
 
+fn spectrum_fade_alpha(vertical_ratio: f32, max_alpha: u8) -> u8 {
+    let ratio = vertical_ratio.clamp(0.0, 1.0);
+    (f32::from(max_alpha) * (1.0 - ratio.powi(4))).round() as u8
+}
+
 #[cfg(test)]
 mod tests {
-    use super::spectrum_amplitude_to_ratio;
+    use super::{
+        SPECTRUM_CURVE_MAX_ALPHA, SPECTRUM_FILL_MAX_ALPHA, spectrum_amplitude_to_ratio,
+        spectrum_fade_alpha,
+    };
 
     #[test]
     fn projection_maps_dbfs_to_the_graph_height() {
@@ -112,5 +157,14 @@ mod tests {
         assert!((spectrum_amplitude_to_ratio(0.001) - 5.0 / 6.0).abs() < 1e-6);
         assert_eq!(spectrum_amplitude_to_ratio(0.0), 1.0);
         assert_eq!(spectrum_amplitude_to_ratio(2.0), 0.0);
+    }
+
+    #[test]
+    fn spectrum_uses_a_smooth_non_linear_fade() {
+        assert_eq!(spectrum_fade_alpha(0.0, SPECTRUM_FILL_MAX_ALPHA), 56);
+        assert_eq!(spectrum_fade_alpha(1.0, SPECTRUM_FILL_MAX_ALPHA), 0);
+        assert_eq!(spectrum_fade_alpha(0.25, SPECTRUM_FILL_MAX_ALPHA), 56);
+        assert_eq!(spectrum_fade_alpha(0.75, SPECTRUM_FILL_MAX_ALPHA), 38);
+        assert_eq!(spectrum_fade_alpha(0.75, SPECTRUM_CURVE_MAX_ALPHA), 82);
     }
 }
