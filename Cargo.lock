@@ -5988,6 +5988,9 @@ version = "0.1.0"
 dependencies = [
  "gpui-platform-gpui-unofficial",
  "gpui-unofficial",
+ "objc2-app-kit 0.3.2",
+ "objc2-core-foundation",
+ "raw-window-handle",
  "tunic-dsp",
  "tunic-engine",
  "tunic-macos",

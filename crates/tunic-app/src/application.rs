@@ -2,9 +2,12 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use gpui::{
-    App, AppContext, Bounds, Entity, KeyBinding, Menu, MenuItem, WindowBounds, WindowOptions,
-    actions, point, px, size,
+    App, AppContext, Bounds, Entity, KeyBinding, Menu, MenuItem, Window, WindowBounds,
+    WindowOptions, actions, point, px, size,
 };
+use objc2_app_kit::NSView;
+use objc2_core_foundation::CGSize;
+use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use tunic_engine::{Engine, EngineOptions};
 use tunic_macos::CoreAudioPlatform;
 
@@ -91,7 +94,7 @@ fn show_main_window(cx: &mut App, state: Entity<TunicView>) -> gpui::Result<()> 
     }
 
     let bounds = Bounds::centered(None, size(px(MAIN_WINDOW_WIDTH), px(720.)), cx);
-    cx.open_window(
+    let window = cx.open_window(
         WindowOptions {
             window_bounds: Some(WindowBounds::Windowed(bounds)),
             titlebar: Some(gpui::TitlebarOptions {
@@ -106,6 +109,22 @@ fn show_main_window(cx: &mut App, state: Entity<TunicView>) -> gpui::Result<()> 
         },
         |_, _| state,
     )?;
+    window.update(cx, |_, window, _| set_main_window_max_width(window))?;
     cx.activate(true);
     Ok(())
+}
+
+fn set_main_window_max_width(window: &Window) {
+    let Ok(handle) = HasWindowHandle::window_handle(window) else {
+        return;
+    };
+    let RawWindowHandle::AppKit(handle) = handle.as_raw() else {
+        return;
+    };
+
+    // SAFETY: GPUI's AppKit handle contains the live NSView owned by this window.
+    let native_view = unsafe { handle.ns_view.cast::<NSView>().as_ref() };
+    if let Some(native_window) = native_view.window() {
+        native_window.setContentMaxSize(CGSize::new(MAIN_WINDOW_WIDTH.into(), f64::MAX));
+    }
 }
