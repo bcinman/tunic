@@ -6,7 +6,7 @@ use crate::spectrum::SpectrumView;
 use gpui::{
     Bounds, Context, Entity, FontWeight, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent,
     MouseUpEvent, PathBuilder, Pixels, Render, Task, Window, canvas, div, point, prelude::*, px,
-    relative, rgb, rgba,
+    relative, rgb,
 };
 use tunic_dsp::{Equalizer, Filter, FilterKind, FrequencyHz, GainDb, PreparedGraph, QualityFactor};
 use tunic_engine::{EditRevision, EngineHandle, EngineSnapshot, EngineStatus};
@@ -389,7 +389,6 @@ impl Render for TunicView {
             .flex()
             .flex_col()
             .gap_3()
-            .p_6()
             .bg(rgb(0x17191d))
             .text_color(rgb(0xe7e8ea))
             .child(
@@ -397,6 +396,8 @@ impl Render for TunicView {
                     .flex()
                     .items_center()
                     .justify_between()
+                    .px_6()
+                    .pt_6()
                     .child(
                         div()
                             .flex()
@@ -430,29 +431,11 @@ impl Render for TunicView {
                     .relative()
                     .h(px(330.0))
                     .w_full()
-                    .rounded_md()
-                    .overflow_hidden()
-                    .bg(rgb(0x0d1117))
-                    .border_1()
-                    .border_color(rgb(0x3a404a))
                     .child(self.spectrum.clone())
                     .child(
                         canvas(
                             move |bounds, _, _| {
                                 graph_bounds.set(bounds);
-                                let mut grid = PathBuilder::stroke(px(1.0));
-                                for column in 0..=10 {
-                                    let x =
-                                        bounds.left() + bounds.size.width * (column as f32 / 10.0);
-                                    grid.move_to(point(x, bounds.top()));
-                                    grid.line_to(point(x, bounds.bottom()));
-                                }
-                                for row in 0..=8 {
-                                    let y = bounds.top() + bounds.size.height * (row as f32 / 8.0);
-                                    grid.move_to(point(bounds.left(), y));
-                                    grid.line_to(point(bounds.right(), y));
-                                }
-
                                 let mut curve = PathBuilder::stroke(px(2.0));
                                 for sample in 0..=256 {
                                     let ratio = sample as f64 / 256.0;
@@ -470,12 +453,9 @@ impl Render for TunicView {
                                         curve.line_to(point(x, y));
                                     }
                                 }
-                                (grid.build().ok(), curve.build().ok())
+                                curve.build().ok()
                             },
-                            |_, (grid, curve), window, _| {
-                                if let Some(grid) = grid {
-                                    window.paint_path(grid, rgba(0x89909b2c));
-                                }
+                            |_, curve, window, _| {
                                 if let Some(curve) = curve {
                                     window.paint_path(curve, rgb(0x4fc3f7));
                                 }
@@ -546,6 +526,7 @@ impl Render for TunicView {
                     .flex()
                     .items_center()
                     .justify_between()
+                    .px_6()
                     .child(
                         div()
                             .flex()
@@ -625,7 +606,13 @@ impl Render for TunicView {
                     ),
             )
             .when_some(self.editor_error.clone(), |element, error| {
-                element.child(div().text_sm().text_color(rgb(0xff7b72)).child(error))
+                element.child(
+                    div()
+                        .px_6()
+                        .text_sm()
+                        .text_color(rgb(0xff7b72))
+                        .child(error),
+                )
             })
             .child(
                 div()
@@ -636,6 +623,8 @@ impl Render for TunicView {
                     .flex()
                     .flex_col()
                     .gap_2()
+                    .px_6()
+                    .pb_6()
                     .children(filters.into_iter().enumerate().map(|(index, filter)| {
                         let selected = self.selected_filter == Some(index);
                         div()
