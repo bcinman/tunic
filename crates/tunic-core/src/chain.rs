@@ -1,3 +1,5 @@
+use nutype::nutype;
+
 /// The ordered processing path applied to an audio stream.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Chain {
@@ -21,11 +23,39 @@ pub enum FilterKind {
     HighShelf,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-pub struct FrequencyHz(pub f64);
+#[nutype(
+    validate(finite, greater = 0.0),
+    derive(Clone, Copy, Debug, PartialEq, PartialOrd, TryFrom)
+)]
+pub struct FrequencyHz(f64);
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct GainDb(pub f64);
+#[nutype(
+    validate(finite),
+    derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, TryFrom),
+    default = 0.0
+)]
+pub struct GainDb(f64);
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-pub struct QualityFactor(pub f64);
+#[nutype(
+    validate(finite, greater = 0.0),
+    derive(Clone, Copy, Debug, PartialEq, PartialOrd, TryFrom)
+)]
+pub struct QualityFactor(f64);
+
+#[cfg(test)]
+mod tests {
+    use super::{FrequencyHz, GainDb, QualityFactor};
+
+    #[test]
+    fn audio_parameters_reject_values_outside_their_domains() {
+        assert!(FrequencyHz::try_new(0.0).is_err());
+        assert!(FrequencyHz::try_new(f64::NAN).is_err());
+        assert!(GainDb::try_new(f64::INFINITY).is_err());
+        assert!(QualityFactor::try_new(0.0).is_err());
+        assert!(QualityFactor::try_new(f64::NEG_INFINITY).is_err());
+
+        assert!(FrequencyHz::try_new(20.0).is_ok());
+        assert!(GainDb::try_new(-12.0).is_ok());
+        assert!(QualityFactor::try_new(0.7).is_ok());
+    }
+}

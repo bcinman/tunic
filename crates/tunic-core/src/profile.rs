@@ -1,33 +1,37 @@
 use crate::{Chain, DeviceId};
+use nutype::nutype;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ProfileId(pub String);
+#[nutype(
+    validate(not_empty),
+    derive(Clone, Debug, Display, Eq, Hash, PartialEq, TryFrom)
+)]
+pub struct ProfileId(String);
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct PresetId(pub String);
+#[nutype(
+    validate(not_empty),
+    derive(Clone, Debug, Display, Eq, Hash, PartialEq, TryFrom)
+)]
+pub struct PresetId(String);
+
+#[nutype(
+    sanitize(trim),
+    validate(not_empty),
+    derive(Clone, Debug, Display, Eq, Hash, PartialEq, TryFrom)
+)]
+pub struct ProfileName(String);
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct ProfileRevision(pub u64);
 
-#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-pub struct EditRevision(pub u64);
-
-/// A saved profile and its optional in-memory edit.
+/// A saved profile and its optional in-memory preview.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Profile {
     pub id: ProfileId,
     pub device: DeviceId,
-    pub name: String,
+    pub name: ProfileName,
     pub chain: Chain,
     pub revision: ProfileRevision,
-    pub edit: Option<ProfileEdit>,
-}
-
-/// An unsaved chain preview.
-#[derive(Clone, Debug, PartialEq)]
-pub struct ProfileEdit {
-    pub chain: Chain,
-    pub revision: EditRevision,
+    pub preview: Option<Chain>,
 }
 
 /// A built-in starting point for a profile.
@@ -37,4 +41,25 @@ pub struct Preset {
     pub brand: String,
     pub model: String,
     pub chain: Chain,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{PresetId, ProfileId, ProfileName};
+
+    #[test]
+    fn identifiers_are_not_empty() {
+        assert!(ProfileId::try_new("").is_err());
+        assert!(PresetId::try_new("").is_err());
+        assert!(ProfileId::try_new("studio").is_ok());
+    }
+
+    #[test]
+    fn profile_names_are_trimmed_and_not_blank() {
+        assert!(ProfileName::try_new("   ").is_err());
+        assert_eq!(
+            ProfileName::try_new("  Studio  ").unwrap().into_inner(),
+            "Studio"
+        );
+    }
 }

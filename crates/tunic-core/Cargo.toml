@@ -3,5 +3,8 @@ name = "tunic-core"
 version.workspace = true
 edition.workspace = true
 
+[dependencies]
+nutype.workspace = true
+
 [lints]
 workspace = true

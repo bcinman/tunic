@@ -1,4 +1,4 @@
-use crate::{State, Store};
+use crate::{DeviceId, PresetId, ProfileId, ProfileName, State, Store, StoreError};
 
 /// Applies product commands and owns Tunic's authoritative state.
 ///
@@ -11,6 +11,17 @@ pub struct Backend {
 
 /// A rejected command or failed backend operation.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct BackendError {
-    pub message: String,
+pub enum BackendError {
+    ProfileNotFound(ProfileId),
+    PresetNotFound(PresetId),
+    ProfileNameAlreadyExists {
+        device: DeviceId,
+        name: ProfileName,
+    },
+    ProfileDeviceMismatch {
+        profile: ProfileId,
+        profile_device: DeviceId,
+        requested_device: DeviceId,
+    },
+    StoreFailed(StoreError),
 }

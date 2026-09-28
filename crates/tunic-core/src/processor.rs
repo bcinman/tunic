@@ -1,10 +1,20 @@
+use std::num::NonZeroUsize;
+
+use nutype::nutype;
+
 pub const SPECTRUM_POINT_COUNT: usize = 256;
+
+#[nutype(
+    validate(finite, greater = 0.0),
+    derive(Clone, Copy, Debug, PartialEq, PartialOrd, TryFrom)
+)]
+pub struct SampleRateHz(f64);
 
 /// The normalized stream format accepted by a [`Processor`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct AudioFormat {
-    pub sample_rate_hz: f64,
-    pub maximum_frame_count: usize,
+    pub sample_rate: SampleRateHz,
+    pub maximum_frame_count: NonZeroUsize,
 }
 
 /// A stateful processor exclusively owned by an audio callback.
@@ -52,6 +62,18 @@ impl Default for Spectrum {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ProcessorError {
-    pub message: String,
+pub enum ProcessorError {
+    FilterAtOrAboveNyquist { filter: usize },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SampleRateHz;
+
+    #[test]
+    fn sample_rates_are_positive_and_finite() {
+        assert!(SampleRateHz::try_new(0.0).is_err());
+        assert!(SampleRateHz::try_new(f64::NAN).is_err());
+        assert!(SampleRateHz::try_new(48_000.0).is_ok());
+    }
 }

@@ -1,4 +1,4 @@
-use crate::{Chain, DeviceId, DeviceProfileSelection, ProfileId, ProfileRevision};
+use crate::{Chain, DeviceId, DeviceProfileSelection, ProfileId, ProfileName, ProfileRevision};
 
 /// Persistence boundary for Tunic's durable product state.
 ///
@@ -19,12 +19,13 @@ pub struct DurableState {
 pub struct StoredProfile {
     pub id: ProfileId,
     pub device: DeviceId,
-    pub name: String,
+    pub name: ProfileName,
     pub chain: Chain,
     pub revision: ProfileRevision,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct StoreError {
-    pub message: String,
+pub enum StoreError {
+    Unavailable { message: String },
+    Corrupt { message: String },
 }

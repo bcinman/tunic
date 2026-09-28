@@ -1,7 +1,11 @@
 use crate::{Profile, ProfileId};
+use nutype::nutype;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct DeviceId(pub String);
+#[nutype(
+    validate(not_empty),
+    derive(Clone, Debug, Display, Eq, Hash, PartialEq, TryFrom)
+)]
+pub struct DeviceId(String);
 
 /// The latest read model exposed by the backend.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -15,4 +19,15 @@ pub struct State {
 pub struct DeviceProfileSelection {
     pub device: DeviceId,
     pub profile: ProfileId,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::DeviceId;
+
+    #[test]
+    fn device_identifiers_are_not_empty() {
+        assert!(DeviceId::try_new("").is_err());
+        assert!(DeviceId::try_new("system-output").is_ok());
+    }
 }

@@ -1,4 +1,4 @@
-use crate::{Chain, DeviceId, EditRevision, PresetId, ProfileId};
+use crate::{Chain, DeviceId, PresetId, ProfileId, ProfileName};
 
 /// An intended change to Tunic's product state.
 #[derive(Clone, Debug, PartialEq)]
@@ -6,12 +6,12 @@ pub enum Command {
     SetBypassed(bool),
     CreateProfile {
         device: DeviceId,
-        name: String,
+        name: ProfileName,
         source: ProfileSource,
     },
     RenameProfile {
         profile: ProfileId,
-        name: String,
+        name: ProfileName,
     },
     DeleteProfile(ProfileId),
     SelectProfile {
@@ -21,16 +21,9 @@ pub enum Command {
     PreviewChain {
         profile: ProfileId,
         chain: Chain,
-        expected_revision: EditRevision,
     },
-    SaveChain {
-        profile: ProfileId,
-        expected_revision: EditRevision,
-    },
-    DiscardChain {
-        profile: ProfileId,
-        expected_revision: EditRevision,
-    },
+    SaveChain(ProfileId),
+    DiscardChain(ProfileId),
 }
 
 /// Initial contents for a newly created profile.

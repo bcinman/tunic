@@ -9,14 +9,18 @@ mod state;
 mod store;
 
 pub use backend::{Backend, BackendError};
-pub use chain::{Chain, Filter, FilterKind, FrequencyHz, GainDb, QualityFactor};
+pub use chain::{
+    Chain, Filter, FilterKind, FrequencyHz, FrequencyHzError, GainDb, GainDbError, QualityFactor,
+    QualityFactorError,
+};
 pub use command::{Command, ProfileSource};
 pub use processor::{
-    AudioFormat, ChannelLevels, Processor, ProcessorError, Spectrum, StereoLevels, Telemetry,
-    TelemetryFrame,
+    AudioFormat, ChannelLevels, Processor, ProcessorError, SampleRateHz, SampleRateHzError,
+    Spectrum, StereoLevels, Telemetry, TelemetryFrame,
 };
 pub use profile::{
-    EditRevision, Preset, PresetId, Profile, ProfileEdit, ProfileId, ProfileRevision,
+    Preset, PresetId, PresetIdError, Profile, ProfileId, ProfileIdError, ProfileName,
+    ProfileNameError, ProfileRevision,
 };
-pub use state::{DeviceId, DeviceProfileSelection, State};
+pub use state::{DeviceId, DeviceIdError, DeviceProfileSelection, State};
 pub use store::{DurableState, Store, StoreError, StoredProfile};
