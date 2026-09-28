@@ -23,6 +23,12 @@ pub struct ProfileName(String);
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct ProfileRevision(pub u64);
 
+impl ProfileRevision {
+    pub(crate) fn next(self) -> Option<Self> {
+        self.0.checked_add(1).map(Self)
+    }
+}
+
 /// A saved reusable processing profile.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Profile {

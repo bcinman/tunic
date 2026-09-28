@@ -11,8 +11,12 @@ architecture.
 
 ## In
 
-- A five-crate Rust workspace separating the app, CLI, DSP, engine, and macOS
-  platform layers.
+- A six-crate Rust workspace separating the portable core, app, CLI, DSP,
+  engine, and macOS platform layers.
+- A new platform-independent `tunic-core` with validated profile, chain, and
+  device-selection types; complete command handling; revision-checked profile
+  updates; atomic whole-state persistence through a `Store` contract; and
+  rejection of corrupt restored state.
 - A Core Audio route built from a process tap, aggregate device, and IOProc.
 - System-audio capture and playback through the current default macOS output.
 - Default-output and nominal sample-rate change observation with route

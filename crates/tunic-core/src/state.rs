@@ -14,6 +14,23 @@ pub struct State {
     pub selections: Vec<DeviceProfileSelection>,
 }
 
+impl State {
+    #[must_use]
+    pub fn profile(&self, id: &ProfileId) -> Option<&Profile> {
+        self.profiles.iter().find(|profile| &profile.id == id)
+    }
+
+    #[must_use]
+    pub fn selected_profile(&self, device: &DeviceId) -> Option<&Profile> {
+        let profile = &self
+            .selections
+            .iter()
+            .find(|selection| &selection.device == device)?
+            .profile;
+        self.profile(profile)
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DeviceProfileSelection {
     pub device: DeviceId,

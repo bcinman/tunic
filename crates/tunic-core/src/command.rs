@@ -4,6 +4,7 @@ use crate::{Chain, DeviceId, PresetId, ProfileId, ProfileName, ProfileRevision};
 #[derive(Clone, Debug, PartialEq)]
 pub enum Command {
     CreateProfile {
+        id: ProfileId,
         name: ProfileName,
         source: ProfileSource,
     },
