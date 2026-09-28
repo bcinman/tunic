@@ -3,16 +3,11 @@ use nutype::nutype;
 /// The ordered processing path applied to an audio stream.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Chain {
-    pub stages: Vec<Stage>,
+    pub equalizer: Equalizer,
+    // pub spatializer: Option<Spatializer>,
 }
 
-/// One operation in a processing [`Chain`].
-#[derive(Clone, Debug, PartialEq)]
-pub enum Stage {
-    Equalizer(Equalizer),
-}
-
-/// Gain and frequency shaping applied as one stage of a processing chain.
+/// Gain and frequency shaping applied by a processing [`Chain`].
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Equalizer {
     pub preamp: GainDb,
@@ -56,21 +51,11 @@ pub struct QualityFactor(f64);
 
 #[cfg(test)]
 mod tests {
-    use super::{Chain, Equalizer, FrequencyHz, GainDb, QualityFactor, Stage};
+    use super::{Chain, Equalizer, FrequencyHz, GainDb, QualityFactor};
 
     #[test]
-    fn chain_default_is_an_empty_processing_path() {
-        assert_eq!(Chain::default().stages, Vec::<Stage>::new());
-    }
-
-    #[test]
-    fn equalizer_is_a_distinct_processing_stage() {
-        let equalizer = Equalizer::default();
-        let chain = Chain {
-            stages: vec![Stage::Equalizer(equalizer.clone())],
-        };
-
-        assert_eq!(chain.stages, vec![Stage::Equalizer(equalizer)]);
+    fn every_chain_has_an_equalizer() {
+        assert_eq!(Chain::default().equalizer, Equalizer::default());
     }
 
     #[test]
