@@ -34,18 +34,26 @@ impl PreparedChain {
         })
     }
 
-    /// Processes interleaved stereo samples in place without allocating.
-    pub(super) fn process(&mut self, samples: &mut [f32]) {
+    /// Processes stereo frames in place without allocating.
+    pub(super) fn process(&mut self, frames: &mut [[f32; 2]]) {
         if self.preamp_gain != 1.0 {
-            for sample in samples.iter_mut() {
-                *sample *= self.preamp_gain;
+            for frame in frames.iter_mut() {
+                frame[0] *= self.preamp_gain;
+                frame[1] *= self.preamp_gain;
             }
         }
         for filter in &mut self.filters {
-            for frame in samples.as_chunks_mut::<2>().0 {
+            for frame in frames.iter_mut() {
                 frame[0] = filter.left.process(frame[0]);
                 frame[1] = filter.right.process(frame[1]);
             }
+        }
+    }
+
+    pub(super) fn reset(&mut self) {
+        for filter in &mut self.filters {
+            filter.left.reset();
+            filter.right.reset();
         }
     }
 }
@@ -176,6 +184,11 @@ impl Biquad {
         self.z2 = self.coefficients.b2 * input - self.coefficients.a2 * output;
         output
     }
+
+    fn reset(&mut self) {
+        self.z1 = 0.0;
+        self.z2 = 0.0;
+    }
 }
 
 #[cfg(test)]
@@ -193,9 +206,9 @@ mod tests {
     #[test]
     fn flat_chain_is_identity_and_preamp_applies_linear_gain() {
         let mut flat = PreparedChain::prepare(&Chain::default(), sample_rate()).unwrap();
-        let mut flat_samples = [0.25, -0.5, -0.75, 0.125];
-        flat.process(&mut flat_samples);
-        assert_eq!(flat_samples, [0.25, -0.5, -0.75, 0.125]);
+        let mut flat_frames = [[0.25, -0.5], [-0.75, 0.125]];
+        flat.process(&mut flat_frames);
+        assert_eq!(flat_frames, [[0.25, -0.5], [-0.75, 0.125]]);
 
         let mut amplified = PreparedChain::prepare(
             &Chain {
@@ -207,11 +220,11 @@ mod tests {
             sample_rate(),
         )
         .unwrap();
-        let mut amplified_samples = [0.25, -0.5];
-        amplified.process(&mut amplified_samples);
+        let mut amplified_frames = [[0.25, -0.5]];
+        amplified.process(&mut amplified_frames);
         let gain = 10.0_f32.powf(6.0 / 20.0);
-        assert!((amplified_samples[0] - 0.25 * gain).abs() < f32::EPSILON);
-        assert!((amplified_samples[1] + 0.5 * gain).abs() < f32::EPSILON);
+        assert!((amplified_frames[0][0] - 0.25 * gain).abs() < f32::EPSILON);
+        assert!((amplified_frames[0][1] + 0.5 * gain).abs() < f32::EPSILON);
     }
 
     #[test]
@@ -221,7 +234,7 @@ mod tests {
 
         prepared.process(&mut samples);
 
-        let settled = &samples[(SAMPLE_RATE / 5) * 2..];
+        let settled = &samples[SAMPLE_RATE / 5..];
         let left_rms = channel_rms(settled, 0);
         let right_rms = channel_rms(settled, 1);
         let expected_gain = 10.0_f32.powf(6.0 / 20.0);
@@ -254,7 +267,7 @@ mod tests {
 
         prepared.process(&mut samples);
 
-        let measured = channel_rms(&samples[(SAMPLE_RATE / 5) * 2..], 0) / (1.0 / 2.0_f32.sqrt());
+        let measured = channel_rms(&samples[SAMPLE_RATE / 5..], 0) / (1.0 / 2.0_f32.sqrt());
         assert!((measured - db_gain(9.0)).abs() < 0.02);
     }
 
@@ -325,9 +338,9 @@ mod tests {
         SampleRateHz::try_new(SAMPLE_RATE as f64).unwrap()
     }
 
-    fn sine(frequency: f32, right_scale: f32) -> Vec<f32> {
+    fn sine(frequency: f32, right_scale: f32) -> Vec<[f32; 2]> {
         (0..SAMPLE_RATE)
-            .flat_map(|frame| {
+            .map(|frame| {
                 let sample = (TAU * frequency * frame as f32 / SAMPLE_RATE as f32).sin();
                 [sample, sample * right_scale]
             })
@@ -338,22 +351,19 @@ mod tests {
         let mut prepared = prepare(vec![filter]).unwrap();
         let mut samples = sine(frequency, 1.0);
         prepared.process(&mut samples);
-        channel_rms(&samples[SAMPLE_RATE..], 0) / (1.0 / 2.0_f32.sqrt())
+        channel_rms(&samples[SAMPLE_RATE / 2..], 0) / (1.0 / 2.0_f32.sqrt())
     }
 
     fn db_gain(gain: f32) -> f32 {
         10.0_f32.powf(gain / 20.0)
     }
 
-    fn channel_rms(samples: &[f32], channel: usize) -> f32 {
-        let frames = samples.len() / 2;
-        (samples
-            .as_chunks::<2>()
-            .0
+    fn channel_rms(frames: &[[f32; 2]], channel: usize) -> f32 {
+        (frames
             .iter()
             .map(|frame| frame[channel] * frame[channel])
             .sum::<f32>()
-            / frames as f32)
+            / frames.len() as f32)
             .sqrt()
     }
 }

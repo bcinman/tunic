@@ -4,6 +4,7 @@ mod backend;
 mod chain;
 mod command;
 mod dsp;
+mod exchange;
 mod processor;
 mod profile;
 mod state;
