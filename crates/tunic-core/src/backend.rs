@@ -1,3 +1,8 @@
+//! Command handling and durable state orchestration.
+//!
+//! The backend validates restored state, reduces commands into candidate states,
+//! and makes a candidate authoritative only after the store accepts it.
+
 use std::collections::HashSet;
 
 use crate::{

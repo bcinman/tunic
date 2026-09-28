@@ -1,3 +1,8 @@
+//! Private latest-value ownership handoff for prepared chains.
+//!
+//! Publishers may lock, allocate, and reclaim storage off the real-time thread.
+//! The single reader adopts a chain with one bounded atomic slot exchange.
+
 use std::cell::UnsafeCell;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};

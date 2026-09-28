@@ -1,3 +1,8 @@
+//! Public real-time processing and non-real-time control boundary.
+//!
+//! The processor owns callback-local DSP state. Its cloneable controller
+//! prepares chain replacements and publishes chain and bypass changes.
+
 use std::num::NonZeroUsize;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};

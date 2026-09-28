@@ -1,3 +1,8 @@
+//! The backend's current read model.
+//!
+//! State contains global reusable profiles and each device's optional profile
+//! selection; devices do not own profiles.
+
 use crate::{Profile, ProfileId};
 use nutype::nutype;
 

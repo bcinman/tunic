@@ -1,3 +1,8 @@
+//! Product intents accepted by the backend.
+//!
+//! Commands describe requested state changes without performing persistence,
+//! device I/O, or real-time processor control.
+
 use crate::{Chain, DeviceId, PresetId, ProfileId, ProfileName, ProfileRevision};
 
 /// An intended change to Tunic's product state.

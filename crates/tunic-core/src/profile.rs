@@ -1,3 +1,8 @@
+//! Reusable processing profiles and built-in profile presets.
+//!
+//! Profiles own stable identity, display name, chain, and revision. They are
+//! global values rather than being owned by any output device.
+
 use crate::Chain;
 use nutype::nutype;
 

@@ -1,3 +1,8 @@
+//! Private preparation and execution of sample-rate-specific DSP chains.
+//!
+//! This module compiles declarative chains into stateful stereo biquads. It
+//! contains signal-processing mechanics but no product or concurrency policy.
+
 use std::f64::consts::TAU;
 
 use crate::{Chain, Filter, FilterKind, ProcessorError, SampleRateHz};

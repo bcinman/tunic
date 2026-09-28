@@ -1,3 +1,8 @@
+//! Portable descriptions of Tunic's ordered audio processing chain.
+//!
+//! These are editable domain values. Sample-rate-specific compilation and
+//! mutable filter state live in the private DSP module.
+
 use nutype::nutype;
 
 /// The ordered processing path applied to an audio stream.

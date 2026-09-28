@@ -1,3 +1,8 @@
+//! Persistence boundary for complete backend state snapshots.
+//!
+//! Store implementations own storage mechanics only. Backend validation and
+//! command policy remain outside this module.
+
 use crate::State;
 
 /// Persistence boundary for Tunic's durable product state.
