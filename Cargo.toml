@@ -2,6 +2,7 @@
 members = [
     "crates/tunic-app",
     "crates/tunic-cli",
+    "crates/tunic-core",
     "crates/tunic-dsp",
     "crates/tunic-engine",
     "crates/tunic-macos",
