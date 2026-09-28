@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 nutype.workspace = true
+rustfft.workspace = true
 
 [lints]
 workspace = true

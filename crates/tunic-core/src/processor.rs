@@ -9,12 +9,13 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::{
     Chain,
+    analyzer::Analyzer,
     dsp::PreparedChain,
     exchange::{self, ChainPublisher, ChainReader},
+    telemetry::{self, Telemetry, TelemetryGeneration, TelemetryPublisher, TelemetrySource},
 };
 use nutype::nutype;
 
-pub const SPECTRUM_POINT_COUNT: usize = 256;
 const CHAIN_CROSSFADE_SECONDS: f64 = 0.005;
 
 #[nutype(
@@ -33,8 +34,8 @@ pub struct AudioFormat {
 /// A stateful processor exclusively owned by an audio callback.
 ///
 /// Its implementation will guarantee that processing does not allocate, lock,
-/// or block. Drop it only after the callback has stopped; destruction may free
-/// prepared chains and scratch storage.
+/// or block. Drop it only after the callback has stopped and on a non-real-time
+/// thread; destruction may free prepared chains and scratch storage.
 pub struct Processor {
     current: PreparedChain,
     chain_updates: ChainReader,
@@ -44,6 +45,9 @@ pub struct Processor {
     bypassed: Arc<AtomicBool>,
     was_bypassed: bool,
     maximum_frame_count: NonZeroUsize,
+    analyzer: Analyzer,
+    telemetry: TelemetryPublisher,
+    telemetry_generation: Option<TelemetryGeneration>,
 }
 
 /// Publishes non-real-time chain and bypass updates to a [`Processor`].
@@ -52,12 +56,7 @@ pub struct Controller {
     chain_updates: ChainPublisher,
     bypassed: Arc<AtomicBool>,
     sample_rate: SampleRateHz,
-}
-
-/// A read-only latest-value view of measurements produced by a [`Processor`].
-#[derive(Clone)]
-pub struct Telemetry {
-    _private: (),
+    telemetry: TelemetrySource,
 }
 
 impl Processor {
@@ -68,6 +67,7 @@ impl Processor {
     ) -> Result<(Self, Controller), ProcessorError> {
         let chain = PreparedChain::prepare(&chain, format.sample_rate)?;
         let (chain_updates, chain_publisher) = exchange::channel();
+        let (telemetry_publisher, telemetry_source) = telemetry::channel();
         let bypassed = Arc::new(AtomicBool::new(bypassed));
         Ok((
             Self {
@@ -81,11 +81,15 @@ impl Processor {
                 bypassed: Arc::clone(&bypassed),
                 was_bypassed: bypassed.load(Ordering::Relaxed),
                 maximum_frame_count: format.maximum_frame_count,
+                analyzer: Analyzer::new(format.sample_rate),
+                telemetry: telemetry_publisher,
+                telemetry_generation: None,
             },
             Controller {
                 chain_updates: chain_publisher,
                 bypassed,
                 sample_rate: format.sample_rate,
+                telemetry: telemetry_source,
             },
         ))
     }
@@ -104,6 +108,7 @@ impl Processor {
         if !bypassed {
             self.process_active(frames);
         }
+        self.observe_telemetry(frames);
     }
 
     fn process_active(&mut self, frames: &mut [[f32; 2]]) {
@@ -141,6 +146,20 @@ impl Processor {
             self.chain_updates.previous_mut().reset();
         }
     }
+
+    fn observe_telemetry(&mut self, frames: &[[f32; 2]]) {
+        let Some(generation) = self.telemetry.active_generation() else {
+            self.telemetry_generation = None;
+            return;
+        };
+        if self.telemetry_generation != Some(generation) {
+            self.analyzer.reset();
+            self.telemetry_generation = Some(generation);
+        }
+        if let Some(frame) = self.analyzer.observe(frames) {
+            self.telemetry.publish(generation, frame);
+        }
+    }
 }
 
 impl Controller {
@@ -159,47 +178,8 @@ impl Controller {
         self.bypassed.load(Ordering::Relaxed)
     }
 
-    #[allow(clippy::todo)]
     pub fn subscribe_telemetry(&self) -> Telemetry {
-        todo!()
-    }
-}
-
-#[allow(clippy::todo)]
-impl Telemetry {
-    pub fn latest(&self) -> Option<TelemetryFrame> {
-        todo!()
-    }
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct TelemetryFrame {
-    pub levels: StereoLevels,
-    pub spectrum: Spectrum,
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct StereoLevels {
-    pub left: ChannelLevels,
-    pub right: ChannelLevels,
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct ChannelLevels {
-    pub peak: f32,
-    pub rms: f32,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Spectrum {
-    pub points: [f32; SPECTRUM_POINT_COUNT],
-}
-
-impl Default for Spectrum {
-    fn default() -> Self {
-        Self {
-            points: [0.0; SPECTRUM_POINT_COUNT],
-        }
+        self.telemetry.subscribe()
     }
 }
 
@@ -401,6 +381,23 @@ mod tests {
         let mut silence = [0.0, 0.0];
         processor.process(&mut silence);
         assert_eq!(silence, [0.0, 0.0]);
+    }
+
+    #[test]
+    fn telemetry_observes_final_output_only_while_subscribed() {
+        let (mut processor, controller) =
+            Processor::new(format(4_096), preamp(6.0), false).unwrap();
+        processor.process(&mut [0.25; 4_095 * 2]);
+        let telemetry = controller.subscribe_telemetry();
+
+        processor.process(&mut [0.25, -0.5]);
+        assert_eq!(telemetry.latest(), None);
+
+        processor.process(&mut [0.25; 4_095 * 2]);
+        let frame = telemetry.latest().unwrap();
+        let gain = db_gain(6.0);
+        assert!((frame.levels.left.peak - 0.25 * gain).abs() < 1e-6);
+        assert!((frame.levels.left.rms - 0.25 * gain).abs() < 1e-6);
     }
 
     fn format(maximum_frame_count: usize) -> AudioFormat {

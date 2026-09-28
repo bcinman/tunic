@@ -6067,6 +6067,7 @@ name = "tunic-core"
 version = "0.1.0"
 dependencies = [
  "nutype",
+ "rustfft",
 ]
 
 [[package]]

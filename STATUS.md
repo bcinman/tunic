@@ -20,7 +20,9 @@ architecture.
   sample-rate-specific stereo biquads with preamp gain and post-quantization
   stability validation. A cloneable controller publishes latest-value chain
   replacements and atomic bypass changes to the allocation-free processor;
-  chain replacements use a five-millisecond crossfade.
+  chain replacements use a five-millisecond crossfade. Demand-driven,
+  allocation-free post-output analysis publishes stereo peak/RMS levels and a
+  256-point spectrum through a nonblocking latest-value telemetry subscription.
 - A Core Audio route built from a process tap, aggregate device, and IOProc.
 - System-audio capture and playback through the current default macOS output.
 - Default-output and nominal sample-rate change observation with route
