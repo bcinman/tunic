@@ -5,7 +5,6 @@ use crate::{Chain, DeviceId, PresetId, ProfileId, ProfileName};
 pub enum Command {
     SetBypassed(bool),
     CreateProfile {
-        device: DeviceId,
         name: ProfileName,
         source: ProfileSource,
     },
@@ -18,6 +17,7 @@ pub enum Command {
         device: DeviceId,
         profile: ProfileId,
     },
+    ClearProfile(DeviceId),
     PreviewChain {
         profile: ProfileId,
         chain: Chain,

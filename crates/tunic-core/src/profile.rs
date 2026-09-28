@@ -1,4 +1,4 @@
-use crate::{Chain, DeviceId};
+use crate::Chain;
 use nutype::nutype;
 
 #[nutype(
@@ -27,7 +27,6 @@ pub struct ProfileRevision(pub u64);
 #[derive(Clone, Debug, PartialEq)]
 pub struct Profile {
     pub id: ProfileId,
-    pub device: DeviceId,
     pub name: ProfileName,
     pub chain: Chain,
     pub revision: ProfileRevision,

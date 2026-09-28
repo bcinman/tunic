@@ -1,4 +1,4 @@
-use crate::{DeviceId, PresetId, ProfileId, ProfileName, State, Store, StoreError};
+use crate::{PresetId, ProfileId, ProfileName, State, Store, StoreError};
 
 /// Applies product commands and owns Tunic's authoritative state.
 ///
@@ -14,14 +14,6 @@ pub struct Backend {
 pub enum BackendError {
     ProfileNotFound(ProfileId),
     PresetNotFound(PresetId),
-    ProfileNameAlreadyExists {
-        device: DeviceId,
-        name: ProfileName,
-    },
-    ProfileDeviceMismatch {
-        profile: ProfileId,
-        profile_device: DeviceId,
-        requested_device: DeviceId,
-    },
+    ProfileNameAlreadyExists(ProfileName),
     StoreFailed(StoreError),
 }
