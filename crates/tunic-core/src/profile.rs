@@ -23,14 +23,13 @@ pub struct ProfileName(String);
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct ProfileRevision(pub u64);
 
-/// A saved profile and its optional in-memory preview.
+/// A saved reusable processing profile.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Profile {
     pub id: ProfileId,
     pub name: ProfileName,
     pub chain: Chain,
     pub revision: ProfileRevision,
-    pub preview: Option<Chain>,
 }
 
 /// A built-in starting point for a profile.

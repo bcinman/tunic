@@ -1,9 +1,8 @@
-use crate::{Chain, DeviceId, PresetId, ProfileId, ProfileName};
+use crate::{Chain, DeviceId, PresetId, ProfileId, ProfileName, ProfileRevision};
 
 /// An intended change to Tunic's product state.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Command {
-    SetBypassed(bool),
     CreateProfile {
         name: ProfileName,
         source: ProfileSource,
@@ -18,12 +17,11 @@ pub enum Command {
         profile: ProfileId,
     },
     ClearProfile(DeviceId),
-    PreviewChain {
+    UpdateProfile {
         profile: ProfileId,
         chain: Chain,
+        expected_revision: ProfileRevision,
     },
-    SaveChain(ProfileId),
-    DiscardChain(ProfileId),
 }
 
 /// Initial contents for a newly created profile.

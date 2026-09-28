@@ -1,5 +1,6 @@
 use std::num::NonZeroUsize;
 
+use crate::Chain;
 use nutype::nutype;
 
 pub const SPECTRUM_POINT_COUNT: usize = 256;
@@ -25,9 +26,57 @@ pub struct Processor {
     _private: (),
 }
 
+/// Publishes non-real-time chain and bypass updates to a [`Processor`].
+#[derive(Clone)]
+pub struct Controller {
+    _private: (),
+}
+
 /// A read-only latest-value view of measurements produced by a [`Processor`].
+#[derive(Clone)]
 pub struct Telemetry {
     _private: (),
+}
+
+#[allow(clippy::todo)]
+impl Processor {
+    pub fn new(
+        _format: AudioFormat,
+        _chain: Chain,
+        _bypassed: bool,
+    ) -> Result<(Self, Controller), ProcessorError> {
+        todo!()
+    }
+
+    pub fn process(&mut self, _interleaved_stereo: &mut [f32]) {
+        todo!()
+    }
+}
+
+#[allow(clippy::todo)]
+impl Controller {
+    pub fn set_chain(&self, _chain: Chain) -> Result<(), ProcessorError> {
+        todo!()
+    }
+
+    pub fn set_bypassed(&self, _bypassed: bool) {
+        todo!()
+    }
+
+    pub fn is_bypassed(&self) -> bool {
+        todo!()
+    }
+
+    pub fn subscribe_telemetry(&self) -> Telemetry {
+        todo!()
+    }
+}
+
+#[allow(clippy::todo)]
+impl Telemetry {
+    pub fn latest(&self) -> Option<TelemetryFrame> {
+        todo!()
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]

@@ -15,8 +15,8 @@ pub use chain::{
 };
 pub use command::{Command, ProfileSource};
 pub use processor::{
-    AudioFormat, ChannelLevels, Processor, ProcessorError, SampleRateHz, SampleRateHzError,
-    Spectrum, StereoLevels, Telemetry, TelemetryFrame,
+    AudioFormat, ChannelLevels, Controller, Processor, ProcessorError, SampleRateHz,
+    SampleRateHzError, Spectrum, StereoLevels, Telemetry, TelemetryFrame,
 };
 pub use profile::{
     Preset, PresetId, PresetIdError, Profile, ProfileId, ProfileIdError, ProfileName,

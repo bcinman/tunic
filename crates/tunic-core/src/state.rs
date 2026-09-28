@@ -10,7 +10,6 @@ pub struct DeviceId(String);
 /// The latest read model exposed by the backend.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct State {
-    pub bypassed: bool,
     pub profiles: Vec<Profile>,
     pub selections: Vec<DeviceProfileSelection>,
 }
