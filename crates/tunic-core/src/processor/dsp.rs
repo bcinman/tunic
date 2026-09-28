@@ -5,7 +5,8 @@
 
 use std::f64::consts::TAU;
 
-use crate::{Chain, Filter, FilterKind, ProcessorError, SampleRateHz};
+use super::{ProcessorError, SampleRateHz};
+use crate::{Chain, Filter, FilterKind};
 
 /// A processing chain compiled for one sample rate.
 pub(super) struct PreparedChain {

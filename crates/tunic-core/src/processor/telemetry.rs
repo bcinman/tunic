@@ -1,4 +1,4 @@
-//! Public telemetry values and the private latest-value transport.
+//! Processor telemetry values and the private latest-value transport.
 //!
 //! Subscriptions create demand for analysis. The processor publishes complete
 //! frames without blocking, and clients poll the newest frame when convenient.

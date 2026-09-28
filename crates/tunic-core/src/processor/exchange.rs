@@ -7,7 +7,7 @@ use std::cell::UnsafeCell;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use crate::dsp::PreparedChain;
+use super::dsp::PreparedChain;
 
 const SLOT_COUNT: usize = 3;
 const PUBLISHER_SLOT: usize = 0;

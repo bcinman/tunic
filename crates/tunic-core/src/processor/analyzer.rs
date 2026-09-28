@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use rustfft::{Fft, FftPlanner, num_complex::Complex32};
 
-use crate::{
+use super::{
     SampleRateHz,
     telemetry::{
         ChannelLevels, SPECTRUM_POINT_COUNT, Spectrum, StereoLevels, TelemetryFrame,

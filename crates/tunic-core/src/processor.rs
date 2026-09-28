@@ -3,17 +3,27 @@
 //! The processor owns callback-local DSP state. Its cloneable controller
 //! prepares chain replacements and publishes chain and bypass changes.
 
+mod analyzer;
+mod dsp;
+mod exchange;
+mod telemetry;
+
+pub use telemetry::{
+    ChannelLevels, SPECTRUM_MAX_FREQUENCY_HZ, SPECTRUM_MIN_FREQUENCY_HZ, SPECTRUM_POINT_COUNT,
+    Spectrum, StereoLevels, Telemetry, TelemetryFrame, spectrum_frequency_hz,
+};
+
 use std::num::NonZeroUsize;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::{
-    Chain,
+use self::{
     analyzer::Analyzer,
     dsp::PreparedChain,
-    exchange::{self, ChainPublisher, ChainReader},
-    telemetry::{self, Telemetry, TelemetryGeneration, TelemetryPublisher, TelemetrySource},
+    exchange::{ChainPublisher, ChainReader},
+    telemetry::{TelemetryGeneration, TelemetryPublisher, TelemetrySource},
 };
+use crate::Chain;
 use nutype::nutype;
 
 const CHAIN_CROSSFADE_SECONDS: f64 = 0.005;

@@ -3,12 +3,20 @@
 //! The backend validates restored state, reduces commands into candidate states,
 //! and makes a candidate authoritative only after the store accepts it.
 
-use std::collections::HashSet;
+mod command;
+mod profile;
+mod state;
+mod store;
 
-use crate::{
-    Command, DeviceProfileSelection, Preset, PresetId, Profile, ProfileId, ProfileName,
-    ProfileRevision, ProfileSource, State, Store, StoreError,
+pub use command::{Command, ProfileSource};
+pub use profile::{
+    Preset, PresetId, PresetIdError, Profile, ProfileId, ProfileIdError, ProfileName,
+    ProfileNameError, ProfileRevision,
 };
+pub use state::{DeviceId, DeviceIdError, DeviceProfileSelection, State};
+pub use store::{MemoryStore, Store, StoreError};
+
+use std::collections::HashSet;
 
 /// Applies product commands and owns Tunic's authoritative state.
 pub struct Backend {

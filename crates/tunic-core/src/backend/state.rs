@@ -3,7 +3,7 @@
 //! State contains global reusable profiles and each device's optional profile
 //! selection; devices do not own profiles.
 
-use crate::{Profile, ProfileId};
+use super::{Profile, ProfileId};
 use nutype::nutype;
 
 #[nutype(

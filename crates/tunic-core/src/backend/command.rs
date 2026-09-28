@@ -3,7 +3,8 @@
 //! Commands describe requested state changes without performing persistence,
 //! device I/O, or real-time processor control.
 
-use crate::{Chain, DeviceId, PresetId, ProfileId, ProfileName, ProfileRevision};
+use super::{DeviceId, PresetId, ProfileId, ProfileName, ProfileRevision};
+use crate::Chain;
 
 /// An intended change to Tunic's product state.
 #[derive(Clone, Debug, PartialEq)]
