@@ -14,30 +14,9 @@ run = "cargo clippy --workspace --all-targets --all-features -- -D warnings"
 description = "Test the Rust workspace"
 run = "cargo test --workspace --all-targets --all-features"
 
-[tasks.bench-dsp]
-description = "Benchmark the DSP processing graph"
-run = "cargo bench -p tunic-dsp --bench processing"
-
 [tasks.check]
 description = "Run all repository checks"
 depends = ["fmt", "lint", "test"]
-
-[tasks.cli]
-description = "Run the Tunic CLI"
-run = "cargo run -p tunic-cli --"
-
-[tasks.app]
-description = "Run the Tunic desktop app"
-run = "cargo run -p tunic-app"
-
-[tasks.capture]
-description = "Run Tunic and capture processed output"
-run = "cargo run -p tunic-cli -- start --capture"
-
-[tasks.verify-audio]
-description = "Verify the production audio path on real hardware"
-depends = ["test"]
-run = "cargo test -p tunic-cli --test hardware -- --ignored --nocapture"
 
 [tasks.ffi-apple]
 description = "Generate the Tunic Apple XCFramework and Swift package"

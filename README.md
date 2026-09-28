@@ -2,12 +2,13 @@
 
 An opinionated cross-platform parametric equalizer.
 
+Tunic is built as a portable, side-effect-free Rust core embedded in native
+platform applications. Native apps own their UI, device integration, audio
+wiring, permissions, and lifecycle.
+
 ## Crates
 
 | Crate | Provides |
 | --- | --- |
-| [`tunic-app`](crates/tunic-app) | GPUI application lifecycle and graphical equalizer editor. |
-| [`tunic-cli`](crates/tunic-cli) | Headless diagnostics and interactive control of the equalizer. |
-| [`tunic-dsp`](crates/tunic-dsp) | Portable equalizer definitions, validation, and real-time audio processing. |
-| [`tunic-engine`](crates/tunic-engine) | Product state, profile persistence, and non-real-time audio coordination. |
-| [`tunic-macos`](crates/tunic-macos) | Core Audio integration for system-audio capture, processing, and playback. |
+| [`tunic-core`](crates/tunic-core) | Domain state, business rules, DSP, real-time processing, telemetry, and storage contracts. |
+| [`tunic-ffi`](crates/tunic-ffi) | Native bindings, including the zero-copy real-time audio entry point. |

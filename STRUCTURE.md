@@ -1,239 +1,58 @@
-# Workspace Outline
+# Workspace Structure
 
-- `tunic-app`
-- `tunic-engine`
-- `tunic-dsp`
-- `tunic-macos`
-- `tunic-cli` (optional diagnostic binary)
+Tunic separates portable product behavior from native platform integration.
 
-## `tunic-app`
+## `tunic-core`
 
-**Responsibility:** GPUI application lifecycle and presentation.
+**Responsibility:** Side-effect-free domain logic and real-time audio
+processing.
 
-- Owns the application-scoped engine handle.
-- Creates, closes, and reopens the normal application window.
-- Keeps the engine alive while no window is open.
-- Renders snapshots, profiles, editor state, failures, and meters.
-- Owns transient UI state and UI-only preferences.
-- Performs orderly engine shutdown only on explicit Quit.
+- Defines profiles, chains, filters, commands, and backend state.
+- Applies commands as pure state transitions.
+- Persists snapshots through an abstract `Store`; it does not implement durable
+  storage.
+- Compiles chains into sample-rate-specific DSP.
+- Processes interleaved stereo without allocation or locking.
+- Publishes live chain and bypass changes through a callback-safe controller.
+- Produces demand-driven peak/RMS and spectrum telemetry.
+- Knows nothing about platform APIs, hardware, UI frameworks, or databases.
 
-### Rough public interface
+## `tunic-ffi`
 
-```rust
-pub struct AppConfig {
-    pub data_directory: PathBuf,
-}
+**Responsibility:** Expose the core to native applications without weakening
+the real-time boundary.
 
-pub fn run(config: AppConfig) -> Result<(), AppError>;
-```
+- Uses BoltFFI for processor construction, domain conversion, errors, and
+  non-real-time controller methods.
+- Exposes a handwritten C ABI that processes a caller-owned mutable audio
+  buffer directly.
+- Packages the bindings as an XCFramework and Swift package.
+- Does not own devices, audio callbacks, application state, or UI.
 
-Everything else can remain internal GPUI entities, views, and actions.
+## Native applications
 
-## `tunic-engine`
+Native applications live outside the Rust workspace and own all side effects:
 
-**Responsibility:** Authoritative product state, non-real-time coordination,
-and the portable real-time shell used by platform callbacks.
-
-- Owns profiles and per-device preferences.
-- Owns SQLite persistence.
-- Tracks desired state, observed output, and active processing state.
-- Publishes bypass through a shared atomic control so the real-time route does
-  not wait on engine-thread work.
-- Owns portable callback policy: bypass transitions, graph processing, capture
-  fanout, telemetry demand, and analyzer resets.
-- Serializes non-real-time user requests and platform events.
-- Coordinates route preparation, activation, retirement, retries, and shutdown.
-- Publishes immutable state snapshots and latest telemetry.
-- Defines the platform-audio contract implemented by macOS and future platforms.
-
-### Rough public interface
-
-```rust
-pub struct Engine;
-pub struct EngineHandle;
-
-impl Engine {
-    pub fn start(
-        options: EngineOptions,
-        platform: impl AudioPlatform,
-    ) -> Result<EngineHandle, EngineError>;
-}
-
-impl EngineHandle {
-    pub fn toggle_bypass(&self) -> bool;
-    pub fn create_profile(&self, name: String) -> Result<ProfileId, EngineError>;
-    pub fn rename_profile(&self, id: ProfileId, name: String) -> Result<(), EngineError>;
-    pub fn delete_profile(&self, id: ProfileId) -> Result<(), EngineError>;
-    pub fn select_profile(&self, id: ProfileId) -> Result<(), EngineError>;
-    pub fn assign_profile(
-        &self,
-        device_id: DeviceId,
-        profile_id: ProfileId,
-    ) -> Result<(), EngineError>;
-
-    pub fn preview_equalizer(
-        &self,
-        equalizer: Equalizer,
-        expected_revision: EditRevision,
-    ) -> Result<EditRevision, EngineError>;
-
-    pub fn save_equalizer(
-        &self,
-        expected_revision: EditRevision,
-    ) -> Result<EqualizerRevision, EngineError>;
-
-    pub fn discard_preview(
-        &self,
-        expected_revision: EditRevision,
-    ) -> Result<EditRevision, EngineError>;
-
-    pub fn snapshot(&self) -> EngineSnapshot;
-    pub fn subscribe_snapshots(&self) -> SnapshotReceiver;
-    pub fn subscribe_telemetry(&self) -> TelemetryReader;
-
-    pub fn shutdown(self) -> Result<(), EngineError>;
-}
-```
-
-### Platform contract
-
-```rust
-pub trait AudioPlatform: 'static {
-    fn start(
-        &mut self,
-        events: PlatformEventSink,
-        output_sink: Option<Arc<dyn ProcessedOutputSink>>,
-        telemetry: TelemetryPublisher,
-        equalizer: &Equalizer,
-        bypass: BypassControl,
-    ) -> Result<PlatformState, PlatformError>;
-    fn rebuild_default_route(
-        &mut self,
-        equalizer: &Equalizer,
-    ) -> Result<PlatformState, PlatformError>;
-    fn set_equalizer(&mut self, equalizer: &Equalizer) -> Result<(), PlatformError>;
-    fn shutdown(&mut self) -> Result<(), PlatformError>;
-}
-```
-
-Commands, events, effects, and reducer details can remain private to the engine.
-
-## `tunic-dsp`
-
-**Responsibility:** Portable audio-processing definitions and algorithms.
-
-- Defines the versioned equalizer.
-- Validates and canonicalizes equalizers.
-- Prepares processing graphs for a specific sample rate.
-- Owns real-time-safe latest-graph publication, retirement, and smooth graph
-  replacement for every platform callback.
-- Processes arbitrary stereo frame counts without allocation.
-- Owns portable, callback-safe peak/RMS and spectrum analysis over normalized
-  post-DSP stereo samples.
-- Supports reset, bypass integration, and latency reporting.
-- Contains mathematical, impulse-response, and frequency-response tests.
-- Knows nothing about devices, GPUI, profiles, persistence, or Core Audio.
-
-### Rough public interface
-
-```rust
-pub struct Equalizer;
-pub struct PreparedGraph;
-
-impl Equalizer {
-    pub fn parse_json(input: &str) -> Result<Self, EqualizerError>;
-    pub fn to_canonical_json(&self) -> Result<String, EqualizerError>;
-}
-
-impl PreparedGraph {
-    pub fn prepare(
-        equalizer: &Equalizer,
-        sample_rate_hz: f64,
-    ) -> Result<Self, EqualizerError>;
-
-    pub fn process(&mut self, frames: &mut [[f32; 2]]);
-
-    pub fn reset(&mut self);
-    pub fn latency_frames(&self) -> usize;
-}
-```
-
-## `tunic-macos`
-
-**Responsibility:** Core Audio integration and macOS real-time execution.
-
-- Implements AudioPlatform.
-- Observes the system default output.
-- Manages system-audio permissions.
-- Owns process taps, aggregate devices, IOProcs, and callback contexts.
-- Negotiates stream formats.
-- Owns native capture/render transport.
-- Normalizes native buffers, invokes the real-time shell, and writes processed
-  samples back to Core Audio.
-- Guarantees ordered activation, handoff, retirement, and teardown.
-- Contains no profile, persistence, or UI policy.
-
-### Rough public interface
-
-```rust
-pub struct CoreAudioPlatform;
-
-impl CoreAudioPlatform {
-    pub fn new(
-        options: CoreAudioOptions,
-    ) -> Result<Self, CoreAudioError>;
-}
-
-impl AudioPlatform for CoreAudioPlatform {
-    // Platform contract implementation
-}
-```
-
-The app wires it directly into the engine:
-
-```rust
-let platform = CoreAudioPlatform::new(audio_options)?;
-let engine = Engine::start(engine_options, platform)?;
-tunic_app::run_with_engine(engine)?;
-```
-
-## `tunic-cli` (optional)
-
-**Responsibility:** Headless diagnostics and deterministic testing.
-
-- Runs the engine with either a fake platform or CoreAudioPlatform.
-- Injects commands and platform failures.
-- Emits snapshots and telemetry as structured output.
-- Exercises restart, routing, and shutdown without GPUI.
-- Reuses production engine and audio code without going through the app.
-
-### Rough interface
-
-```console
-tunic-cli fake
-tunic-cli macos
-tunic-cli inspect
-```
-
-It likely needs no public Rust API; it is an executable consumer of the other crates.
+- UI and application lifecycle;
+- device discovery and permissions;
+- native audio capture and playback wiring;
+- processor creation and callback ownership;
+- coordinating backend state with transient processor previews;
+- loading and saving state through a platform storage adapter.
 
 ## Dependency Direction
 
 ```text
-┌───────────┐
-│ tunic-app │──────────────┐
-└─────┬─────┘              │
-      ▼                    ▼
-┌──────────────┐     ┌─────────────┐
-│ tunic-engine │◀────│ tunic-macos │
-└──────┬───────┘     └──────┬──────┘
-       │                    │
-       └─────────┬──────────┘
-                 ▼
-          ┌───────────┐
-          │ tunic-dsp │
-          └───────────┘
-
-tunic-cli ──▶ tunic-engine
-          └─▶ tunic-macos
+┌────────────────────┐
+│ Native application │
+└─────────┬──────────┘
+          │ generated API + direct audio buffer
+          ▼
+     ┌───────────┐
+     │ tunic-ffi │
+     └─────┬─────┘
+           ▼
+     ┌────────────┐
+     │ tunic-core │
+     └────────────┘
 ```
