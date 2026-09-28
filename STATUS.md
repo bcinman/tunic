@@ -16,7 +16,9 @@ architecture.
 - A new platform-independent `tunic-core` with validated profile, chain, and
   device-selection types; complete command handling; revision-checked profile
   updates; atomic whole-state persistence through a `Store` contract; and
-  rejection of corrupt restored state.
+  rejection of corrupt restored state. Chains compile into private,
+  sample-rate-specific stereo biquads with preamp gain and post-quantization
+  stability validation, ready for allocation-free processing.
 - A Core Audio route built from a process tap, aggregate device, and IOProc.
 - System-audio capture and playback through the current default macOS output.
 - Default-output and nominal sample-rate change observation with route

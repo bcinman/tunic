@@ -1,6 +1,6 @@
 use std::num::NonZeroUsize;
 
-use crate::Chain;
+use crate::{Chain, dsp::PreparedChain};
 use nutype::nutype;
 
 pub const SPECTRUM_POINT_COUNT: usize = 256;
@@ -23,7 +23,9 @@ pub struct AudioFormat {
 /// Its implementation will guarantee that processing does not allocate, lock,
 /// or block.
 pub struct Processor {
-    _private: (),
+    chain: PreparedChain,
+    bypassed: bool,
+    maximum_frame_count: NonZeroUsize,
 }
 
 /// Publishes non-real-time chain and bypass updates to a [`Processor`].
@@ -38,18 +40,29 @@ pub struct Telemetry {
     _private: (),
 }
 
-#[allow(clippy::todo)]
 impl Processor {
     pub fn new(
-        _format: AudioFormat,
-        _chain: Chain,
-        _bypassed: bool,
+        format: AudioFormat,
+        chain: Chain,
+        bypassed: bool,
     ) -> Result<(Self, Controller), ProcessorError> {
-        todo!()
+        let chain = PreparedChain::prepare(&chain, format.sample_rate)?;
+        Ok((
+            Self {
+                chain,
+                bypassed,
+                maximum_frame_count: format.maximum_frame_count,
+            },
+            Controller { _private: () },
+        ))
     }
 
-    pub fn process(&mut self, _interleaved_stereo: &mut [f32]) {
-        todo!()
+    pub fn process(&mut self, interleaved_stereo: &mut [f32]) {
+        debug_assert_eq!(interleaved_stereo.len() % 2, 0);
+        debug_assert!(interleaved_stereo.len() / 2 <= self.maximum_frame_count.get());
+        if !self.bypassed {
+            self.chain.process(interleaved_stereo);
+        }
     }
 }
 
@@ -112,17 +125,48 @@ impl Default for Spectrum {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ProcessorError {
+    PreampOutOfRange,
     FilterAtOrAboveNyquist { filter: usize },
+    UnstableFilter { filter: usize },
 }
 
 #[cfg(test)]
 mod tests {
-    use super::SampleRateHz;
+    use std::num::NonZeroUsize;
+
+    use super::{AudioFormat, Processor, SampleRateHz};
+    use crate::{Chain, Equalizer, GainDb};
 
     #[test]
     fn sample_rates_are_positive_and_finite() {
         assert!(SampleRateHz::try_new(0.0).is_err());
         assert!(SampleRateHz::try_new(f64::NAN).is_err());
         assert!(SampleRateHz::try_new(48_000.0).is_ok());
+    }
+
+    #[test]
+    fn processor_applies_its_initial_chain_unless_bypassed() {
+        let chain = Chain {
+            equalizer: Equalizer {
+                preamp: GainDb::try_new(6.0).unwrap(),
+                filters: Vec::new(),
+            },
+        };
+        let format = AudioFormat {
+            sample_rate: SampleRateHz::try_new(48_000.0).unwrap(),
+            maximum_frame_count: NonZeroUsize::new(2).unwrap(),
+        };
+        let (mut active, _) = Processor::new(format, chain.clone(), false).unwrap();
+        let (mut bypassed, _) = Processor::new(format, chain, true).unwrap();
+        let mut active_samples = [0.25, -0.5, 0.125, -0.25];
+        let mut bypassed_samples = active_samples;
+
+        active.process(&mut active_samples);
+        bypassed.process(&mut bypassed_samples);
+
+        let gain = 10.0_f32.powf(6.0 / 20.0);
+        assert!((active_samples[0] - 0.25 * gain).abs() < f32::EPSILON);
+        assert!((active_samples[1] + 0.5 * gain).abs() < f32::EPSILON);
+        assert_eq!(bypassed_samples, [0.25, -0.5, 0.125, -0.25]);
     }
 }
