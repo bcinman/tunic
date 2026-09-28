@@ -10,8 +10,8 @@ mod store;
 
 pub use backend::{Backend, BackendError};
 pub use chain::{
-    Chain, Filter, FilterKind, FrequencyHz, FrequencyHzError, GainDb, GainDbError, QualityFactor,
-    QualityFactorError,
+    Chain, Equalizer, Filter, FilterKind, FrequencyHz, FrequencyHzError, GainDb, GainDbError,
+    QualityFactor, QualityFactorError, Stage,
 };
 pub use command::{Command, ProfileSource};
 pub use processor::{

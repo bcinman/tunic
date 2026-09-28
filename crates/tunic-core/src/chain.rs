@@ -3,11 +3,23 @@ use nutype::nutype;
 /// The ordered processing path applied to an audio stream.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Chain {
+    pub stages: Vec<Stage>,
+}
+
+/// One operation in a processing [`Chain`].
+#[derive(Clone, Debug, PartialEq)]
+pub enum Stage {
+    Equalizer(Equalizer),
+}
+
+/// Gain and frequency shaping applied as one stage of a processing chain.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Equalizer {
     pub preamp: GainDb,
     pub filters: Vec<Filter>,
 }
 
-/// A single filter in a processing [`Chain`].
+/// A single filter in an [`Equalizer`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Filter {
     pub kind: FilterKind,
@@ -44,7 +56,22 @@ pub struct QualityFactor(f64);
 
 #[cfg(test)]
 mod tests {
-    use super::{FrequencyHz, GainDb, QualityFactor};
+    use super::{Chain, Equalizer, FrequencyHz, GainDb, QualityFactor, Stage};
+
+    #[test]
+    fn chain_default_is_an_empty_processing_path() {
+        assert_eq!(Chain::default().stages, Vec::<Stage>::new());
+    }
+
+    #[test]
+    fn equalizer_is_a_distinct_processing_stage() {
+        let equalizer = Equalizer::default();
+        let chain = Chain {
+            stages: vec![Stage::Equalizer(equalizer.clone())],
+        };
+
+        assert_eq!(chain.stages, vec![Stage::Equalizer(equalizer)]);
+    }
 
     #[test]
     fn audio_parameters_reject_values_outside_their_domains() {
