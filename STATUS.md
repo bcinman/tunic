@@ -23,6 +23,9 @@ architecture.
   chain replacements use a five-millisecond crossfade. Demand-driven,
   allocation-free post-output analysis publishes stereo peak/RMS levels and a
   256-point spectrum through a nonblocking latest-value telemetry subscription.
+- A `tunic-ffi` integration spike using BoltFFI for native processor creation
+  and control, with an explicit direct-slice real-time entry point for zero-copy
+  audio processing and Apple XCFramework/Swift package generation.
 - A Core Audio route built from a process tap, aggregate device, and IOProc.
 - System-audio capture and playback through the current default macOS output.
 - Default-output and nominal sample-rate change observation with route

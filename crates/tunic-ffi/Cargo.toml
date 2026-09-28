@@ -1,0 +1,14 @@
+[package]
+name = "tunic-ffi"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["lib", "staticlib", "cdylib"]
+
+[dependencies]
+boltffi.workspace = true
+tunic-core.workspace = true
+
+[lints]
+workspace = true

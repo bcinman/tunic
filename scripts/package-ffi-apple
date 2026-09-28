@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+
+boltffi pack apple --release
+
+for headers in dist/apple/Tunic.xcframework/*/Headers/tunic-ffi; do
+    cp crates/tunic-ffi/include/tunic_realtime.h "$headers/tunic_realtime.h"
+    printf '\n#include "tunic_realtime.h"\n' >> "$headers/tunic-ffi.h"
+done
+
+cp crates/tunic-ffi/swift/TunicRealtime.swift dist/apple/Sources/TunicRealtime.swift
+
+rm -f dist/apple/Tunic.xcframework.zip
+(
+    cd dist/apple
+    ditto -c -k --sequesterRsrc --keepParent \
+        Tunic.xcframework Tunic.xcframework.zip
+)
+
+swift build --package-path dist/apple
