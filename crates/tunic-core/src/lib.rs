@@ -23,4 +23,4 @@ pub use profile::{
     ProfileNameError, ProfileRevision,
 };
 pub use state::{DeviceId, DeviceIdError, DeviceProfileSelection, State};
-pub use store::{DurableState, Store, StoreError, StoredProfile};
+pub use store::{DurableState, MemoryStore, Store, StoreError, StoredProfile};
