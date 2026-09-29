@@ -21,3 +21,13 @@ depends = ["fmt", "lint", "test"]
 [tasks.ffi-apple]
 description = "Generate the Tunic Apple XCFramework and Swift package"
 run = "./scripts/package-ffi-apple"
+
+[tasks.build-macos]
+description = "Build the native macOS app and generated bindings"
+depends = ["ffi-apple"]
+run = "xcodebuild -project native/macos/Tunic.xcodeproj -scheme Tunic -configuration Debug -destination 'platform=macOS,arch=arm64' -derivedDataPath target/macos build"
+
+[tasks.run-macos]
+description = "Build and launch the native macOS app"
+depends = ["build-macos"]
+run = "open target/macos/Build/Products/Debug/Tunic.app"

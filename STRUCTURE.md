@@ -48,6 +48,10 @@ the real-time boundary.
 
 ## Native applications
 
+`native/macos` contains the SwiftUI macOS app and its Xcode project. It depends
+on the generated local Swift package in `dist/apple`. For now it displays a
+static device label and a local placeholder profile dropdown above an empty content area.
+
 Native applications live outside the Rust workspace and own all side effects:
 
 - UI and application lifecycle;

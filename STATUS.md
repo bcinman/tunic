@@ -36,12 +36,15 @@ This file is the source of truth for implemented product capabilities.
   and control, plus a handwritten zero-copy real-time audio entry point.
 - macOS arm64 XCFramework and Swift package generation through
   `mise run ffi-apple`.
+- A native SwiftUI macOS app in `native/macos` that links the generated bindings
+  with a compact, titleless window, a static device label, and a profile dropdown
+  using local placeholder choices, built and launched through `mise run run-macos`.
 - Automated formatting, Clippy, and workspace tests through `mise run check`.
 
 ## Not In Yet
 
-- Native platform applications and their UI, device discovery, permissions,
-  audio wiring, and lifecycle.
+- Product UI, device discovery, permissions, audio wiring, and audio lifecycle
+  in the native app; native applications for other platforms.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
   core's `Store` contract.
 - Durable backend construction and telemetry FFI bindings.
