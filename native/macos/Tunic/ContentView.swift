@@ -11,8 +11,14 @@ struct ContentView: View {
             .fixedSize(horizontal: false, vertical: true)
             .toolbarBackground(.hidden, for: .windowToolbar)
             .toolbar {
-                ToolbarItem(placement: .navigation) {
-                    Label("External Headphones", systemImage: "headphones")
+                if #available(macOS 26.0, *) {
+                    ToolbarItem(placement: .navigation) {
+                        Label("External Headphones", systemImage: "headphones").labelStyle(.titleAndIcon)
+                    }.sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: .navigation) {
+                        Label("External Headphones", systemImage: "headphones").labelStyle(.titleAndIcon)
+                    }
                 }
                 ToolbarItem(placement: .navigation) {
                     // Static choices only; selection does not change audio.

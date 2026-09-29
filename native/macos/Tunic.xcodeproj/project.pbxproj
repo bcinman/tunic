@@ -105,6 +105,8 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PRODUCT_MODULE_NAME = TunicApp;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				// No App Intents are defined by this app.
+				LM_SKIP_METADATA_EXTRACTION = YES;
 			};
 			name = Debug;
 		};
@@ -122,6 +124,8 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PRODUCT_MODULE_NAME = TunicApp;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				// No App Intents are defined by this app.
+				LM_SKIP_METADATA_EXTRACTION = YES;
 			};
 			name = Release;
 		};
