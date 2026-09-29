@@ -108,27 +108,33 @@ impl From<core::Preset> for Preset {
     fn from(preset: core::Preset) -> Self {
         Self {
             summary: preset.summary.into(),
-            attribution: Attribution {
-                provider: preset.attribution.provider,
-                measurement_source: preset.attribution.measurement_source,
-                source_url: preset.attribution.source_url,
-            },
+            attribution: preset.attribution.into(),
             chain: preset.chain.into(),
-            adjustments: preset
-                .adjustments
-                .into_iter()
-                .map(|adjustment| Adjustment {
-                    label: adjustment.label,
-                    filter: adjustment.filter.into_inner(),
-                    parameter: match adjustment.parameter {
-                        core::AdjustableParameter::GainDb => AdjustableParameter::GainDb,
-                        core::AdjustableParameter::FrequencyHz => AdjustableParameter::FrequencyHz,
-                        core::AdjustableParameter::QualityFactor => {
-                            AdjustableParameter::QualityFactor
-                        }
-                    },
-                })
-                .collect(),
+            adjustments: preset.adjustments.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<core::Attribution> for Attribution {
+    fn from(attribution: core::Attribution) -> Self {
+        Self {
+            provider: attribution.provider,
+            measurement_source: attribution.measurement_source,
+            source_url: attribution.source_url,
+        }
+    }
+}
+
+impl From<core::Adjustment> for Adjustment {
+    fn from(adjustment: core::Adjustment) -> Self {
+        Self {
+            label: adjustment.label,
+            filter: adjustment.filter.into_inner(),
+            parameter: match adjustment.parameter {
+                core::AdjustableParameter::GainDb => AdjustableParameter::GainDb,
+                core::AdjustableParameter::FrequencyHz => AdjustableParameter::FrequencyHz,
+                core::AdjustableParameter::QualityFactor => AdjustableParameter::QualityFactor,
+            },
         }
     }
 }

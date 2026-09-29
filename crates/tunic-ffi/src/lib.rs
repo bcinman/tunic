@@ -4,7 +4,9 @@
 //! callback uses [`tunic_processor_process_realtime`], whose primitive handle
 //! and raw buffer never enter BoltFFI's collection wrappers.
 
+mod backend;
 mod presets;
+pub use backend::*;
 pub use presets::*;
 
 use std::num::NonZeroUsize;

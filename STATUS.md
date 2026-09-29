@@ -20,6 +20,9 @@ This file is the source of truth for implemented product capabilities.
   preset attribution, revision, and adjustments; edits to other filter parameters
   remove obsolete adjustments without changing the source preset.
 - Typed preset browsing and lookup through BoltFFI.
+- Native backend methods for creating, copying, renaming, deleting, selecting,
+  and revision-checked editing of profiles, returning complete state snapshots
+  and typed errors. The current constructor uses an in-memory store only.
 - Sample-rate-specific stereo DSP with preamp gain, ordered peaking and shelf
   filters, post-quantization stability validation, and allocation-free audio
   processing.
@@ -41,7 +44,7 @@ This file is the source of truth for implemented product capabilities.
   audio wiring, and lifecycle.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
   core's `Store` contract.
-- Backend and telemetry FFI bindings.
+- Durable backend construction and telemetry FFI bindings.
 - Bulk preset ingestion, AutoEq data, and catalog updates independent of app releases.
 - Apple targets beyond macOS arm64, or bindings for other platforms.
 - Filter types other than peaking, low-shelf, and high-shelf EQ.

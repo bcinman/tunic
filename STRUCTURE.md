@@ -41,7 +41,10 @@ the real-time boundary.
 - Packages the bindings as an XCFramework and Swift package.
 - Constructs the bundled catalog and exposes typed brand/model queries and preset
   lookup. Native apps never parse catalog JSON.
-- Does not own devices, audio callbacks, application state, or UI.
+- Wraps the core backend with native methods that translate values and issue one
+  command each. Profile rules and authoritative state remain in core; the current
+  native constructor uses an in-memory store.
+- Does not own devices, audio callbacks, UI, or backend-to-processor coordination.
 
 ## Native applications
 
