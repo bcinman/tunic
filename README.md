@@ -11,4 +11,5 @@ wiring, permissions, and lifecycle.
 | Crate | Provides |
 | --- | --- |
 | [`tunic-core`](crates/tunic-core) | Domain state, business rules, DSP, real-time processing, telemetry, and storage contracts. |
+| [`tunic-presets`](crates/tunic-presets) | Embedded headphone presets, validated JSON, and indexed brand/model queries. |
 | [`tunic-ffi`](crates/tunic-ffi) | Native bindings, including the zero-copy real-time audio entry point. |

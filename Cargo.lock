@@ -684,6 +684,16 @@ version = "0.1.0"
 dependencies = [
  "boltffi",
  "tunic-core",
+ "tunic-presets",
+]
+
+[[package]]
+name = "tunic-presets"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tunic-core",
 ]
 
 [[package]]

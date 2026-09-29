@@ -5,13 +5,15 @@ mod chain;
 mod processor;
 
 pub use backend::{
-    Backend, BackendError, Command, DeviceId, DeviceIdError, DeviceProfileSelection, MemoryStore,
-    Preset, PresetId, PresetIdError, Profile, ProfileId, ProfileIdError, ProfileName,
-    ProfileNameError, ProfileRevision, ProfileSource, State, Store, StoreError,
+    AdjustableParameter, Adjustment, Attribution, Backend, BackendError, Command, DeviceId,
+    DeviceIdError, DeviceProfileSelection, MemoryStore, Preset, PresetCatalog, PresetId,
+    PresetIdError, PresetOrigin, PresetQuery, PresetRevision, PresetRevisionError, PresetSummary,
+    Profile, ProfileId, ProfileIdError, ProfileName, ProfileNameError, ProfileRevision,
+    ProfileSource, State, Store, StoreError,
 };
 pub use chain::{
-    Chain, Equalizer, Filter, FilterKind, FrequencyHz, FrequencyHzError, GainDb, GainDbError,
-    QualityFactor, QualityFactorError,
+    Chain, Equalizer, Filter, FilterId, FilterIdError, FilterKind, FrequencyHz, FrequencyHzError,
+    GainDb, GainDbError, QualityFactor, QualityFactorError,
 };
 pub use processor::{
     AudioFormat, ChannelLevels, Controller, Processor, ProcessorError, SPECTRUM_MAX_FREQUENCY_HZ,

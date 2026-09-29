@@ -428,6 +428,7 @@ mod tests {
 
     fn filter(frequency: f64, gain: f64) -> Filter {
         Filter {
+            id: crate::FilterId::try_new(1).unwrap(),
             kind: FilterKind::Peaking,
             frequency: FrequencyHz::try_new(frequency).unwrap(),
             gain: GainDb::try_new(gain).unwrap(),

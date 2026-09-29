@@ -17,6 +17,18 @@ processing.
 - Produces demand-driven peak/RMS and spectrum telemetry.
 - Knows nothing about platform APIs, hardware, UI frameworks, or databases.
 
+## `tunic-presets`
+
+**Responsibility:** The bundled, read-only headphone preset catalog.
+
+- Stores one JSON file per preset under `data/<source>/<brand>/`.
+- Shares strict Serde decoding between build-time validation and runtime lookup.
+- Generates static brand/model and preset-ID indexes at build time.
+- Decodes only the requested payload; browsing never parses JSON or scans files.
+- Implements the core's `PresetCatalog` interface. The backend copies selected
+  preset chains, attribution, and adjustment mappings into independent profiles.
+- Depends on `tunic-core`; the core does not depend on the bundled catalog.
+
 ## `tunic-ffi`
 
 **Responsibility:** Expose the core to native applications without weakening
@@ -27,6 +39,8 @@ the real-time boundary.
 - Exposes a handwritten C ABI that processes a caller-owned mutable audio
   buffer directly.
 - Packages the bindings as an XCFramework and Swift package.
+- Constructs the bundled catalog and exposes typed brand/model queries and preset
+  lookup. Native apps never parse catalog JSON.
 - Does not own devices, audio callbacks, application state, or UI.
 
 ## Native applications
@@ -48,11 +62,11 @@ Native applications live outside the Rust workspace and own all side effects:
 └─────────┬──────────┘
           │ generated API + direct audio buffer
           ▼
-     ┌───────────┐
-     │ tunic-ffi │
-     └─────┬─────┘
-           ▼
-     ┌────────────┐
-     │ tunic-core │
+     ┌───────────┐      ┌───────────────┐
+     │ tunic-ffi │─────▶│ tunic-presets │
+     └─────┬─────┘      └───────┬───────┘
+           ▼                    │
+     ┌────────────┐             │
+     │ tunic-core │◀────────────┘
      └────────────┘
 ```

@@ -4,6 +4,9 @@
 //! callback uses [`tunic_processor_process_realtime`], whose primitive handle
 //! and raw buffer never enter BoltFFI's collection wrappers.
 
+mod presets;
+pub use presets::*;
+
 use std::num::NonZeroUsize;
 use std::ptr::NonNull;
 
@@ -24,6 +27,7 @@ pub enum FilterKind {
 
 #[data]
 pub struct Filter {
+    pub id: u32,
     pub kind: FilterKind,
     pub frequency_hz: f64,
     pub gain_db: f64,
@@ -42,6 +46,8 @@ pub enum ProcessorError {
     InvalidSampleRate,
     InvalidMaximumFrameCount,
     InvalidPreampGain,
+    InvalidFilterId,
+    DuplicateFilterId,
     InvalidFilterFrequency,
     InvalidFilterGain,
     InvalidFilterQualityFactor,
@@ -170,6 +176,10 @@ impl TryFrom<Chain> for core::Chain {
     type Error = ProcessorError;
 
     fn try_from(chain: Chain) -> Result<Self, Self::Error> {
+        let mut ids = std::collections::HashSet::new();
+        if chain.filters.iter().any(|filter| !ids.insert(filter.id)) {
+            return Err(ProcessorError::DuplicateFilterId);
+        }
         Ok(Self {
             equalizer: core::Equalizer {
                 preamp: core::GainDb::try_new(chain.preamp_gain_db)
@@ -189,6 +199,7 @@ impl TryFrom<Filter> for core::Filter {
 
     fn try_from(filter: Filter) -> Result<Self, Self::Error> {
         Ok(Self {
+            id: core::FilterId::try_new(filter.id).map_err(|_| ProcessorError::InvalidFilterId)?,
             kind: match filter.kind {
                 FilterKind::Peaking => core::FilterKind::Peaking,
                 FilterKind::LowShelf => core::FilterKind::LowShelf,
@@ -201,6 +212,30 @@ impl TryFrom<Filter> for core::Filter {
             quality_factor: core::QualityFactor::try_new(filter.quality_factor)
                 .map_err(|_| ProcessorError::InvalidFilterQualityFactor)?,
         })
+    }
+}
+
+impl From<core::Chain> for Chain {
+    fn from(chain: core::Chain) -> Self {
+        Self {
+            preamp_gain_db: chain.equalizer.preamp.into_inner(),
+            filters: chain
+                .equalizer
+                .filters
+                .into_iter()
+                .map(|filter| Filter {
+                    id: filter.id.into_inner(),
+                    kind: match filter.kind {
+                        core::FilterKind::Peaking => FilterKind::Peaking,
+                        core::FilterKind::LowShelf => FilterKind::LowShelf,
+                        core::FilterKind::HighShelf => FilterKind::HighShelf,
+                    },
+                    frequency_hz: filter.frequency.into_inner(),
+                    gain_db: filter.gain.into_inner(),
+                    quality_factor: filter.quality_factor.into_inner(),
+                })
+                .collect(),
+        }
     }
 }
 

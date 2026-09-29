@@ -13,6 +13,13 @@ This file is the source of truth for implemented product capabilities.
 - Complete backend command handling with revision-checked profile updates,
   atomic whole-state persistence through a `Store` contract, and rejection of
   corrupt restored state.
+- An offline `tunic-presets` catalog with build-validated JSON, static brand/model
+  indexes, and on-demand payload decoding. Initial oratory1990 presets cover
+  Sennheiser HD650 and Sony MDR-7506.
+- Stable filter identities and source-provided adjustment mappings. Profiles copy
+  preset attribution, revision, and adjustments; edits to other filter parameters
+  remove obsolete adjustments without changing the source preset.
+- Typed preset browsing and lookup through BoltFFI.
 - Sample-rate-specific stereo DSP with preamp gain, ordered peaking and shelf
   filters, post-quantization stability validation, and allocation-free audio
   processing.
@@ -35,6 +42,7 @@ This file is the source of truth for implemented product capabilities.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
   core's `Store` contract.
 - Backend and telemetry FFI bindings.
+- Bulk preset ingestion, AutoEq data, and catalog updates independent of app releases.
 - Apple targets beyond macOS arm64, or bindings for other platforms.
 - Filter types other than peaking, low-shelf, and high-shelf EQ.
 - Profile import/export.

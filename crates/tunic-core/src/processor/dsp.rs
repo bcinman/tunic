@@ -333,6 +333,7 @@ mod tests {
 
     fn filter(kind: FilterKind, frequency: f64, gain: f64) -> Filter {
         Filter {
+            id: crate::FilterId::try_new(1).unwrap(),
             kind,
             frequency: FrequencyHz::try_new(frequency).unwrap(),
             gain: GainDb::try_new(gain).unwrap(),

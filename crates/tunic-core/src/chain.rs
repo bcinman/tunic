@@ -22,11 +22,19 @@ pub struct Equalizer {
 /// A single filter in an [`Equalizer`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Filter {
+    pub id: FilterId,
     pub kind: FilterKind,
     pub frequency: FrequencyHz,
     pub gain: GainDb,
     pub quality_factor: QualityFactor,
 }
+
+/// Identity of a filter within its containing chain.
+#[nutype(
+    validate(greater = 0),
+    derive(Clone, Copy, Debug, Display, Eq, Hash, PartialEq, TryFrom)
+)]
+pub struct FilterId(u32);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FilterKind {

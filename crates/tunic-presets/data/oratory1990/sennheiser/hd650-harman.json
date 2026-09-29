@@ -1,0 +1,36 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/hd650/harman",
+    "revision": "2023-09-09.1",
+    "brand": "Sennheiser",
+    "model": "HD650",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/qs4hs92tvfbwr04/Sennheiser%20HD650.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -9.3,
+    "filters": [
+      { "id": 1, "kind": "peaking", "frequency_hz": 20, "gain_db": 4.0, "quality_factor": 1.1 },
+      { "id": 2, "kind": "peaking", "frequency_hz": 97, "gain_db": -2.5, "quality_factor": 0.7 },
+      { "id": 3, "kind": "low_shelf", "frequency_hz": 105, "gain_db": 5.5, "quality_factor": 0.71 },
+      { "id": 4, "kind": "peaking", "frequency_hz": 215, "gain_db": -1.7, "quality_factor": 1.1 },
+      { "id": 5, "kind": "peaking", "frequency_hz": 1300, "gain_db": -1.5, "quality_factor": 1.5 },
+      { "id": 6, "kind": "high_shelf", "frequency_hz": 2000, "gain_db": 3.5, "quality_factor": 0.71 },
+      { "id": 7, "kind": "peaking", "frequency_hz": 2700, "gain_db": -1.4, "quality_factor": 3.0 },
+      { "id": 8, "kind": "peaking", "frequency_hz": 3300, "gain_db": -3.7, "quality_factor": 2.7 },
+      { "id": 9, "kind": "peaking", "frequency_hz": 5350, "gain_db": -3.4, "quality_factor": 3.0 },
+      { "id": 10, "kind": "high_shelf", "frequency_hz": 11000, "gain_db": -2.5, "quality_factor": 0.71 }
+    ]
+  },
+  "adjustments": [
+    { "label": "Bass", "filter": 3, "parameter": "gain_db" },
+    { "label": "Warmth / muddiness", "filter": 4, "parameter": "gain_db" },
+    { "label": "Midrange accuracy / shoutiness", "filter": 5, "parameter": "gain_db" },
+    { "label": "Treble", "filter": 6, "parameter": "gain_db" },
+    { "label": "Airiness", "filter": 10, "parameter": "gain_db" }
+  ]
+}

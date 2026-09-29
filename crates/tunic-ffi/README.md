@@ -11,8 +11,12 @@ wrapper over the raw C symbol. It accepts the native callback's existing
 retains its BoltFFI `Processor`; construct and release both away from the audio
 callback.
 
-This spike covers processor construction, live chain and bypass control, and
-the explicit render entry point. Backend and telemetry bindings are intentionally
+This spike covers processor construction, live chain and bypass control,
+the explicit render entry point, and typed preset catalog access through
+`PresetCatalog.brands`, `models`, `list_presets`, and `preset`. Catalog queries
+use exact, case-sensitive brand/model filters; an unknown ID returns no preset.
+Filters carry stable positive IDs scoped to their chain, including across FFI.
+Backend and telemetry bindings are intentionally
 deferred until this boundary is proven in a native app.
 
 Generate the macOS XCFramework and Swift package with:
