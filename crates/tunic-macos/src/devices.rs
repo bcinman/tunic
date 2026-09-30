@@ -1,9 +1,13 @@
 use std::ffi::c_void;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::ptr::NonNull;
+use std::sync::Arc;
 
+use block2::RcBlock;
 use objc2_core_audio::{
-    AudioObjectGetPropertyData, AudioObjectGetPropertyDataSize, AudioObjectID,
-    AudioObjectPropertyAddress, kAudioDevicePropertyDeviceUID,
+    AudioObjectAddPropertyListenerBlock, AudioObjectGetPropertyData,
+    AudioObjectGetPropertyDataSize, AudioObjectID, AudioObjectPropertyAddress,
+    AudioObjectRemovePropertyListenerBlock, kAudioDevicePropertyDeviceUID,
     kAudioDevicePropertyNominalSampleRate, kAudioDevicePropertyStreams,
     kAudioHardwarePropertyDefaultOutputDevice, kAudioObjectPropertyName,
     kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyScopeInput,
@@ -12,6 +16,53 @@ use objc2_core_audio::{
 use objc2_core_foundation::{CFRetained, CFString};
 
 use crate::{Error, address, check_status};
+
+type ListenerBlock = RcBlock<dyn Fn(u32, NonNull<AudioObjectPropertyAddress>)>;
+
+/// Owns a listener for changes to the system's default output.
+pub struct DefaultOutputWatcher {
+    property: AudioObjectPropertyAddress,
+    block: ListenerBlock,
+}
+
+impl DefaultOutputWatcher {
+    pub fn start(notify: Arc<dyn Fn() + Send + Sync + 'static>) -> Result<Self, Error> {
+        let property = address(
+            kAudioHardwarePropertyDefaultOutputDevice,
+            kAudioObjectPropertyScopeGlobal,
+        );
+        let block: ListenerBlock = RcBlock::new(
+            move |_count: u32, _addresses: NonNull<AudioObjectPropertyAddress>| {
+                let _ = catch_unwind(AssertUnwindSafe(|| notify()));
+            },
+        );
+        // SAFETY: property and block remain owned by the watcher until it unregisters them.
+        let status = unsafe {
+            AudioObjectAddPropertyListenerBlock(
+                kAudioObjectSystemObject as AudioObjectID,
+                NonNull::from(&property),
+                None,
+                RcBlock::as_ptr(&block),
+            )
+        };
+        check_status("watch default output", status)?;
+        Ok(Self { property, block })
+    }
+}
+
+impl Drop for DefaultOutputWatcher {
+    fn drop(&mut self) {
+        // SAFETY: this is the same object, property, queue, and block used to register.
+        let _ = unsafe {
+            AudioObjectRemovePropertyListenerBlock(
+                kAudioObjectSystemObject as AudioObjectID,
+                NonNull::from(&self.property),
+                None,
+                RcBlock::as_ptr(&self.block),
+            )
+        };
+    }
+}
 
 pub(crate) fn default_output_id() -> Result<AudioObjectID, Error> {
     let property = address(

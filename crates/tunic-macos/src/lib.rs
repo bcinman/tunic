@@ -5,14 +5,19 @@ mod route;
 
 use std::fmt;
 
-use objc2_core_audio::{AudioObjectPropertyAddress, kAudioObjectPropertyElementMain};
+use objc2_core_audio::{
+    AudioObjectID, AudioObjectPropertyAddress, kAudioObjectPropertyElementMain,
+};
 use tunic_core::{Chain, Controller};
 
 use crate::devices::{default_output_id, device_name, sample_rate};
 use crate::route::Route;
 
+pub use crate::devices::DefaultOutputWatcher;
+
 /// Owns the Core Audio resources that keep system-output processing active.
 pub struct AudioSession {
+    output_id: AudioObjectID,
     device_name: String,
     _route: Route,
 }
@@ -25,6 +30,7 @@ impl AudioSession {
         let (route, controller) = Route::start(output, sample_rate(output)?, initial_chain)?;
         Ok((
             Self {
+                output_id: output,
                 device_name,
                 _route: route,
             },
@@ -35,6 +41,11 @@ impl AudioSession {
     #[must_use]
     pub fn device_name(&self) -> &str {
         &self.device_name
+    }
+
+    /// Whether this session still targets the system's default output.
+    pub fn is_current_default_output(&self) -> Result<bool, Error> {
+        Ok(self.output_id == default_output_id()?)
     }
 }
 

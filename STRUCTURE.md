@@ -43,15 +43,16 @@ processing.
 **Responsibility:** GPUI application lifecycle and composition.
 
 - Selects GPUI's native platform backend and opens the application window.
-- Starts and retains the platform audio session.
-- Passes the platform's core `Controller` to the shared `tunic-ui` root view.
+- Defines the small `Platform`/`Connection` contract used by the application.
+- Responds to native default-output notifications and replaces complete audio routes.
+- Passes each route's core `Controller` to the shared `tunic-ui` root view.
 - Is currently built and visually verified on macOS only.
 
 ## `tunic-macos`
 
 **Responsibility:** Core Audio system-output processing.
 
-- Opens the current default output only; device-change recovery is intentionally deferred.
+- Opens the current default output and observes native default-output changes.
 - Owns the process tap, private aggregate device, IOProc, and ordered teardown.
 - Normalizes native buffers to interleaved stereo for a callback-owned core `Processor`.
 - Returns a core `Controller` for non-real-time chain publication.

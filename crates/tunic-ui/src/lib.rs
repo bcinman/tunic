@@ -24,6 +24,22 @@ impl TunicView {
             model: Model::new(device_name, controller, audio_error),
         }
     }
+
+    #[must_use]
+    pub fn active_chain(&self) -> Chain {
+        self.model.active_chain()
+    }
+
+    pub fn replace_audio(
+        &mut self,
+        device_name: String,
+        controller: Option<Controller>,
+        audio_error: Option<String>,
+    ) {
+        self.model.device_name = device_name;
+        self.model.controller = controller;
+        self.model.audio_error = audio_error;
+    }
 }
 
 impl Render for TunicView {
@@ -178,13 +194,15 @@ impl Model {
             .or_else(|| self.publish_chain(Chain::default()));
     }
 
-    fn publish_selected_chain(&self) -> Option<String> {
-        let chain = self
-            .backend
+    fn active_chain(&self) -> Chain {
+        self.backend
             .state()
             .selected_profile(&self.device)
-            .map_or_else(Chain::default, |profile| profile.chain.clone());
-        self.publish_chain(chain)
+            .map_or_else(Chain::default, |profile| profile.chain.clone())
+    }
+
+    fn publish_selected_chain(&self) -> Option<String> {
+        self.publish_chain(self.active_chain())
     }
 
     fn publish_chain(&self, chain: Chain) -> Option<String> {
