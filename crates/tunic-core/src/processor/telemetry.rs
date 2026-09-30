@@ -1,7 +1,7 @@
-//! Processor telemetry values and the private latest-value transport.
+//! Processor telemetry values and the private retained-frame transport.
 //!
 //! Subscriptions create demand for analysis. The processor publishes complete
-//! frames without blocking, and clients poll the newest frame when convenient.
+//! frames without blocking, and clients poll recent frames when convenient.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
@@ -46,11 +46,11 @@ pub struct ChannelLevels {
     pub rms: f32,
 }
 
-/// Logarithmically spaced post-processor magnitudes in linear amplitude.
+/// Raw logarithmically spaced post-processor magnitudes in linear amplitude.
 ///
 /// Point frequencies span 20 Hz through 20 kHz and are obtained with
 /// [`spectrum_frequency_hz`]. Points above the stream's Nyquist frequency are
-/// zero.
+/// zero. Presentation ballistics are the consumer's responsibility.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Spectrum {
     pub points: [f32; SPECTRUM_POINT_COUNT],

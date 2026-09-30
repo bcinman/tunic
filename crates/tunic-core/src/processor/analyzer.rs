@@ -17,9 +17,7 @@ use super::{
 };
 
 const UPDATES_PER_SECOND: f64 = 60.0;
-const FFT_SIZE: usize = 4_096;
-const SPECTRUM_DECAY_DB_PER_SECOND: f32 = 30.0;
-const SPECTRUM_ATTACK: f32 = 0.65;
+const FFT_SIZE: usize = 2_048;
 
 pub(crate) struct Analyzer {
     levels: LevelMeter,
@@ -120,20 +118,6 @@ impl LevelMeter {
     }
 }
 
-fn smooth_with_decay(current: f32, measured: f32, attack: f32, decay: f32) -> f32 {
-    if current == 0.0 {
-        measured
-    } else if measured >= current {
-        current + (measured - current) * attack
-    } else {
-        measured.max(current * decay)
-    }
-}
-
-fn decay_multiplier(decibels_per_second: f32, updates_per_second: f64) -> f32 {
-    10.0_f32.powf(-decibels_per_second / (20.0 * updates_per_second as f32))
-}
-
 struct SpectrumMeter {
     hop_frames: usize,
     frames_since_analysis: usize,
@@ -143,8 +127,7 @@ struct SpectrumMeter {
     right: Vec<f32>,
     window: Vec<f32>,
     fft: SpectrumFft,
-    smoothed: Spectrum,
-    decay: f32,
+    current: Spectrum,
     ready: bool,
 }
 
@@ -164,8 +147,7 @@ impl SpectrumMeter {
             right: vec![0.0; FFT_SIZE],
             window,
             fft: SpectrumFft::new(sample_rate_hz, window_sum),
-            smoothed: Spectrum::default(),
-            decay: decay_multiplier(SPECTRUM_DECAY_DB_PER_SECOND, UPDATES_PER_SECOND),
+            current: Spectrum::default(),
             ready: false,
         }
     }
@@ -186,7 +168,7 @@ impl SpectrumMeter {
     }
 
     fn current(&self) -> Spectrum {
-        self.smoothed
+        self.current
     }
 
     fn is_ready(&self) -> bool {
@@ -197,7 +179,7 @@ impl SpectrumMeter {
         self.frames_since_analysis = 0;
         self.filled = 0;
         self.write_index = 0;
-        self.smoothed = Spectrum::default();
+        self.current = Spectrum::default();
         self.ready = false;
     }
 
@@ -207,9 +189,7 @@ impl SpectrumMeter {
             .analyze(&self.left, self.write_index, &self.window, &mut measured);
         self.fft
             .analyze(&self.right, self.write_index, &self.window, &mut measured);
-        for (smoothed, measured) in self.smoothed.points.iter_mut().zip(measured) {
-            *smoothed = smooth_with_decay(*smoothed, measured, SPECTRUM_ATTACK, self.decay);
-        }
+        self.current.points = measured;
         self.ready = true;
     }
 }
@@ -301,7 +281,7 @@ fn spectrum_point_bins(sample_rate_hz: f64) -> [Option<(usize, usize)>; SPECTRUM
 mod tests {
     use std::f32::consts::TAU;
 
-    use super::{Analyzer, FFT_SIZE, LevelMeter};
+    use super::{Analyzer, FFT_SIZE, LevelMeter, SpectrumMeter};
     use crate::{SPECTRUM_POINT_COUNT, SampleRateHz, spectrum_frequency_hz};
 
     fn nearest_spectrum_point(frequency_hz: f32) -> usize {
@@ -356,6 +336,26 @@ mod tests {
         assert!(frame.levels.left.peak > 0.99);
         let magnitude = frame.spectrum.points[nearest_spectrum_point(TONE_HZ)];
         assert!((magnitude - 1.0).abs() < 0.001, "magnitude {magnitude}");
+    }
+
+    #[test]
+    fn spectrum_reports_raw_measurements_without_display_ballistics() {
+        const SAMPLE_RATE: f32 = 48_000.0;
+        const TONE_HZ: f32 = SAMPLE_RATE * 84.0 / FFT_SIZE as f32;
+        let mut meter = SpectrumMeter::new(f64::from(SAMPLE_RATE));
+        let tone = (0..FFT_SIZE)
+            .map(|frame| {
+                let sample = (TAU * TONE_HZ * frame as f32 / SAMPLE_RATE).sin();
+                [sample, sample]
+            })
+            .collect::<Vec<_>>();
+
+        meter.observe(&tone);
+        assert!(meter.current().points[nearest_spectrum_point(TONE_HZ)] > 0.99);
+
+        let silence = vec![[0.0, 0.0]; FFT_SIZE + meter.hop_frames];
+        meter.observe(&silence);
+        assert_eq!(meter.current().points[nearest_spectrum_point(TONE_HZ)], 0.0);
     }
 
     #[test]

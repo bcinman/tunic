@@ -8,7 +8,8 @@ use gpui::{
 };
 use tunic_core::{
     Backend, Chain, Command, Controller, DeviceId, MemoryStore, PresetCatalog, PresetQuery,
-    PresetSummary, ProfileId, ProfileName, ProfileSource, StereoLevels, Telemetry,
+    PresetSummary, ProfileId, ProfileName, ProfileSource, SPECTRUM_POINT_COUNT, Spectrum,
+    StereoLevels, Telemetry,
 };
 use tunic_presets::BundledCatalog;
 
@@ -16,17 +17,21 @@ const SYSTEM_OUTPUT: &str = "system-output";
 const FLAT_PROFILE: &str = "flat";
 const METER_FLOOR_DB: f32 = -60.0;
 const METER_DECAY_DB_PER_SECOND: f32 = 24.0;
+const SPECTRUM_FLOOR_DB: f32 = -90.0;
+const SPECTRUM_DECAY_DB_PER_SECOND: f32 = 40.0;
+const TELEMETRY_UPDATES_PER_SECOND: f32 = 60.0;
 const FRAME_HISTORY_LENGTH: usize = 90;
 const SLOW_FRAME_MILLISECONDS: f32 = 33.0;
 
 pub struct TunicView {
     model: Model,
-    meters: Entity<MeterView>,
+    telemetry: Entity<TelemetryView>,
 }
 
-struct MeterView {
+struct TelemetryView {
     telemetry: Option<Telemetry>,
     levels: StereoLevels,
+    spectrum: Spectrum,
     last_frame_at: Option<Instant>,
     frame_times: VecDeque<f32>,
 }
@@ -41,7 +46,7 @@ impl TunicView {
         let telemetry = controller.as_ref().map(Controller::subscribe_telemetry);
         Self {
             model: Model::new(device_name, controller, audio_error),
-            meters: cx.new(|_| MeterView::new(telemetry)),
+            telemetry: cx.new(|_| TelemetryView::new(telemetry)),
         }
     }
 
@@ -58,9 +63,10 @@ impl TunicView {
         cx: &mut Context<Self>,
     ) {
         let telemetry = controller.as_ref().map(Controller::subscribe_telemetry);
-        self.meters.update(cx, |meters, cx| {
-            meters.telemetry = telemetry;
-            meters.levels = StereoLevels::default();
+        self.telemetry.update(cx, |view, cx| {
+            view.telemetry = telemetry;
+            view.levels = StereoLevels::default();
+            view.spectrum = Spectrum::default();
             cx.notify();
         });
         self.model.device_name = device_name;
@@ -69,23 +75,29 @@ impl TunicView {
     }
 }
 
-impl MeterView {
+impl TelemetryView {
     fn new(telemetry: Option<Telemetry>) -> Self {
         Self {
             telemetry,
             levels: StereoLevels::default(),
+            spectrum: Spectrum::default(),
             last_frame_at: None,
             frame_times: VecDeque::with_capacity(FRAME_HISTORY_LENGTH),
         }
     }
 
-    fn update_meters(&mut self, elapsed_seconds: f32) {
+    fn update(&mut self, elapsed_seconds: f32) {
         let mut left_peak = None;
         let mut right_peak = None;
         if let Some(telemetry) = &self.telemetry {
             telemetry.for_each_unseen(|frame| {
                 left_peak = highest_peak(left_peak, frame.levels.left.peak);
                 right_peak = highest_peak(right_peak, frame.levels.right.peak);
+                animate_spectrum(
+                    &mut self.spectrum,
+                    &frame.spectrum,
+                    1.0 / TELEMETRY_UPDATES_PER_SECOND,
+                );
             });
         }
         self.levels.left.peak = animate_meter(self.levels.left.peak, left_peak, elapsed_seconds);
@@ -107,10 +119,10 @@ impl MeterView {
     }
 }
 
-impl Render for MeterView {
+impl Render for TelemetryView {
     fn render(&mut self, window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let elapsed_seconds = self.record_frame(Instant::now());
-        self.update_meters(elapsed_seconds);
+        self.update(elapsed_seconds);
         window.request_animation_frame();
 
         div()
@@ -125,6 +137,7 @@ impl Render for MeterView {
                     .child(meter("L", self.levels.left.peak))
                     .child(meter("R", self.levels.right.peak)),
             )
+            .child(spectrum_graph(&self.spectrum))
             .child(frame_graph(&self.frame_times))
     }
 }
@@ -145,7 +158,7 @@ impl Render for TunicView {
             .child(div().text_xl().child("Tunic"))
             .child(format!("Device: {}", self.model.device_name))
             .child(format!("Selected profile: {selected}"))
-            .child(self.meters.clone())
+            .child(self.telemetry.clone())
             .child(
                 button("flat", "Use Flat").on_click(cx.listener(|this, _, _, cx| {
                     this.model.select_flat();
@@ -223,6 +236,82 @@ fn highest_peak(current: Option<f32>, measured: f32) -> Option<f32> {
         .is_finite()
         .then(|| current.map_or(measured, |current| current.max(measured)))
         .or(current)
+}
+
+fn animate_spectrum(current: &mut Spectrum, measured: &Spectrum, elapsed_seconds: f32) {
+    for (current, measured) in current.points.iter_mut().zip(measured.points) {
+        *current = animate_spectrum_point(*current, measured, elapsed_seconds);
+    }
+}
+
+fn animate_spectrum_point(current: f32, measured: f32, elapsed_seconds: f32) -> f32 {
+    let current = finite_amplitude(current);
+    let measured = finite_amplitude(measured);
+    if current == 0.0 {
+        return measured;
+    }
+    if measured >= current {
+        measured
+    } else {
+        let decay = 10.0_f32.powf(-SPECTRUM_DECAY_DB_PER_SECOND * elapsed_seconds / 20.0);
+        measured.max(current * decay)
+    }
+}
+
+fn finite_amplitude(amplitude: f32) -> f32 {
+    if amplitude.is_finite() {
+        amplitude.max(0.0)
+    } else {
+        0.0
+    }
+}
+
+fn spectrum_fraction(amplitude: f32) -> f32 {
+    if !amplitude.is_finite() || amplitude <= 0.0 {
+        return 0.0;
+    }
+    ((20.0 * amplitude.log10() - SPECTRUM_FLOOR_DB) / -SPECTRUM_FLOOR_DB).clamp(0.0, 1.0)
+}
+
+fn spectrum_graph(spectrum: &Spectrum) -> Div {
+    let bars = spectrum.points.map(spectrum_fraction);
+    div()
+        .flex()
+        .flex_col()
+        .gap_1()
+        .child("Spectrum")
+        .child(
+            div().h_32().bg(rgb(0x35373c)).child(
+                canvas(
+                    |_, _, _| {},
+                    move |bounds, _, window, _| {
+                        let bar_width = bounds.size.width / SPECTRUM_POINT_COUNT as f32;
+                        for (index, fraction) in bars.iter().copied().enumerate() {
+                            let height = bounds.size.height * fraction;
+                            window.paint_quad(fill(
+                                gpui::Bounds {
+                                    origin: point(
+                                        bounds.origin.x + bar_width * index as f32,
+                                        bounds.origin.y + bounds.size.height - height,
+                                    ),
+                                    size: size(bar_width, height),
+                                },
+                                rgb(0x69b578),
+                            ));
+                        }
+                    },
+                )
+                .size_full(),
+            ),
+        )
+        .child(
+            div()
+                .flex()
+                .justify_between()
+                .text_sm()
+                .child("20 Hz")
+                .child("20 kHz"),
+        )
 }
 
 fn frame_graph(frame_times: &VecDeque<f32>) -> Div {
@@ -405,7 +494,10 @@ impl Model {
 mod tests {
     use std::num::NonZeroUsize;
 
-    use super::{Model, animate_meter, highest_peak, meter_fraction};
+    use super::{
+        Model, animate_meter, animate_spectrum_point, highest_peak, meter_fraction,
+        spectrum_fraction,
+    };
     use tunic_core::{AudioFormat, Chain, Processor, SampleRateHz};
 
     #[test]
@@ -471,5 +563,23 @@ mod tests {
             .unwrap();
 
         assert_eq!(peak, 0.9);
+    }
+
+    #[test]
+    fn spectrum_maps_decibels_to_a_clamped_fraction() {
+        assert_eq!(spectrum_fraction(0.0), 0.0);
+        assert_eq!(spectrum_fraction(0.000_01), 0.0);
+        assert!((spectrum_fraction(0.001) - 1.0 / 3.0).abs() < 1e-6);
+        assert_eq!(spectrum_fraction(1.0), 1.0);
+        assert_eq!(spectrum_fraction(f32::NAN), 0.0);
+    }
+
+    #[test]
+    fn spectrum_attacks_immediately_and_decays_for_each_telemetry_frame() {
+        let frame_seconds = 1.0 / 60.0;
+
+        assert_eq!(animate_spectrum_point(0.0, 0.5, frame_seconds), 0.5);
+        assert_eq!(animate_spectrum_point(0.5, 1.0, frame_seconds), 1.0);
+        assert!((animate_spectrum_point(1.0, 0.0, frame_seconds) - 0.926_118_73).abs() < 1e-6);
     }
 }
