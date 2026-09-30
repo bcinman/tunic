@@ -36,6 +36,7 @@ processing.
 - Owns GPUI entities, rendering, click handlers, and transient presentation state.
 - Calls `tunic-core` and `tunic-presets` directly.
 - Publishes the selected profile chain through a core `Controller`.
+- Polls the controller's latest telemetry for lightweight level presentation.
 - Does not own platform devices, audio callbacks, or native resources.
 
 ## `tunic-app`

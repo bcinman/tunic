@@ -41,7 +41,7 @@ impl<P: Platform + 'static> Root<P> {
             Err(error) => (Err(error), false),
         };
         let (device, controller, error) = connection_state(connection);
-        let view = cx.new(|_| TunicView::new(device, controller, error));
+        let view = cx.new(|cx| TunicView::new(device, controller, error, cx));
         if retry_initial {
             changes.notify();
         }
@@ -144,7 +144,7 @@ impl ChangeSignal {
 
 fn main() {
     gpui_platform::application().run(move |cx: &mut App| {
-        let bounds = Bounds::centered(None, size(px(560.0), px(360.0)), cx);
+        let bounds = Bounds::centered(None, size(px(560.0), px(400.0)), cx);
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),

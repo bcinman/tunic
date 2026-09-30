@@ -38,14 +38,15 @@ This file is the source of truth for implemented product capabilities.
   through the core `Controller`.
 - An app-owned `Platform` contract with an Apple implementation that observes
   Core Audio default-output notifications and immediately rebuilds the complete route.
+- Minimal live left/right peak meters driven by the processor's latest telemetry.
 - macOS GPUI development through `mise run build-app` and `mise run run-app`.
 - Automated formatting, Clippy, and workspace tests through `mise run check`.
 
 ## Not In Yet
 
 - Product-complete UI, explicit permission UX, recovery beyond retrying the
-  current default output, bypass, and telemetry presentation; GPUI builds and platform
-  integrations for Linux and Windows.
+  current default output, bypass, and spectrum presentation; GPUI builds and
+  platform integrations for Linux and Windows.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
   core's `Store` contract.
 - Bulk preset ingestion, AutoEq data, and catalog updates independent of app releases.
