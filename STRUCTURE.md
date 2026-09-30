@@ -35,15 +35,27 @@ processing.
 
 - Owns GPUI entities, rendering, click handlers, and transient presentation state.
 - Calls `tunic-core` and `tunic-presets` directly without an FFI conversion layer.
-- Renders backend state but does not own product rules, devices, or audio callbacks.
+- Publishes the selected profile chain through a core `Controller`.
+- Does not own platform devices, audio callbacks, or native resources.
 
-## `tunic-desktop`
+## `tunic-app`
 
 **Responsibility:** GPUI application lifecycle and composition.
 
 - Selects GPUI's native platform backend and opens the application window.
-- Constructs the shared `tunic-ui` root view.
+- Starts and retains the platform audio session.
+- Passes the platform's core `Controller` to the shared `tunic-ui` root view.
 - Is currently built and visually verified on macOS only.
+
+## `tunic-macos`
+
+**Responsibility:** Core Audio system-output processing.
+
+- Opens the current default output only; device-change recovery is intentionally deferred.
+- Owns the process tap, private aggregate device, IOProc, and ordered teardown.
+- Normalizes native buffers to interleaved stereo for a callback-owned core `Processor`.
+- Returns a core `Controller` for non-real-time chain publication.
+- Contains no profile, persistence, or UI policy.
 
 ## `tunic-ffi`
 
@@ -62,11 +74,11 @@ the real-time boundary.
   native constructor uses an in-memory store.
 - Does not own devices, audio callbacks, UI, or backend-to-processor coordination.
 
-## Native applications
+## Application
 
-`tunic-desktop` is the active cross-platform UI spike. Its current macOS build
-shows the bundled presets and executes profile selection directly through the
-core backend. Audio is not connected yet.
+`tunic-app` is the active application. Its current macOS build processes system
+output through `tunic-core`; selecting a bundled or flat profile publishes that
+chain to the live processor.
 
 `native/macos` retains the earlier SwiftUI/Xcode integration for comparison. It
 depends on the generated local Swift package in `dist/apple` and remains a
@@ -84,11 +96,12 @@ The desktop application and future platform integrations own all side effects:
 ## Dependency Direction
 
 ```text
-┌───────────────┐     ┌──────────┐
-│ tunic-desktop │────▶│ tunic-ui │
-└───────────────┘     └────┬─────┘
-                           ├──────▶ tunic-presets
-                           └──────▶ tunic-core
+                   ┌──────────┐────▶ tunic-presets
+┌───────────┐─────▶│ tunic-ui │
+│ tunic-app │      └────┬─────┘
+└─────┬─────┘           └─────────▶ tunic-core
+      │                              ▲
+      └────────▶ tunic-macos ────────┘
 
 Legacy SwiftUI spike ──▶ tunic-ffi ──┬──▶ tunic-presets
                                      └──▶ tunic-core

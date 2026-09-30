@@ -2,8 +2,8 @@
 
 use gpui::{Context, Div, IntoElement, Render, Stateful, Window, div, prelude::*, rgb};
 use tunic_core::{
-    Backend, Command, DeviceId, MemoryStore, PresetCatalog, PresetQuery, PresetSummary, ProfileId,
-    ProfileName, ProfileSource,
+    Backend, Chain, Command, Controller, DeviceId, MemoryStore, PresetCatalog, PresetQuery,
+    PresetSummary, ProfileId, ProfileName, ProfileSource,
 };
 use tunic_presets::BundledCatalog;
 
@@ -15,17 +15,14 @@ pub struct TunicView {
 }
 
 impl TunicView {
-    #[must_use]
-    pub fn new() -> Self {
+    pub fn new(
+        device_name: String,
+        controller: Option<Controller>,
+        audio_error: Option<String>,
+    ) -> Self {
         Self {
-            model: Model::new(),
+            model: Model::new(device_name, controller, audio_error),
         }
-    }
-}
-
-impl Default for TunicView {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -43,7 +40,7 @@ impl Render for TunicView {
             .bg(rgb(0x1f2023))
             .text_color(rgb(0xf2f2f2))
             .child(div().text_xl().child("Tunic"))
-            .child("Device: System Output (audio not connected)")
+            .child(format!("Device: {}", self.model.device_name))
             .child(format!("Selected profile: {selected}"))
             .child(
                 button("flat", "Use Flat").on_click(cx.listener(|this, _, _, cx| {
@@ -64,7 +61,14 @@ impl Render for TunicView {
                     cx.notify();
                 })),
             )
-            .when_some(self.model.error.as_ref(), |view, error| {
+            .when_some(self.model.audio_error.as_ref(), |view, error| {
+                view.child(
+                    div()
+                        .text_color(rgb(0xff8a8a))
+                        .child(format!("Audio unavailable: {error}")),
+                )
+            })
+            .when_some(self.model.action_error.as_ref(), |view, error| {
                 view.child(
                     div()
                         .text_color(rgb(0xff8a8a))
@@ -88,12 +92,19 @@ fn button(id: impl Into<gpui::ElementId>, label: impl Into<gpui::SharedString>) 
 struct Model {
     backend: Backend,
     device: DeviceId,
+    device_name: String,
+    controller: Option<Controller>,
     presets: Vec<PresetSummary>,
-    error: Option<String>,
+    audio_error: Option<String>,
+    action_error: Option<String>,
 }
 
 impl Model {
-    fn new() -> Self {
+    fn new(
+        device_name: String,
+        controller: Option<Controller>,
+        audio_error: Option<String>,
+    ) -> Self {
         let catalog = BundledCatalog;
         let presets = catalog.list(&PresetQuery::default());
         let backend = Backend::new(MemoryStore::default(), catalog)
@@ -101,8 +112,11 @@ impl Model {
         Self {
             backend,
             device: DeviceId::try_new(SYSTEM_OUTPUT).expect("static device ID is valid"),
+            device_name,
+            controller,
             presets,
-            error: None,
+            audio_error,
+            action_error: None,
         }
     }
 
@@ -123,7 +137,7 @@ impl Model {
 
     fn select_preset(&mut self, index: usize) {
         let Some(preset) = self.presets.get(index).cloned() else {
-            self.error = Some("preset is no longer available".into());
+            self.action_error = Some("preset is no longer available".into());
             return;
         };
         let id = ProfileId::try_new(format!("preset-{index}"))
@@ -149,25 +163,48 @@ impl Model {
                 profile: id,
             })
         });
-        self.error = result.err().map(|error| format!("{error:?}"));
+        self.action_error = result
+            .err()
+            .map(|error| format!("{error:?}"))
+            .or_else(|| self.publish_selected_chain());
     }
 
     fn clear_selection(&mut self) {
-        self.error = self
+        self.action_error = self
             .backend
             .execute(Command::ClearProfile(self.device.clone()))
             .err()
-            .map(|error| format!("{error:?}"));
+            .map(|error| format!("{error:?}"))
+            .or_else(|| self.publish_chain(Chain::default()));
+    }
+
+    fn publish_selected_chain(&self) -> Option<String> {
+        let chain = self
+            .backend
+            .state()
+            .selected_profile(&self.device)
+            .map_or_else(Chain::default, |profile| profile.chain.clone());
+        self.publish_chain(chain)
+    }
+
+    fn publish_chain(&self, chain: Chain) -> Option<String> {
+        self.controller
+            .as_ref()
+            .and_then(|controller| controller.set_chain(chain).err())
+            .map(|error| format!("publish chain: {error:?}"))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroUsize;
+
     use super::Model;
+    use tunic_core::{AudioFormat, Chain, Processor, SampleRateHz};
 
     #[test]
     fn selecting_profiles_updates_the_authoritative_backend_state() {
-        let mut model = Model::new();
+        let mut model = Model::new("System Output".into(), None, None);
         assert_eq!(model.selected_profile_name(), "None");
 
         model.select_preset(1);
@@ -179,6 +216,27 @@ mod tests {
 
         model.clear_selection();
         assert_eq!(model.selected_profile_name(), "None");
-        assert!(model.error.is_none());
+        assert!(model.action_error.is_none());
+    }
+
+    #[test]
+    fn selecting_a_preset_publishes_its_chain_to_the_processor() {
+        let (mut processor, controller) = Processor::new(
+            AudioFormat {
+                sample_rate: SampleRateHz::try_new(48_000.0).unwrap(),
+                maximum_frame_count: NonZeroUsize::new(512).unwrap(),
+            },
+            Chain::default(),
+            false,
+        )
+        .unwrap();
+        let mut model = Model::new("System Output".into(), Some(controller), None);
+        let mut samples = vec![0.25_f32; 512 * 2];
+
+        model.select_preset(1);
+        processor.process(&mut samples);
+
+        assert!(samples.iter().any(|sample| *sample != 0.25));
+        assert!(model.action_error.is_none());
     }
 }

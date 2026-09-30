@@ -40,17 +40,21 @@ This file is the source of truth for implemented product capabilities.
 - A native SwiftUI macOS app in `native/macos` that links the generated bindings
   with a compact, titleless window, a static device label, and a profile dropdown
   using local placeholder choices, built and launched through `mise run run-macos`.
-- A minimal GPUI-CE desktop spike split into shared `tunic-ui` presentation and
-  a thin `tunic-desktop` executable. Its macOS build browses both bundled presets,
+- A minimal GPUI-CE application split into shared `tunic-ui` presentation and
+  `tunic-app` lifecycle/platform composition. It browses both bundled presets,
   creates and selects real core profiles, and clears selection without FFI.
-- macOS GPUI development through `mise run build-desktop` and
-  `mise run run-desktop`.
+- A `tunic-macos` route for the current default output using a Core Audio process
+  tap, private aggregate device, callback-owned core `Processor`, native-buffer
+  normalization, and ordered teardown. Profile clicks publish live chain changes
+  through the core `Controller`.
+- macOS GPUI development through `mise run build-app` and `mise run run-app`.
 - Automated formatting, Clippy, and workspace tests through `mise run check`.
 
 ## Not In Yet
 
-- Product-complete UI, device discovery, permissions, audio wiring, and audio
-  lifecycle; GPUI builds and platform integrations for Linux and Windows.
+- Product-complete UI, explicit permission UX, output-device switching and route
+  recovery, bypass, and telemetry presentation; GPUI builds and platform
+  integrations for Linux and Windows.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
   core's `Store` contract.
 - Durable backend construction and telemetry FFI bindings.
@@ -74,10 +78,10 @@ Run the complete Rust suite with:
 mise run check
 ```
 
-Build and launch the GPUI desktop spike on macOS with:
+Build and launch the GPUI application on macOS with:
 
 ```console
-mise run run-desktop
+mise run run-app
 ```
 
 Generate and compile the Apple package with:

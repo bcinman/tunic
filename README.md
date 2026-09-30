@@ -11,10 +11,11 @@ permissions, and lifecycle.
 | Crate | Provides |
 | --- | --- |
 | [`tunic-core`](crates/tunic-core) | Domain state, business rules, DSP, real-time processing, telemetry, and storage contracts. |
-| [`tunic-ui`](crates/tunic-ui) | Shared GPUI presentation and direct integration with the core backend. |
-| [`tunic-desktop`](crates/tunic-desktop) | Thin GPUI desktop executable, currently verified on macOS. |
+| [`tunic-ui`](crates/tunic-ui) | Shared GPUI presentation and direct backend/controller integration. |
+| [`tunic-app`](crates/tunic-app) | GPUI application lifecycle and platform composition. |
+| [`tunic-macos`](crates/tunic-macos) | Core Audio system-output route and callback ownership. |
 | [`tunic-presets`](crates/tunic-presets) | Embedded headphone presets, validated JSON, and indexed brand/model queries. |
 | [`tunic-ffi`](crates/tunic-ffi) | Native bindings, including the zero-copy real-time audio entry point. |
 
-Run the GPUI application on macOS with `mise run run-desktop`. The earlier
+Run the GPUI application on macOS with `mise run run-app`. The earlier
 SwiftUI/FFI integration remains available while the GPUI spike is evaluated.
