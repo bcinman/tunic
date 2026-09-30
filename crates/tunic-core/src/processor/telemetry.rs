@@ -25,18 +25,20 @@ pub fn spectrum_frequency_hz(index: usize) -> f32 {
 /// One post-processor measurement snapshot.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct TelemetryFrame {
+    /// Monotonically increasing publication number for this complete snapshot.
+    pub sequence: u64,
     pub levels: StereoLevels,
     pub spectrum: Spectrum,
 }
 
-/// Peak and RMS levels for both output channels, in linear amplitude.
+/// Raw peak and RMS measurements for both output channels, in linear amplitude.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct StereoLevels {
     pub left: ChannelLevels,
     pub right: ChannelLevels,
 }
 
-/// Peak and RMS levels for one output channel, in linear amplitude.
+/// Raw peak and RMS measurements for one output channel, in linear amplitude.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct ChannelLevels {
     pub peak: f32,
@@ -80,10 +82,11 @@ impl Telemetry {
         if !before.is_multiple_of(2) {
             return None;
         }
-        let frame = shared.load();
+        let mut frame = shared.load();
         let published_generation =
             TelemetryGeneration(shared.published_generation.load(Ordering::SeqCst));
         let after = shared.sequence.load(Ordering::Acquire);
+        frame.sequence = before / 2;
         (before == after && published_generation == self.subscription.generation).then_some(frame)
     }
 }
@@ -241,6 +244,7 @@ impl SharedTelemetry {
 
     fn load(&self) -> TelemetryFrame {
         TelemetryFrame {
+            sequence: 0,
             levels: StereoLevels {
                 left: ChannelLevels {
                     peak: f32::from_bits(self.left_peak.load(Ordering::SeqCst)),
@@ -266,6 +270,7 @@ mod tests {
 
     fn frame() -> TelemetryFrame {
         TelemetryFrame {
+            sequence: 0,
             levels: StereoLevels {
                 left: ChannelLevels {
                     peak: 0.75,
@@ -290,7 +295,13 @@ mod tests {
 
         assert_eq!(telemetry.latest(), None);
         publisher.publish(telemetry.subscription.generation, frame);
-        assert_eq!(telemetry.latest(), Some(frame));
+        assert_eq!(
+            telemetry.latest(),
+            Some(TelemetryFrame {
+                sequence: 1,
+                ..frame
+            })
+        );
     }
 
     #[test]
@@ -328,6 +339,12 @@ mod tests {
         publisher.publish(previous_generation, frame());
         assert_eq!(current.latest(), None);
         publisher.publish(current_generation, TelemetryFrame::default());
-        assert_eq!(current.latest(), Some(TelemetryFrame::default()));
+        assert_eq!(
+            current.latest(),
+            Some(TelemetryFrame {
+                sequence: 2,
+                ..TelemetryFrame::default()
+            })
+        );
     }
 }

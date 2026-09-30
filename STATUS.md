@@ -26,9 +26,9 @@ This file is the source of truth for implemented product capabilities.
 - A cloneable controller that publishes latest-value chain replacements and
   atomic bypass changes to the processor. Chain replacements use a
   five-millisecond crossfade.
-- Demand-driven, allocation-free post-output telemetry with stereo peak/RMS
-  levels and a 256-point spectrum exposed through nonblocking latest-value
-  subscriptions.
+- Demand-driven, allocation-free post-output telemetry with sequenced raw stereo
+  peak/RMS measurements and a 256-point spectrum exposed through nonblocking
+  latest-value subscriptions.
 - A minimal GPUI-CE application split into shared `tunic-ui` presentation and
   `tunic-app` lifecycle/platform composition. It browses both bundled presets,
   creates and selects real core profiles, and clears selection.
@@ -38,7 +38,8 @@ This file is the source of truth for implemented product capabilities.
   through the core `Controller`.
 - An app-owned `Platform` contract with an Apple implementation that observes
   Core Audio default-output notifications and immediately rebuilds the complete route.
-- Minimal live left/right peak meters driven by the processor's latest telemetry.
+- Minimal live left/right peak meters with UI-owned attack and display-frame
+  decay, plus an on-screen frame-rate diagnostic.
 - macOS GPUI development through `mise run build-app` and `mise run run-app`.
 - Automated formatting, Clippy, and workspace tests through `mise run check`.
 

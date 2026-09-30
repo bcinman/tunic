@@ -18,8 +18,6 @@ use super::{
 
 const UPDATES_PER_SECOND: f64 = 60.0;
 const FFT_SIZE: usize = 4_096;
-const PEAK_DECAY_DB_PER_SECOND: f32 = 20.0;
-const RMS_DECAY_DB_PER_SECOND: f32 = 12.0;
 const SPECTRUM_DECAY_DB_PER_SECOND: f32 = 30.0;
 const SPECTRUM_ATTACK: f32 = 0.65;
 
@@ -43,6 +41,7 @@ impl Analyzer {
             .observe(frames)
             .filter(|_| self.spectrum.is_ready())
             .map(|levels| TelemetryFrame {
+                sequence: 0,
                 levels,
                 spectrum: self.spectrum.current(),
             })
@@ -61,24 +60,15 @@ struct LevelMeter {
     right_peak: f32,
     left_square_sum: f64,
     right_square_sum: f64,
-    smoothed: StereoLevels,
-    peak_decay: f32,
-    rms_decay: f32,
 }
 
 impl LevelMeter {
     fn new(sample_rate_hz: f64) -> Self {
         let window_frames = (sample_rate_hz / UPDATES_PER_SECOND).round() as usize;
-        Self::with_window_frames_and_rate(window_frames, sample_rate_hz)
+        Self::with_window_frames(window_frames)
     }
 
-    #[cfg(test)]
     fn with_window_frames(window_frames: usize) -> Self {
-        Self::with_window_frames_and_rate(window_frames, window_frames as f64 * UPDATES_PER_SECOND)
-    }
-
-    fn with_window_frames_and_rate(window_frames: usize, sample_rate_hz: f64) -> Self {
-        let update_rate = sample_rate_hz / window_frames.max(1) as f64;
         Self {
             window_frames: window_frames.max(1),
             frames: 0,
@@ -86,9 +76,6 @@ impl LevelMeter {
             right_peak: 0.0,
             left_square_sum: 0.0,
             right_square_sum: 0.0,
-            smoothed: StereoLevels::default(),
-            peak_decay: decay_multiplier(PEAK_DECAY_DB_PER_SECOND, update_rate),
-            rms_decay: decay_multiplier(RMS_DECAY_DB_PER_SECOND, update_rate),
         }
     }
 
@@ -113,19 +100,7 @@ impl LevelMeter {
                         rms: (self.right_square_sum / frame_count).sqrt() as f32,
                     },
                 };
-                self.smoothed.left = smooth_levels(
-                    self.smoothed.left,
-                    measured.left,
-                    self.peak_decay,
-                    self.rms_decay,
-                );
-                self.smoothed.right = smooth_levels(
-                    self.smoothed.right,
-                    measured.right,
-                    self.peak_decay,
-                    self.rms_decay,
-                );
-                latest = Some(self.smoothed);
+                latest = Some(measured);
                 self.clear_window();
             }
         }
@@ -134,7 +109,6 @@ impl LevelMeter {
 
     fn reset(&mut self) {
         self.clear_window();
-        self.smoothed = StereoLevels::default();
     }
 
     fn clear_window(&mut self) {
@@ -143,18 +117,6 @@ impl LevelMeter {
         self.right_peak = 0.0;
         self.left_square_sum = 0.0;
         self.right_square_sum = 0.0;
-    }
-}
-
-fn smooth_levels(
-    current: ChannelLevels,
-    measured: ChannelLevels,
-    peak_decay: f32,
-    rms_decay: f32,
-) -> ChannelLevels {
-    ChannelLevels {
-        peak: smooth_with_decay(current.peak, measured.peak, 1.0, peak_decay),
-        rms: smooth_with_decay(current.rms, measured.rms, 0.35, rms_decay),
     }
 }
 
@@ -360,6 +322,19 @@ mod tests {
 
         assert_eq!(levels.left.peak, 1.0);
         assert_eq!(levels.left.rms, std::f32::consts::FRAC_1_SQRT_2);
+        assert_eq!(levels.right.peak, 0.5);
+        assert_eq!(levels.right.rms, 0.5);
+    }
+
+    #[test]
+    fn level_meter_reports_each_window_without_display_ballistics() {
+        let mut meter = LevelMeter::with_window_frames(2);
+
+        assert!(meter.observe(&[[1.0, 1.0]; 2]).is_some());
+        let levels = meter.observe(&[[0.25, 0.5]; 2]).unwrap();
+
+        assert_eq!(levels.left.peak, 0.25);
+        assert_eq!(levels.left.rms, 0.25);
         assert_eq!(levels.right.peak, 0.5);
         assert_eq!(levels.right.rms, 0.5);
     }

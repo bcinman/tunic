@@ -1,9 +1,10 @@
 //! Shared GPUI presentation for Tunic desktop applications.
 
-use std::time::Duration;
+use std::{collections::VecDeque, time::Instant};
 
 use gpui::{
-    Context, Div, IntoElement, Render, Stateful, Task, Window, div, prelude::*, relative, rgb,
+    Context, Div, Entity, IntoElement, Render, Stateful, Window, canvas, div, fill, point,
+    prelude::*, relative, rgb, size,
 };
 use tunic_core::{
     Backend, Chain, Command, Controller, DeviceId, MemoryStore, PresetCatalog, PresetQuery,
@@ -13,14 +14,22 @@ use tunic_presets::BundledCatalog;
 
 const SYSTEM_OUTPUT: &str = "system-output";
 const FLAT_PROFILE: &str = "flat";
-const METER_REFRESH_INTERVAL: Duration = Duration::from_millis(33);
 const METER_FLOOR_DB: f32 = -60.0;
+const METER_DECAY_DB_PER_SECOND: f32 = 20.0;
+const FRAME_HISTORY_LENGTH: usize = 90;
+const SLOW_FRAME_MILLISECONDS: f32 = 33.0;
 
 pub struct TunicView {
     model: Model,
+    meters: Entity<MeterView>,
+}
+
+struct MeterView {
     telemetry: Option<Telemetry>,
+    last_telemetry_sequence: Option<u64>,
     levels: StereoLevels,
-    _meter_task: Task<()>,
+    last_frame_at: Option<Instant>,
+    frame_times: VecDeque<f32>,
 }
 
 impl TunicView {
@@ -31,19 +40,9 @@ impl TunicView {
         cx: &mut Context<Self>,
     ) -> Self {
         let telemetry = controller.as_ref().map(Controller::subscribe_telemetry);
-        let meter_task = cx.spawn(async move |this, cx| {
-            loop {
-                cx.background_executor().timer(METER_REFRESH_INTERVAL).await;
-                if this.update(cx, |this, cx| this.refresh_levels(cx)).is_err() {
-                    break;
-                }
-            }
-        });
         Self {
             model: Model::new(device_name, controller, audio_error),
-            telemetry,
-            levels: StereoLevels::default(),
-            _meter_task: meter_task,
+            meters: cx.new(|_| MeterView::new(telemetry)),
         }
     }
 
@@ -57,27 +56,86 @@ impl TunicView {
         device_name: String,
         controller: Option<Controller>,
         audio_error: Option<String>,
+        cx: &mut Context<Self>,
     ) {
-        self.telemetry = controller.as_ref().map(Controller::subscribe_telemetry);
-        self.levels = StereoLevels::default();
+        let telemetry = controller.as_ref().map(Controller::subscribe_telemetry);
+        self.meters.update(cx, |meters, cx| {
+            meters.telemetry = telemetry;
+            meters.last_telemetry_sequence = None;
+            meters.levels = StereoLevels::default();
+            cx.notify();
+        });
         self.model.device_name = device_name;
         self.model.controller = controller;
         self.model.audio_error = audio_error;
     }
+}
 
-    fn refresh_levels(&mut self, cx: &mut Context<Self>) {
-        let Some(levels) = self
-            .telemetry
-            .as_ref()
-            .and_then(Telemetry::latest)
-            .map(|frame| frame.levels)
-        else {
-            return;
-        };
-        if levels != self.levels {
-            self.levels = levels;
-            cx.notify();
+impl MeterView {
+    fn new(telemetry: Option<Telemetry>) -> Self {
+        Self {
+            telemetry,
+            last_telemetry_sequence: None,
+            levels: StereoLevels::default(),
+            last_frame_at: None,
+            frame_times: VecDeque::with_capacity(FRAME_HISTORY_LENGTH),
         }
+    }
+
+    fn update_meters(&mut self, elapsed_seconds: f32) {
+        let frame = self.telemetry.as_ref().and_then(Telemetry::latest);
+        let measured = frame.and_then(|frame| {
+            (self.last_telemetry_sequence != Some(frame.sequence)).then_some(frame.levels)
+        });
+        if let Some(frame) = frame {
+            self.last_telemetry_sequence = Some(frame.sequence);
+        }
+        self.levels.left.peak = animate_meter(
+            self.levels.left.peak,
+            measured.map(|levels| levels.left.peak),
+            elapsed_seconds,
+        );
+        self.levels.right.peak = animate_meter(
+            self.levels.right.peak,
+            measured.map(|levels| levels.right.peak),
+            elapsed_seconds,
+        );
+    }
+
+    fn record_frame(&mut self, now: Instant) -> f32 {
+        let Some(previous) = self.last_frame_at.replace(now) else {
+            return 0.0;
+        };
+        let elapsed = now.duration_since(previous).as_secs_f32();
+        if elapsed <= 0.25 {
+            if self.frame_times.len() == FRAME_HISTORY_LENGTH {
+                self.frame_times.pop_front();
+            }
+            self.frame_times.push_back(elapsed * 1_000.0);
+        }
+        elapsed
+    }
+}
+
+impl Render for MeterView {
+    fn render(&mut self, window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        let elapsed_seconds = self.record_frame(Instant::now());
+        self.update_meters(elapsed_seconds);
+        window.request_animation_frame();
+
+        div()
+            .flex()
+            .flex_col()
+            .gap_3()
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap_1()
+                    .child(meter("L", self.levels.left.peak))
+                    .child(meter("R", self.levels.right.peak)),
+            )
+            .child(frame_graph(&self.frame_times))
     }
 }
 
@@ -97,14 +155,7 @@ impl Render for TunicView {
             .child(div().text_xl().child("Tunic"))
             .child(format!("Device: {}", self.model.device_name))
             .child(format!("Selected profile: {selected}"))
-            .child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .gap_1()
-                    .child(meter("L", self.levels.left.peak))
-                    .child(meter("R", self.levels.right.peak)),
-            )
+            .child(self.meters.clone())
             .child(
                 button("flat", "Use Flat").on_click(cx.listener(|this, _, _, cx| {
                     this.model.select_flat();
@@ -162,6 +213,76 @@ fn meter_fraction(amplitude: f32) -> f32 {
         return 0.0;
     }
     ((20.0 * amplitude.log10() - METER_FLOOR_DB) / -METER_FLOOR_DB).clamp(0.0, 1.0)
+}
+
+fn animate_meter(current: f32, measured: Option<f32>, elapsed_seconds: f32) -> f32 {
+    let current = if current.is_finite() {
+        current.max(0.0)
+    } else {
+        0.0
+    };
+    let decay = 10.0_f32.powf(-METER_DECAY_DB_PER_SECOND * elapsed_seconds / 20.0);
+    let decayed = current * decay;
+    measured
+        .filter(|level| level.is_finite())
+        .map_or(decayed, |level| decayed.max(level.max(0.0)))
+}
+
+fn frame_graph(frame_times: &VecDeque<f32>) -> Div {
+    let average = if frame_times.is_empty() {
+        0.0
+    } else {
+        frame_times.iter().sum::<f32>() / frame_times.len() as f32
+    };
+    let fps = if average > 0.0 {
+        1_000.0 / average
+    } else {
+        0.0
+    };
+    let bars = frame_times.iter().copied().collect::<Vec<_>>();
+
+    div()
+        .flex()
+        .flex_col()
+        .gap_1()
+        .child(format!("Frame rate: {fps:.0} fps / {average:.1} ms"))
+        .child(
+            div().flex().items_end().h_10().bg(rgb(0x35373c)).child(
+                canvas(
+                    |_, _, _| {},
+                    move |bounds, _, window, _| {
+                        let count = bars.len() as f32;
+                        if count == 0.0 {
+                            return;
+                        }
+                        let bar_width = bounds.size.width / count;
+                        for (index, milliseconds) in bars.iter().copied().enumerate() {
+                            let fraction =
+                                (milliseconds / SLOW_FRAME_MILLISECONDS).clamp(0.05, 1.0);
+                            let height = bounds.size.height * fraction;
+                            let color = if milliseconds > SLOW_FRAME_MILLISECONDS {
+                                rgb(0xd16d6d)
+                            } else if milliseconds > 20.0 {
+                                rgb(0xd1b56d)
+                            } else {
+                                rgb(0x69b578)
+                            };
+                            window.paint_quad(fill(
+                                gpui::Bounds {
+                                    origin: point(
+                                        bounds.origin.x + bar_width * index as f32,
+                                        bounds.origin.y + bounds.size.height - height,
+                                    ),
+                                    size: size(bar_width, height),
+                                },
+                                color,
+                            ));
+                        }
+                    },
+                )
+                .size_full(),
+            ),
+        )
 }
 
 fn button(id: impl Into<gpui::ElementId>, label: impl Into<gpui::SharedString>) -> Stateful<Div> {
@@ -287,7 +408,7 @@ impl Model {
 mod tests {
     use std::num::NonZeroUsize;
 
-    use super::{Model, meter_fraction};
+    use super::{Model, animate_meter, meter_fraction};
     use tunic_core::{AudioFormat, Chain, Processor, SampleRateHz};
 
     #[test]
@@ -336,5 +457,12 @@ mod tests {
         assert_eq!(meter_fraction(1.0), 1.0);
         assert_eq!(meter_fraction(2.0), 1.0);
         assert_eq!(meter_fraction(f32::NAN), 0.0);
+    }
+
+    #[test]
+    fn meter_attacks_immediately_and_decays_at_twenty_decibels_per_second() {
+        assert_eq!(animate_meter(0.25, Some(1.0), 0.1), 1.0);
+        assert!((animate_meter(1.0, None, 0.1) - 0.794_328_2).abs() < 1e-6);
+        assert_eq!(animate_meter(1.0, Some(0.9), 0.1), 0.9);
     }
 }

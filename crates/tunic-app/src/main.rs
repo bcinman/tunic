@@ -75,7 +75,7 @@ impl<P: Platform + 'static> Root<P> {
         let connected = update.is_ok();
         let (device, controller, error) = connection_state(update);
         self.view.update(cx, |view, cx| {
-            view.replace_audio(device, controller, error);
+            view.replace_audio(device, controller, error, cx);
             cx.notify();
         });
         connected
@@ -144,7 +144,7 @@ impl ChangeSignal {
 
 fn main() {
     gpui_platform::application().run(move |cx: &mut App| {
-        let bounds = Bounds::centered(None, size(px(560.0), px(400.0)), cx);
+        let bounds = Bounds::centered(None, size(px(560.0), px(460.0)), cx);
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
