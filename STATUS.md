@@ -39,14 +39,16 @@ This file is the source of truth for implemented product capabilities.
   Core Audio default-output notifications and immediately rebuilds the complete route.
 - Minimal live left/right peak meters and a real-time spectrum view with
   UI-owned display ballistics, plus an on-screen frame-rate diagnostic.
+- An editable logarithmic equalizer graph with the exact digital filter response,
+  live drag previews through the processor controller, and explicit save/reset.
 - macOS GPUI development through `mise run build-app` and `mise run run-app`.
 - Automated formatting, Clippy, and workspace tests through `mise run check`.
 
 ## Not In Yet
 
 - Product-complete UI, explicit permission UX, recovery beyond retrying the
-  current default output, and bypass; GPUI builds and platform integrations for
-  Linux and Windows.
+  current default output, bypass, and full equalizer controls; GPUI builds and
+  platform integrations for Linux and Windows.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
   core's `Store` contract.
 - Bulk preset ingestion, AutoEq data, and catalog updates independent of app releases.

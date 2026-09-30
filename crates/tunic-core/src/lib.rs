@@ -16,7 +16,7 @@ pub use chain::{
     GainDb, GainDbError, QualityFactor, QualityFactorError,
 };
 pub use processor::{
-    AudioFormat, ChannelLevels, Controller, Processor, ProcessorError, SPECTRUM_MAX_FREQUENCY_HZ,
-    SPECTRUM_MIN_FREQUENCY_HZ, SPECTRUM_POINT_COUNT, SampleRateHz, SampleRateHzError, Spectrum,
-    StereoLevels, Telemetry, TelemetryFrame, spectrum_frequency_hz,
+    AudioFormat, ChannelLevels, Controller, FrequencyResponse, Processor, ProcessorError,
+    SPECTRUM_MAX_FREQUENCY_HZ, SPECTRUM_MIN_FREQUENCY_HZ, SPECTRUM_POINT_COUNT, SampleRateHz,
+    SampleRateHzError, Spectrum, StereoLevels, Telemetry, TelemetryFrame, spectrum_frequency_hz,
 };

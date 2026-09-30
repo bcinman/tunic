@@ -1,15 +1,16 @@
 //! Shared GPUI presentation for Tunic desktop applications.
 
-use std::{collections::VecDeque, time::Instant};
+use std::{cell::Cell, collections::VecDeque, rc::Rc, time::Instant};
 
 use gpui::{
-    Context, Div, Entity, IntoElement, Render, Stateful, Window, canvas, div, fill, point,
-    prelude::*, relative, rgb, size,
+    Bounds, Context, Div, Entity, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent,
+    PathBuilder, Pixels, Point, Render, Stateful, Window, canvas, div, fill, point, prelude::*, px,
+    relative, rgb, size,
 };
 use tunic_core::{
-    Backend, Chain, Command, Controller, DeviceId, MemoryStore, PresetCatalog, PresetQuery,
-    PresetSummary, ProfileId, ProfileName, ProfileSource, SPECTRUM_POINT_COUNT, Spectrum,
-    StereoLevels, Telemetry,
+    Backend, Chain, Command, Controller, DeviceId, FrequencyHz, FrequencyResponse, GainDb,
+    MemoryStore, PresetCatalog, PresetQuery, PresetSummary, ProcessorError, ProfileId, ProfileName,
+    ProfileSource, SPECTRUM_POINT_COUNT, SampleRateHz, Spectrum, StereoLevels, Telemetry,
 };
 use tunic_presets::BundledCatalog;
 
@@ -20,12 +21,21 @@ const METER_DECAY_DB_PER_SECOND: f32 = 24.0;
 const SPECTRUM_FLOOR_DB: f32 = -90.0;
 const SPECTRUM_DECAY_DB_PER_SECOND: f32 = 40.0;
 const TELEMETRY_UPDATES_PER_SECOND: f32 = 60.0;
+const EQ_MIN_FREQUENCY_HZ: f64 = 20.0;
+const EQ_MAX_FREQUENCY_HZ: f64 = 20_000.0;
+const EQ_MIN_GAIN_DB: f64 = -12.0;
+const EQ_MAX_GAIN_DB: f64 = 12.0;
+const EQ_FALLBACK_SAMPLE_RATE_HZ: f64 = 48_000.0;
+const EQ_POINT_RADIUS_PX: f32 = 4.0;
+const EQ_POINT_INSET_PX: f32 = EQ_POINT_RADIUS_PX + 1.0;
+const EQ_POINT_HIT_RADIUS_PX: f32 = 12.0;
 const FRAME_HISTORY_LENGTH: usize = 90;
 const SLOW_FRAME_MILLISECONDS: f32 = 33.0;
 
 pub struct TunicView {
     model: Model,
     telemetry: Entity<TelemetryView>,
+    dragging_filter: Option<usize>,
 }
 
 struct TelemetryView {
@@ -47,6 +57,7 @@ impl TunicView {
         Self {
             model: Model::new(device_name, controller, audio_error),
             telemetry: cx.new(|_| TelemetryView::new(telemetry)),
+            dragging_filter: None,
         }
     }
 
@@ -146,6 +157,11 @@ impl Render for TunicView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let selected = self.model.selected_profile_name();
         let presets = self.model.presets.clone();
+        let chain = self.model.active_chain();
+        let sample_rate = self.model.sample_rate();
+        let graph_bounds = Rc::new(Cell::new(None));
+        let mouse_down_bounds = Rc::clone(&graph_bounds);
+        let mouse_move_bounds = Rc::clone(&graph_bounds);
 
         div()
             .size_full()
@@ -158,6 +174,29 @@ impl Render for TunicView {
             .child(div().text_xl().child("Tunic"))
             .child(format!("Device: {}", self.model.device_name))
             .child(format!("Selected profile: {selected}"))
+            .child(equalizer_graph(
+                &chain,
+                sample_rate,
+                Rc::clone(&graph_bounds),
+            ))
+            .child(
+                div()
+                    .flex()
+                    .gap_2()
+                    .child(
+                        button("save", "Save").on_click(cx.listener(|this, _, _, cx| {
+                            this.model.save_draft();
+                            cx.notify();
+                        })),
+                    )
+                    .child(
+                        button("reset", "Reset").on_click(cx.listener(|this, _, _, cx| {
+                            this.dragging_filter = None;
+                            this.model.reset_draft();
+                            cx.notify();
+                        })),
+                    ),
+            )
             .child(self.telemetry.clone())
             .child(
                 button("flat", "Use Flat").on_click(cx.listener(|this, _, _, cx| {
@@ -192,6 +231,40 @@ impl Render for TunicView {
                         .child(format!("Error: {error}")),
                 )
             })
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(move |this, event: &MouseDownEvent, _, _| {
+                    let Some(bounds) = mouse_down_bounds.get() else {
+                        return;
+                    };
+                    this.dragging_filter = closest_filter(
+                        &this.model.active_chain(),
+                        this.model.sample_rate(),
+                        bounds,
+                        event.position,
+                    );
+                }),
+            )
+            .on_mouse_move(cx.listener(move |this, event: &MouseMoveEvent, _, cx| {
+                let (Some(filter), Some(bounds)) = (this.dragging_filter, mouse_move_bounds.get())
+                else {
+                    return;
+                };
+                if !event.dragging() {
+                    this.dragging_filter = None;
+                    return;
+                }
+                this.model.drag_filter(filter, bounds, event.position);
+                cx.notify();
+            }))
+            .on_mouse_up(
+                MouseButton::Left,
+                cx.listener(|this, _, _, _| this.dragging_filter = None),
+            )
+            .on_mouse_up_out(
+                MouseButton::Left,
+                cx.listener(|this, _, _, _| this.dragging_filter = None),
+            )
     }
 }
 
@@ -209,6 +282,182 @@ fn meter(label: &'static str, amplitude: f32) -> Div {
                     .bg(rgb(0x69b578)),
             ),
         )
+}
+
+fn equalizer_graph(
+    chain: &Chain,
+    sample_rate: SampleRateHz,
+    graph_bounds: Rc<Cell<Option<Bounds<Pixels>>>>,
+) -> Div {
+    let max_frequency = EQ_MAX_FREQUENCY_HZ.min(sample_rate.into_inner() * 0.499);
+    let (response, response_error) = match equalizer_response(chain, sample_rate, max_frequency) {
+        Ok(response) => (response, None),
+        Err(error) => (Vec::new(), Some(format!("Response unavailable: {error:?}"))),
+    };
+    let points = chain
+        .equalizer
+        .filters
+        .iter()
+        .map(|filter| {
+            (
+                frequency_fraction(filter.frequency.into_inner(), max_frequency),
+                gain_fraction(filter.gain.into_inner()),
+            )
+        })
+        .collect::<Vec<_>>();
+    let max_frequency_label = if max_frequency >= 1_000.0 {
+        format!("{:.0} kHz", max_frequency / 1_000.0)
+    } else {
+        format!("{max_frequency:.0} Hz")
+    };
+
+    div()
+        .flex()
+        .flex_col()
+        .gap_1()
+        .child("Equalizer")
+        .child(
+            div().h_40().bg(rgb(0x35373c)).child(
+                canvas(
+                    move |bounds, _, _| graph_bounds.set(Some(bounds)),
+                    move |bounds, _, window, _| {
+                        let zero_y = bounds.origin.y + bounds.size.height * gain_fraction(0.0);
+                        window.paint_quad(fill(
+                            gpui::Bounds {
+                                origin: point(bounds.origin.x, zero_y),
+                                size: size(bounds.size.width, px(1.0)),
+                            },
+                            rgb(0x5a5d64),
+                        ));
+
+                        if !response.is_empty() {
+                            let mut path = PathBuilder::stroke(px(2.0));
+                            for (index, response) in response.iter().copied().enumerate() {
+                                let x = bounds.origin.x
+                                    + bounds.size.width
+                                        * (index as f32 / (SPECTRUM_POINT_COUNT - 1) as f32);
+                                let y = bounds.origin.y
+                                    + bounds.size.height * gain_fraction(f64::from(response));
+                                if index == 0 {
+                                    path.move_to(point(x, y));
+                                } else {
+                                    path.line_to(point(x, y));
+                                }
+                            }
+                            if let Ok(path) = path.build() {
+                                window.paint_path(path, rgb(0x69b578));
+                            }
+                        }
+
+                        for (x, y) in &points {
+                            let point_radius = px(EQ_POINT_RADIUS_PX);
+                            let center = graph_point(bounds, *x, *y);
+                            window.paint_quad(fill(
+                                gpui::Bounds {
+                                    origin: point(center.x - point_radius, center.y - point_radius),
+                                    size: size(point_radius * 2.0, point_radius * 2.0),
+                                },
+                                rgb(0xf2f2f2),
+                            ));
+                        }
+                    },
+                )
+                .size_full(),
+            ),
+        )
+        .child(
+            div()
+                .flex()
+                .justify_between()
+                .text_sm()
+                .child("20 Hz")
+                .child(max_frequency_label),
+        )
+        .when_some(response_error, |graph, error| {
+            graph.child(div().text_color(rgb(0xff8a8a)).child(error))
+        })
+}
+
+fn equalizer_response(
+    chain: &Chain,
+    sample_rate: SampleRateHz,
+    max_frequency: f64,
+) -> Result<Vec<f32>, ProcessorError> {
+    let prepared = FrequencyResponse::new(chain, sample_rate)?;
+    (0..SPECTRUM_POINT_COUNT)
+        .map(|index| {
+            let fraction = index as f64 / (SPECTRUM_POINT_COUNT - 1) as f64;
+            let frequency =
+                EQ_MIN_FREQUENCY_HZ * (max_frequency / EQ_MIN_FREQUENCY_HZ).powf(fraction);
+            let frequency = FrequencyHz::try_new(frequency).expect("graph frequency is positive");
+            prepared.db_at(frequency).map(|response| response as f32)
+        })
+        .collect()
+}
+
+fn frequency_fraction(frequency: f64, max_frequency: f64) -> f32 {
+    ((frequency.clamp(EQ_MIN_FREQUENCY_HZ, max_frequency) / EQ_MIN_FREQUENCY_HZ).ln()
+        / (max_frequency / EQ_MIN_FREQUENCY_HZ).ln()) as f32
+}
+
+fn gain_fraction(gain_db: f64) -> f32 {
+    ((EQ_MAX_GAIN_DB - gain_db.clamp(EQ_MIN_GAIN_DB, EQ_MAX_GAIN_DB))
+        / (EQ_MAX_GAIN_DB - EQ_MIN_GAIN_DB)) as f32
+}
+
+fn frequency_at_fraction(fraction: f32, max_frequency: f64) -> f64 {
+    EQ_MIN_FREQUENCY_HZ
+        * (max_frequency / EQ_MIN_FREQUENCY_HZ).powf(f64::from(fraction.clamp(0.0, 1.0)))
+}
+
+fn gain_at_fraction(fraction: f32) -> f64 {
+    EQ_MAX_GAIN_DB - f64::from(fraction.clamp(0.0, 1.0)) * (EQ_MAX_GAIN_DB - EQ_MIN_GAIN_DB)
+}
+
+fn graph_point(bounds: Bounds<Pixels>, x: f32, y: f32) -> Point<Pixels> {
+    let inset = px(EQ_POINT_INSET_PX);
+    point(
+        bounds.origin.x + inset + (bounds.size.width - inset * 2.0) * x,
+        bounds.origin.y + inset + (bounds.size.height - inset * 2.0) * y,
+    )
+}
+
+fn graph_fractions(bounds: Bounds<Pixels>, position: Point<Pixels>) -> (f32, f32) {
+    let inset = px(EQ_POINT_INSET_PX);
+    let width = bounds.size.width - inset * 2.0;
+    let height = bounds.size.height - inset * 2.0;
+    (
+        ((position.x - bounds.origin.x - inset) / width).clamp(0.0, 1.0),
+        ((position.y - bounds.origin.y - inset) / height).clamp(0.0, 1.0),
+    )
+}
+
+fn closest_filter(
+    chain: &Chain,
+    sample_rate: SampleRateHz,
+    bounds: Bounds<Pixels>,
+    position: Point<Pixels>,
+) -> Option<usize> {
+    let max_frequency = EQ_MAX_FREQUENCY_HZ.min(sample_rate.into_inner() * 0.499);
+    chain
+        .equalizer
+        .filters
+        .iter()
+        .enumerate()
+        .filter_map(|(index, filter)| {
+            let center = graph_point(
+                bounds,
+                frequency_fraction(filter.frequency.into_inner(), max_frequency),
+                gain_fraction(filter.gain.into_inner()),
+            );
+            let x = (position.x - center.x).as_f32();
+            let y = (position.y - center.y).as_f32();
+            let distance_squared = x.mul_add(x, y * y);
+            (distance_squared <= EQ_POINT_HIT_RADIUS_PX.powi(2))
+                .then_some((index, distance_squared))
+        })
+        .min_by(|(_, left), (_, right)| left.total_cmp(right))
+        .map(|(index, _)| index)
 }
 
 fn meter_fraction(amplitude: f32) -> f32 {
@@ -387,6 +636,7 @@ struct Model {
     device: DeviceId,
     device_name: String,
     controller: Option<Controller>,
+    draft_chain: Option<Chain>,
     presets: Vec<PresetSummary>,
     audio_error: Option<String>,
     action_error: Option<String>,
@@ -407,6 +657,7 @@ impl Model {
             device: DeviceId::try_new(SYSTEM_OUTPUT).expect("static device ID is valid"),
             device_name,
             controller,
+            draft_chain: None,
             presets,
             audio_error,
             action_error: None,
@@ -418,6 +669,16 @@ impl Model {
             .state()
             .selected_profile(&self.device)
             .map_or_else(|| "None".into(), |profile| profile.name.to_string())
+    }
+
+    fn sample_rate(&self) -> SampleRateHz {
+        self.controller.as_ref().map_or_else(
+            || {
+                SampleRateHz::try_new(EQ_FALLBACK_SAMPLE_RATE_HZ)
+                    .expect("fallback sample rate is valid")
+            },
+            Controller::sample_rate,
+        )
     }
 
     fn select_flat(&mut self) {
@@ -441,6 +702,7 @@ impl Model {
     }
 
     fn select(&mut self, id: ProfileId, name: ProfileName, source: ProfileSource) {
+        self.draft_chain = None;
         let result = if self.backend.state().profile(&id).is_none() {
             self.backend.execute(Command::CreateProfile {
                 id: id.clone(),
@@ -463,6 +725,7 @@ impl Model {
     }
 
     fn clear_selection(&mut self) {
+        self.draft_chain = None;
         self.action_error = self
             .backend
             .execute(Command::ClearProfile(self.device.clone()))
@@ -472,10 +735,77 @@ impl Model {
     }
 
     fn active_chain(&self) -> Chain {
-        self.backend
+        self.draft_chain.clone().unwrap_or_else(|| {
+            self.backend
+                .state()
+                .selected_profile(&self.device)
+                .map_or_else(Chain::default, |profile| profile.chain.clone())
+        })
+    }
+
+    fn drag_filter(
+        &mut self,
+        filter_index: usize,
+        bounds: Bounds<Pixels>,
+        position: Point<Pixels>,
+    ) {
+        if self
+            .backend
             .state()
             .selected_profile(&self.device)
-            .map_or_else(Chain::default, |profile| profile.chain.clone())
+            .is_none()
+        {
+            return;
+        }
+        let (x, y) = graph_fractions(bounds, position);
+        let max_frequency = EQ_MAX_FREQUENCY_HZ.min(self.sample_rate().into_inner() * 0.499);
+        let mut chain = self.active_chain();
+        let Some(filter) = chain.equalizer.filters.get_mut(filter_index) else {
+            return;
+        };
+        filter.frequency = FrequencyHz::try_new(frequency_at_fraction(x, max_frequency))
+            .expect("dragged frequency stays positive");
+        filter.gain = GainDb::try_new(gain_at_fraction(y)).expect("dragged gain stays finite");
+
+        self.action_error = self.publish_chain(chain.clone());
+        if self.action_error.is_none() {
+            self.draft_chain = Some(chain);
+        }
+    }
+
+    fn save_draft(&mut self) {
+        let Some(chain) = self.draft_chain.clone() else {
+            return;
+        };
+        let Some(profile) = self.backend.state().selected_profile(&self.device).cloned() else {
+            return;
+        };
+        match self.backend.execute(Command::UpdateProfile {
+            profile: profile.id,
+            chain,
+            expected_revision: profile.revision,
+        }) {
+            Ok(_) => {
+                self.draft_chain = None;
+                self.action_error = None;
+            }
+            Err(error) => self.action_error = Some(format!("{error:?}")),
+        }
+    }
+
+    fn reset_draft(&mut self) {
+        if self.draft_chain.is_none() {
+            return;
+        }
+        let saved = self
+            .backend
+            .state()
+            .selected_profile(&self.device)
+            .map_or_else(Chain::default, |profile| profile.chain.clone());
+        self.action_error = self.publish_chain(saved);
+        if self.action_error.is_none() {
+            self.draft_chain = None;
+        }
     }
 
     fn publish_selected_chain(&self) -> Option<String> {
@@ -495,10 +825,14 @@ mod tests {
     use std::num::NonZeroUsize;
 
     use super::{
-        Model, animate_meter, animate_spectrum_point, highest_peak, meter_fraction,
-        spectrum_fraction,
+        Model, animate_meter, animate_spectrum_point, equalizer_response, frequency_at_fraction,
+        frequency_fraction, gain_at_fraction, gain_fraction, graph_point, highest_peak,
+        meter_fraction, spectrum_fraction,
     };
-    use tunic_core::{AudioFormat, Chain, Processor, SampleRateHz};
+    use gpui::{Bounds, point, px, size};
+    use tunic_core::{
+        AudioFormat, Chain, FrequencyHz, GainDb, Processor, ProcessorError, SampleRateHz,
+    };
 
     #[test]
     fn selecting_profiles_updates_the_authoritative_backend_state() {
@@ -581,5 +915,140 @@ mod tests {
         assert_eq!(animate_spectrum_point(0.0, 0.5, frame_seconds), 0.5);
         assert_eq!(animate_spectrum_point(0.5, 1.0, frame_seconds), 1.0);
         assert!((animate_spectrum_point(1.0, 0.0, frame_seconds) - 0.926_118_73).abs() < 1e-6);
+    }
+
+    #[test]
+    fn equalizer_coordinates_are_logarithmic_and_centered_on_zero_db() {
+        assert_eq!(frequency_fraction(20.0, 20_000.0), 0.0);
+        assert!(
+            (frequency_fraction(20_000.0_f64.sqrt() * 20.0_f64.sqrt(), 20_000.0) - 0.5).abs()
+                < 1e-6
+        );
+        assert_eq!(frequency_fraction(20_000.0, 20_000.0), 1.0);
+        assert_eq!(gain_fraction(12.0), 0.0);
+        assert_eq!(gain_fraction(0.0), 0.5);
+        assert_eq!(gain_fraction(-12.0), 1.0);
+    }
+
+    #[test]
+    fn equalizer_drag_coordinates_invert_the_display_mapping() {
+        let middle_frequency = 20_000.0_f64.sqrt() * 20.0_f64.sqrt();
+        assert!((frequency_at_fraction(0.5, 20_000.0) - middle_frequency).abs() < 1e-6);
+        assert_eq!(gain_at_fraction(0.25), 6.0);
+        assert_eq!(gain_at_fraction(0.75), -6.0);
+    }
+
+    #[test]
+    fn incompatible_equalizer_response_is_reported_instead_of_panicking() {
+        let mut model = Model::new("System Output".into(), None, None);
+        model.select_preset(1);
+        let sample_rate = SampleRateHz::try_new(16_000.0).unwrap();
+
+        assert!(matches!(
+            equalizer_response(&model.active_chain(), sample_rate, 7_984.0),
+            Err(ProcessorError::FilterAtOrAboveNyquist { .. })
+        ));
+    }
+
+    #[test]
+    fn dragged_filters_are_live_drafts_until_saved_or_reset() {
+        let mut model = Model::new("System Output".into(), None, None);
+        model.select_preset(0);
+        let saved = model
+            .backend
+            .state()
+            .selected_profile(&model.device)
+            .unwrap()
+            .clone();
+        let bounds = Bounds {
+            origin: point(px(10.0), px(20.0)),
+            size: size(px(1_000.0), px(200.0)),
+        };
+        let dragged_position = graph_point(bounds, 0.75, 0.25);
+
+        model.drag_filter(0, bounds, dragged_position);
+        let draft = model.active_chain();
+        assert_eq!(draft.equalizer.filters[0].gain.into_inner(), 6.0);
+        assert_ne!(draft, saved.chain);
+        assert_eq!(
+            model
+                .backend
+                .state()
+                .selected_profile(&model.device)
+                .unwrap(),
+            &saved
+        );
+
+        model.reset_draft();
+        assert_eq!(model.active_chain(), saved.chain);
+
+        model.drag_filter(0, bounds, dragged_position);
+        let draft = model.active_chain();
+        model.save_draft();
+        let persisted = model
+            .backend
+            .state()
+            .selected_profile(&model.device)
+            .unwrap();
+        assert_eq!(persisted.chain, draft);
+        assert_eq!(persisted.revision.0, saved.revision.0 + 1);
+        assert!(model.draft_chain.is_none());
+    }
+
+    #[test]
+    fn failed_reset_keeps_the_compatible_live_draft() {
+        let mut model = Model::new("System Output".into(), None, None);
+        model.select_preset(1);
+        let mut draft = model.active_chain();
+        for filter in &mut draft.equalizer.filters {
+            if filter.frequency.into_inner() >= 8_000.0 {
+                filter.frequency = FrequencyHz::try_new(4_000.0).unwrap();
+            }
+        }
+        let (_, controller) = Processor::new(
+            AudioFormat {
+                sample_rate: SampleRateHz::try_new(16_000.0).unwrap(),
+                maximum_frame_count: NonZeroUsize::new(512).unwrap(),
+            },
+            draft.clone(),
+            false,
+        )
+        .unwrap();
+        model.controller = Some(controller);
+        model.draft_chain = Some(draft.clone());
+
+        model.reset_draft();
+
+        assert_eq!(model.active_chain(), draft);
+        assert!(model.action_error.is_some());
+    }
+
+    #[test]
+    fn saving_does_not_republish_and_reset_filter_history() {
+        let mut model = Model::new("System Output".into(), None, None);
+        model.select_preset(0);
+        let mut draft = model.active_chain();
+        draft.equalizer.filters[0].gain = GainDb::try_new(8.0).unwrap();
+        let format = || AudioFormat {
+            sample_rate: SampleRateHz::try_new(48_000.0).unwrap(),
+            maximum_frame_count: NonZeroUsize::new(512).unwrap(),
+        };
+        let (mut processor, controller) = Processor::new(format(), draft.clone(), false).unwrap();
+        let (mut reference, _) = Processor::new(format(), draft.clone(), false).unwrap();
+        model.controller = Some(controller);
+        model.draft_chain = Some(draft);
+
+        let mut warmup = vec![0.25_f32; 512 * 2];
+        let mut reference_warmup = warmup.clone();
+        processor.process(&mut warmup);
+        reference.process(&mut reference_warmup);
+        model.save_draft();
+        let mut actual = vec![0.25_f32; 512 * 2];
+        let mut expected = actual.clone();
+        processor.process(&mut actual);
+        reference.process(&mut expected);
+
+        assert_eq!(actual, expected);
+        assert!(model.action_error.is_none());
     }
 }

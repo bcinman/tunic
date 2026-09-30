@@ -69,6 +69,27 @@ pub struct Controller {
     telemetry: TelemetrySource,
 }
 
+/// A prepared, read-only view of a chain's combined filter response.
+///
+/// Preamp gain is intentionally excluded so filter control points remain relative
+/// to the equalizer's zero line. Preparation computes filter coefficients once;
+/// callers can then sample as many graph frequencies as needed.
+pub struct FrequencyResponse {
+    prepared: dsp::PreparedResponse,
+}
+
+impl FrequencyResponse {
+    pub fn new(chain: &Chain, sample_rate: SampleRateHz) -> Result<Self, ProcessorError> {
+        Ok(Self {
+            prepared: dsp::PreparedResponse::prepare(chain, sample_rate)?,
+        })
+    }
+
+    pub fn db_at(&self, frequency: crate::FrequencyHz) -> Result<f64, ProcessorError> {
+        self.prepared.db_at(frequency)
+    }
+}
+
 impl Processor {
     pub fn new(
         format: AudioFormat,
@@ -173,6 +194,11 @@ impl Processor {
 }
 
 impl Controller {
+    #[must_use]
+    pub fn sample_rate(&self) -> SampleRateHz {
+        self.sample_rate
+    }
+
     pub fn set_chain(&self, chain: Chain) -> Result<(), ProcessorError> {
         let chain = PreparedChain::prepare(&chain, self.sample_rate)?;
         self.chain_updates.publish(chain);
@@ -196,6 +222,7 @@ impl Controller {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ProcessorError {
     PreampOutOfRange,
+    ResponseAtOrAboveNyquist,
     FilterAtOrAboveNyquist { filter: usize },
     UnstableFilter { filter: usize },
 }

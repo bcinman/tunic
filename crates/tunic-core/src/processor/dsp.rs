@@ -6,7 +6,46 @@
 use std::f64::consts::TAU;
 
 use super::{ProcessorError, SampleRateHz};
-use crate::{Chain, Filter, FilterKind};
+use crate::{Chain, Filter, FilterKind, FrequencyHz};
+
+pub(super) struct PreparedResponse {
+    sample_rate: f64,
+    filters: Vec<Coefficients>,
+}
+
+impl PreparedResponse {
+    pub(super) fn prepare(
+        chain: &Chain,
+        sample_rate: SampleRateHz,
+    ) -> Result<Self, ProcessorError> {
+        let sample_rate = sample_rate.into_inner();
+        let filters = chain
+            .equalizer
+            .filters
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(index, filter)| coefficients(filter, sample_rate, index))
+            .collect::<Result<_, _>>()?;
+        Ok(Self {
+            sample_rate,
+            filters,
+        })
+    }
+
+    pub(super) fn db_at(&self, frequency: FrequencyHz) -> Result<f64, ProcessorError> {
+        let frequency = frequency.into_inner();
+        if frequency >= self.sample_rate / 2.0 {
+            return Err(ProcessorError::ResponseAtOrAboveNyquist);
+        }
+        let angular_frequency = TAU * frequency / self.sample_rate;
+        Ok(self
+            .filters
+            .iter()
+            .map(|coefficients| coefficients.response_db(angular_frequency))
+            .sum())
+    }
+}
 
 /// A processing chain compiled for one sample rate.
 pub(super) struct PreparedChain {
@@ -71,20 +110,29 @@ struct StereoBiquad {
 
 impl StereoBiquad {
     fn prepare(filter: Filter, sample_rate: f64, index: usize) -> Result<Self, ProcessorError> {
-        if filter.frequency.into_inner() >= sample_rate / 2.0 {
-            return Err(ProcessorError::FilterAtOrAboveNyquist { filter: index });
-        }
-
-        let coefficients = Coefficients::for_filter(filter, sample_rate);
-        if !coefficients.is_finite() || !coefficients.is_stable() {
-            return Err(ProcessorError::UnstableFilter { filter: index });
-        }
+        let coefficients = coefficients(filter, sample_rate, index)?;
 
         Ok(Self {
             left: Biquad::new(coefficients),
             right: Biquad::new(coefficients),
         })
     }
+}
+
+fn coefficients(
+    filter: Filter,
+    sample_rate: f64,
+    index: usize,
+) -> Result<Coefficients, ProcessorError> {
+    if filter.frequency.into_inner() >= sample_rate / 2.0 {
+        return Err(ProcessorError::FilterAtOrAboveNyquist { filter: index });
+    }
+
+    let coefficients = Coefficients::for_filter(filter, sample_rate);
+    if !coefficients.is_finite() || !coefficients.is_stable() {
+        return Err(ProcessorError::UnstableFilter { filter: index });
+    }
+    Ok(coefficients)
 }
 
 #[derive(Clone, Copy)]
@@ -167,6 +215,23 @@ impl Coefficients {
         let a2 = f64::from(self.a2);
         a2.abs() < 1.0 && 1.0 + a1 + a2 > 0.0 && 1.0 - a1 + a2 > 0.0
     }
+
+    fn response_db(self, angular_frequency: f64) -> f64 {
+        let cosine = angular_frequency.cos();
+        let sine = angular_frequency.sin();
+        let cosine_double = (2.0 * angular_frequency).cos();
+        let sine_double = (2.0 * angular_frequency).sin();
+        let numerator_real =
+            f64::from(self.b0) + f64::from(self.b1) * cosine + f64::from(self.b2) * cosine_double;
+        let numerator_imag = -f64::from(self.b1) * sine - f64::from(self.b2) * sine_double;
+        let denominator_real =
+            1.0 + f64::from(self.a1) * cosine + f64::from(self.a2) * cosine_double;
+        let denominator_imag = -f64::from(self.a1) * sine - f64::from(self.a2) * sine_double;
+        let numerator_power = numerator_real.mul_add(numerator_real, numerator_imag.powi(2));
+        let denominator_power =
+            denominator_real.mul_add(denominator_real, denominator_imag.powi(2));
+        10.0 * (numerator_power / denominator_power).log10()
+    }
 }
 
 struct Biquad {
@@ -201,7 +266,7 @@ impl Biquad {
 mod tests {
     use std::f32::consts::TAU;
 
-    use super::PreparedChain;
+    use super::{PreparedChain, PreparedResponse};
     use crate::{
         Chain, Equalizer, Filter, FilterKind, FrequencyHz, GainDb, ProcessorError, QualityFactor,
         SampleRateHz,
@@ -246,6 +311,23 @@ mod tests {
         let expected_gain = 10.0_f32.powf(6.0 / 20.0);
         assert!((left_rms / (1.0 / 2.0_f32.sqrt()) - expected_gain).abs() < 0.01);
         assert!((left_rms / right_rms - 4.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn filter_response_uses_processing_coefficients_without_preamp() {
+        let chain = Chain {
+            equalizer: Equalizer {
+                preamp: GainDb::try_new(-12.0).unwrap(),
+                filters: vec![filter(FilterKind::Peaking, 1_000.0, 6.0)],
+            },
+        };
+
+        let response = PreparedResponse::prepare(&chain, sample_rate())
+            .unwrap()
+            .db_at(FrequencyHz::try_new(1_000.0).unwrap())
+            .unwrap();
+
+        assert!((response - 6.0).abs() < 1e-5, "response {response}");
     }
 
     #[test]
