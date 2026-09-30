@@ -34,7 +34,7 @@ processing.
 **Responsibility:** Shared GPUI presentation.
 
 - Owns GPUI entities, rendering, click handlers, and transient presentation state.
-- Calls `tunic-core` and `tunic-presets` directly without an FFI conversion layer.
+- Calls `tunic-core` and `tunic-presets` directly.
 - Publishes the selected profile chain through a core `Controller`.
 - Does not own platform devices, audio callbacks, or native resources.
 
@@ -58,32 +58,11 @@ processing.
 - Returns a core `Controller` for non-real-time chain publication.
 - Contains no profile, persistence, or UI policy.
 
-## `tunic-ffi`
-
-**Responsibility:** Expose the core to native applications without weakening
-the real-time boundary.
-
-- Uses BoltFFI for processor construction, domain conversion, errors, and
-  non-real-time controller methods.
-- Exposes a handwritten C ABI that processes a caller-owned mutable audio
-  buffer directly.
-- Packages the bindings as an XCFramework and Swift package.
-- Constructs the bundled catalog and exposes typed brand/model queries and preset
-  lookup. Native apps never parse catalog JSON.
-- Wraps the core backend with native methods that translate values and issue one
-  command each. Profile rules and authoritative state remain in core; the current
-  native constructor uses an in-memory store.
-- Does not own devices, audio callbacks, UI, or backend-to-processor coordination.
-
 ## Application
 
 `tunic-app` is the active application. Its current macOS build processes system
 output through `tunic-core`; selecting a bundled or flat profile publishes that
 chain to the live processor.
-
-`native/macos` retains the earlier SwiftUI/Xcode integration for comparison. It
-depends on the generated local Swift package in `dist/apple` and remains a
-placeholder rather than the intended application architecture.
 
 The desktop application and future platform integrations own all side effects:
 
@@ -103,7 +82,4 @@ The desktop application and future platform integrations own all side effects:
 └─────┬─────┘           └─────────▶ tunic-core
       │                              ▲
       └────────▶ tunic-macos ────────┘
-
-Legacy SwiftUI spike ──▶ tunic-ffi ──┬──▶ tunic-presets
-                                     └──▶ tunic-core
 ```

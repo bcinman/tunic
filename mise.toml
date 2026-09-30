@@ -1,6 +1,5 @@
 [tools]
 rust = "nightly-2026-09-20"
-"cargo:boltffi_cli" = "0.30.1"
 
 [tasks.fmt]
 description = "Check Rust formatting"
@@ -25,17 +24,3 @@ run = "cargo build -p tunic-app"
 [tasks.run-app]
 description = "Build and launch the GPUI application"
 run = "cargo run -p tunic-app"
-
-[tasks.ffi-apple]
-description = "Generate the Tunic Apple XCFramework and Swift package"
-run = "./scripts/package-ffi-apple"
-
-[tasks.build-macos]
-description = "Build the native macOS app and generated bindings"
-depends = ["ffi-apple"]
-run = "xcodebuild -project native/macos/Tunic.xcodeproj -scheme Tunic -configuration Debug -destination 'platform=macOS,arch=arm64' -derivedDataPath target/macos build"
-
-[tasks.run-macos]
-description = "Build and launch the native macOS app"
-depends = ["build-macos"]
-run = "open target/macos/Build/Products/Debug/Tunic.app"
