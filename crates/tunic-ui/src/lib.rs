@@ -15,7 +15,7 @@ use tunic_presets::BundledCatalog;
 const SYSTEM_OUTPUT: &str = "system-output";
 const FLAT_PROFILE: &str = "flat";
 const METER_FLOOR_DB: f32 = -60.0;
-const METER_DECAY_DB_PER_SECOND: f32 = 20.0;
+const METER_DECAY_DB_PER_SECOND: f32 = 24.0;
 const FRAME_HISTORY_LENGTH: usize = 90;
 const SLOW_FRAME_MILLISECONDS: f32 = 33.0;
 
@@ -26,7 +26,6 @@ pub struct TunicView {
 
 struct MeterView {
     telemetry: Option<Telemetry>,
-    last_telemetry_sequence: Option<u64>,
     levels: StereoLevels,
     last_frame_at: Option<Instant>,
     frame_times: VecDeque<f32>,
@@ -61,7 +60,6 @@ impl TunicView {
         let telemetry = controller.as_ref().map(Controller::subscribe_telemetry);
         self.meters.update(cx, |meters, cx| {
             meters.telemetry = telemetry;
-            meters.last_telemetry_sequence = None;
             meters.levels = StereoLevels::default();
             cx.notify();
         });
@@ -75,7 +73,6 @@ impl MeterView {
     fn new(telemetry: Option<Telemetry>) -> Self {
         Self {
             telemetry,
-            last_telemetry_sequence: None,
             levels: StereoLevels::default(),
             last_frame_at: None,
             frame_times: VecDeque::with_capacity(FRAME_HISTORY_LENGTH),
@@ -83,23 +80,16 @@ impl MeterView {
     }
 
     fn update_meters(&mut self, elapsed_seconds: f32) {
-        let frame = self.telemetry.as_ref().and_then(Telemetry::latest);
-        let measured = frame.and_then(|frame| {
-            (self.last_telemetry_sequence != Some(frame.sequence)).then_some(frame.levels)
-        });
-        if let Some(frame) = frame {
-            self.last_telemetry_sequence = Some(frame.sequence);
+        let mut left_peak = None;
+        let mut right_peak = None;
+        if let Some(telemetry) = &self.telemetry {
+            telemetry.for_each_unseen(|frame| {
+                left_peak = highest_peak(left_peak, frame.levels.left.peak);
+                right_peak = highest_peak(right_peak, frame.levels.right.peak);
+            });
         }
-        self.levels.left.peak = animate_meter(
-            self.levels.left.peak,
-            measured.map(|levels| levels.left.peak),
-            elapsed_seconds,
-        );
-        self.levels.right.peak = animate_meter(
-            self.levels.right.peak,
-            measured.map(|levels| levels.right.peak),
-            elapsed_seconds,
-        );
+        self.levels.left.peak = animate_meter(self.levels.left.peak, left_peak, elapsed_seconds);
+        self.levels.right.peak = animate_meter(self.levels.right.peak, right_peak, elapsed_seconds);
     }
 
     fn record_frame(&mut self, now: Instant) -> f32 {
@@ -226,6 +216,13 @@ fn animate_meter(current: f32, measured: Option<f32>, elapsed_seconds: f32) -> f
     measured
         .filter(|level| level.is_finite())
         .map_or(decayed, |level| decayed.max(level.max(0.0)))
+}
+
+fn highest_peak(current: Option<f32>, measured: f32) -> Option<f32> {
+    measured
+        .is_finite()
+        .then(|| current.map_or(measured, |current| current.max(measured)))
+        .or(current)
 }
 
 fn frame_graph(frame_times: &VecDeque<f32>) -> Div {
@@ -408,7 +405,7 @@ impl Model {
 mod tests {
     use std::num::NonZeroUsize;
 
-    use super::{Model, animate_meter, meter_fraction};
+    use super::{Model, animate_meter, highest_peak, meter_fraction};
     use tunic_core::{AudioFormat, Chain, Processor, SampleRateHz};
 
     #[test]
@@ -460,9 +457,19 @@ mod tests {
     }
 
     #[test]
-    fn meter_attacks_immediately_and_decays_at_twenty_decibels_per_second() {
+    fn meter_attacks_immediately_and_decays_at_twenty_four_decibels_per_second() {
         assert_eq!(animate_meter(0.25, Some(1.0), 0.1), 1.0);
-        assert!((animate_meter(1.0, None, 0.1) - 0.794_328_2).abs() < 1e-6);
+        assert!((animate_meter(1.0, None, 0.1) - 0.758_577_6).abs() < 1e-6);
         assert_eq!(animate_meter(1.0, Some(0.9), 0.1), 0.9);
+    }
+
+    #[test]
+    fn meter_keeps_the_highest_peak_from_unseen_telemetry() {
+        let peak = [0.2, 0.9, 0.1]
+            .into_iter()
+            .fold(None, highest_peak)
+            .unwrap();
+
+        assert_eq!(peak, 0.9);
     }
 }

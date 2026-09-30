@@ -12,6 +12,7 @@ pub const SPECTRUM_MAX_FREQUENCY_HZ: f32 = 20_000.0;
 
 const ACTIVE_SUBSCRIPTION_MASK: u64 = u32::MAX as u64;
 const GENERATION_INCREMENT: u64 = 1_u64 << 32;
+const FRAME_HISTORY_CAPACITY: usize = 16;
 
 /// Returns the logarithmically spaced center frequency for a spectrum point.
 ///
@@ -63,11 +64,12 @@ impl Default for Spectrum {
     }
 }
 
-/// A read-only latest-value view of measurements produced by a processor.
+/// A read-only view of recent measurements produced by a processor.
 ///
 /// Clones share one subscription. Calling `Controller::subscribe_telemetry`
 /// again creates independent demand. The first frame is available only after
-/// the processor has observed enough new audio for a complete analysis.
+/// the processor has observed enough new audio for a complete analysis. Clones
+/// also share the cursor used by [`Self::for_each_unseen`].
 #[derive(Clone)]
 pub struct Telemetry {
     subscription: Arc<TelemetrySubscription>,
@@ -77,17 +79,43 @@ impl Telemetry {
     /// Returns the latest complete frame without blocking.
     #[must_use]
     pub fn latest(&self) -> Option<TelemetryFrame> {
-        let shared = &self.subscription.shared;
-        let before = shared.sequence.load(Ordering::Acquire);
-        if !before.is_multiple_of(2) {
-            return None;
+        let sequence = self
+            .subscription
+            .shared
+            .published_sequence
+            .load(Ordering::Acquire);
+        self.subscription
+            .shared
+            .load(sequence, self.subscription.generation)
+    }
+
+    /// Visits every complete frame published since the previous call.
+    ///
+    /// If the reader falls more than 16 frames behind, only the retained tail is
+    /// visited. This method does not block or allocate.
+    pub fn for_each_unseen(&self, mut visit: impl FnMut(TelemetryFrame)) {
+        let latest = self
+            .subscription
+            .shared
+            .published_sequence
+            .load(Ordering::Acquire);
+        let previous = self
+            .subscription
+            .last_seen_sequence
+            .swap(latest, Ordering::AcqRel);
+        if latest <= previous {
+            return;
         }
-        let mut frame = shared.load();
-        let published_generation =
-            TelemetryGeneration(shared.published_generation.load(Ordering::SeqCst));
-        let after = shared.sequence.load(Ordering::Acquire);
-        frame.sequence = before / 2;
-        (before == after && published_generation == self.subscription.generation).then_some(frame)
+        let oldest_retained = latest.saturating_sub(FRAME_HISTORY_CAPACITY as u64 - 1);
+        for sequence in previous.saturating_add(1).max(oldest_retained)..=latest {
+            if let Some(frame) = self
+                .subscription
+                .shared
+                .load(sequence, self.subscription.generation)
+            {
+                visit(frame);
+            }
+        }
     }
 }
 
@@ -101,6 +129,7 @@ pub(crate) struct TelemetrySource {
 
 impl TelemetrySource {
     pub(crate) fn subscribe(&self) -> Telemetry {
+        let initial_sequence = self.shared.published_sequence.load(Ordering::Acquire);
         let previous = self
             .shared
             .demand
@@ -124,6 +153,7 @@ impl TelemetrySource {
             subscription: Arc::new(TelemetrySubscription {
                 shared: Arc::clone(&self.shared),
                 generation: TelemetryGeneration(generation),
+                last_seen_sequence: AtomicU64::new(initial_sequence),
             }),
         }
     }
@@ -132,6 +162,7 @@ impl TelemetrySource {
 struct TelemetrySubscription {
     shared: Arc<SharedTelemetry>,
     generation: TelemetryGeneration,
+    last_seen_sequence: AtomicU64,
 }
 
 impl Drop for TelemetrySubscription {
@@ -155,35 +186,16 @@ impl TelemetryPublisher {
         if self.active_generation() != Some(generation) {
             return;
         }
-
-        let sequence = self.shared.sequence.load(Ordering::Acquire);
-        if !sequence.is_multiple_of(2)
-            || self
-                .shared
-                .sequence
-                .compare_exchange(
-                    sequence,
-                    sequence.wrapping_add(1),
-                    Ordering::AcqRel,
-                    Ordering::Acquire,
-                )
-                .is_err()
-        {
-            return;
-        }
-        if self.active_generation() != Some(generation) {
-            self.shared
-                .sequence
-                .store(sequence.wrapping_add(2), Ordering::Release);
-            return;
-        }
-        self.shared.store(frame);
+        let sequence = self
+            .shared
+            .published_sequence
+            .load(Ordering::Relaxed)
+            .checked_add(1)
+            .expect("telemetry sequence overflow");
+        self.shared.store(sequence, generation, frame);
         self.shared
-            .published_generation
-            .store(generation.0, Ordering::SeqCst);
-        self.shared
-            .sequence
-            .store(sequence.wrapping_add(2), Ordering::Release);
+            .published_sequence
+            .store(sequence, Ordering::Release);
     }
 }
 
@@ -203,8 +215,13 @@ pub(crate) fn channel() -> (TelemetryPublisher, TelemetrySource) {
 
 struct SharedTelemetry {
     demand: AtomicU64,
+    published_sequence: AtomicU64,
+    frames: [SharedTelemetryFrame; FRAME_HISTORY_CAPACITY],
+}
+
+struct SharedTelemetryFrame {
     sequence: AtomicU64,
-    published_generation: AtomicU32,
+    generation: AtomicU32,
     left_peak: AtomicU32,
     left_rms: AtomicU32,
     right_peak: AtomicU32,
@@ -216,8 +233,17 @@ impl Default for SharedTelemetry {
     fn default() -> Self {
         Self {
             demand: AtomicU64::new(0),
+            published_sequence: AtomicU64::new(0),
+            frames: std::array::from_fn(|_| SharedTelemetryFrame::default()),
+        }
+    }
+}
+
+impl Default for SharedTelemetryFrame {
+    fn default() -> Self {
+        Self {
             sequence: AtomicU64::new(0),
-            published_generation: AtomicU32::new(0),
+            generation: AtomicU32::new(0),
             left_peak: AtomicU32::new(0),
             left_rms: AtomicU32::new(0),
             right_peak: AtomicU32::new(0),
@@ -228,45 +254,66 @@ impl Default for SharedTelemetry {
 }
 
 impl SharedTelemetry {
-    fn store(&self, frame: TelemetryFrame) {
-        self.left_peak
+    fn store(&self, sequence: u64, generation: TelemetryGeneration, frame: TelemetryFrame) {
+        let target = &self.frames[sequence as usize % FRAME_HISTORY_CAPACITY];
+        target.sequence.store(0, Ordering::Release);
+        target.generation.store(generation.0, Ordering::SeqCst);
+        target
+            .left_peak
             .store(frame.levels.left.peak.to_bits(), Ordering::SeqCst);
-        self.left_rms
+        target
+            .left_rms
             .store(frame.levels.left.rms.to_bits(), Ordering::SeqCst);
-        self.right_peak
+        target
+            .right_peak
             .store(frame.levels.right.peak.to_bits(), Ordering::SeqCst);
-        self.right_rms
+        target
+            .right_rms
             .store(frame.levels.right.rms.to_bits(), Ordering::SeqCst);
-        for (target, value) in self.spectrum.iter().zip(frame.spectrum.points) {
-            target.store(value.to_bits(), Ordering::SeqCst);
+        for (point, value) in target.spectrum.iter().zip(frame.spectrum.points) {
+            point.store(value.to_bits(), Ordering::SeqCst);
         }
+        target.sequence.store(sequence, Ordering::Release);
     }
 
-    fn load(&self) -> TelemetryFrame {
-        TelemetryFrame {
-            sequence: 0,
+    fn load(&self, sequence: u64, generation: TelemetryGeneration) -> Option<TelemetryFrame> {
+        if sequence == 0 {
+            return None;
+        }
+        let source = &self.frames[sequence as usize % FRAME_HISTORY_CAPACITY];
+        let before = source.sequence.load(Ordering::Acquire);
+        if before != sequence
+            || TelemetryGeneration(source.generation.load(Ordering::SeqCst)) != generation
+        {
+            return None;
+        }
+        let frame = TelemetryFrame {
+            sequence,
             levels: StereoLevels {
                 left: ChannelLevels {
-                    peak: f32::from_bits(self.left_peak.load(Ordering::SeqCst)),
-                    rms: f32::from_bits(self.left_rms.load(Ordering::SeqCst)),
+                    peak: f32::from_bits(source.left_peak.load(Ordering::SeqCst)),
+                    rms: f32::from_bits(source.left_rms.load(Ordering::SeqCst)),
                 },
                 right: ChannelLevels {
-                    peak: f32::from_bits(self.right_peak.load(Ordering::SeqCst)),
-                    rms: f32::from_bits(self.right_rms.load(Ordering::SeqCst)),
+                    peak: f32::from_bits(source.right_peak.load(Ordering::SeqCst)),
+                    rms: f32::from_bits(source.right_rms.load(Ordering::SeqCst)),
                 },
             },
             spectrum: Spectrum {
                 points: std::array::from_fn(|index| {
-                    f32::from_bits(self.spectrum[index].load(Ordering::SeqCst))
+                    f32::from_bits(source.spectrum[index].load(Ordering::SeqCst))
                 }),
             },
-        }
+        };
+        (source.sequence.load(Ordering::Acquire) == sequence).then_some(frame)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{ChannelLevels, Spectrum, StereoLevels, TelemetryFrame, channel};
+    use super::{
+        ChannelLevels, FRAME_HISTORY_CAPACITY, Spectrum, StereoLevels, TelemetryFrame, channel,
+    };
 
     fn frame() -> TelemetryFrame {
         TelemetryFrame {
@@ -302,6 +349,48 @@ mod tests {
                 ..frame
             })
         );
+    }
+
+    #[test]
+    fn subscription_visits_every_unseen_frame_in_publication_order() {
+        let (publisher, source) = channel();
+        let telemetry = source.subscribe();
+        let generation = telemetry.subscription.generation;
+        for peak in [0.2, 0.9, 0.1] {
+            let mut frame = frame();
+            frame.levels.left.peak = peak;
+            publisher.publish(generation, frame);
+        }
+
+        let mut seen = Vec::new();
+        telemetry.for_each_unseen(|frame| {
+            seen.push((frame.sequence, frame.levels.left.peak));
+        });
+
+        assert_eq!(seen, [(1, 0.2), (2, 0.9), (3, 0.1)]);
+        telemetry.for_each_unseen(|frame| seen.push((frame.sequence, frame.levels.left.peak)));
+        assert_eq!(seen.len(), 3);
+    }
+
+    #[test]
+    fn slow_subscription_receives_the_retained_tail() {
+        let (publisher, source) = channel();
+        let telemetry = source.subscribe();
+        let generation = telemetry.subscription.generation;
+        for peak in 1..=FRAME_HISTORY_CAPACITY + 2 {
+            let mut frame = frame();
+            frame.levels.left.peak = peak as f32;
+            publisher.publish(generation, frame);
+        }
+
+        let mut seen = Vec::new();
+        telemetry.for_each_unseen(|frame| seen.push(frame));
+
+        assert_eq!(seen.len(), FRAME_HISTORY_CAPACITY);
+        assert_eq!(seen.first().unwrap().sequence, 3);
+        assert_eq!(seen.first().unwrap().levels.left.peak, 3.0);
+        assert_eq!(seen.last().unwrap().sequence, 18);
+        assert_eq!(seen.last().unwrap().levels.left.peak, 18.0);
     }
 
     #[test]
