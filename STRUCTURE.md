@@ -29,6 +29,22 @@ processing.
   preset chains, attribution, and adjustment mappings into independent profiles.
 - Depends on `tunic-core`; the core does not depend on the bundled catalog.
 
+## `tunic-ui`
+
+**Responsibility:** Shared GPUI presentation.
+
+- Owns GPUI entities, rendering, click handlers, and transient presentation state.
+- Calls `tunic-core` and `tunic-presets` directly without an FFI conversion layer.
+- Renders backend state but does not own product rules, devices, or audio callbacks.
+
+## `tunic-desktop`
+
+**Responsibility:** GPUI application lifecycle and composition.
+
+- Selects GPUI's native platform backend and opens the application window.
+- Constructs the shared `tunic-ui` root view.
+- Is currently built and visually verified on macOS only.
+
 ## `tunic-ffi`
 
 **Responsibility:** Expose the core to native applications without weakening
@@ -48,11 +64,15 @@ the real-time boundary.
 
 ## Native applications
 
-`native/macos` contains the SwiftUI macOS app and its Xcode project. It depends
-on the generated local Swift package in `dist/apple`. For now it displays a
-static device label and a local placeholder profile dropdown above an empty content area.
+`tunic-desktop` is the active cross-platform UI spike. Its current macOS build
+shows the bundled presets and executes profile selection directly through the
+core backend. Audio is not connected yet.
 
-Native applications live outside the Rust workspace and own all side effects:
+`native/macos` retains the earlier SwiftUI/Xcode integration for comparison. It
+depends on the generated local Swift package in `dist/apple` and remains a
+placeholder rather than the intended application architecture.
+
+The desktop application and future platform integrations own all side effects:
 
 - UI and application lifecycle;
 - device discovery and permissions;
@@ -64,16 +84,12 @@ Native applications live outside the Rust workspace and own all side effects:
 ## Dependency Direction
 
 ```text
-┌────────────────────┐
-│ Native application │
-└─────────┬──────────┘
-          │ generated API + direct audio buffer
-          ▼
-     ┌───────────┐      ┌───────────────┐
-     │ tunic-ffi │─────▶│ tunic-presets │
-     └─────┬─────┘      └───────┬───────┘
-           ▼                    │
-     ┌────────────┐             │
-     │ tunic-core │◀────────────┘
-     └────────────┘
+┌───────────────┐     ┌──────────┐
+│ tunic-desktop │────▶│ tunic-ui │
+└───────────────┘     └────┬─────┘
+                           ├──────▶ tunic-presets
+                           └──────▶ tunic-core
+
+Legacy SwiftUI spike ──▶ tunic-ffi ──┬──▶ tunic-presets
+                                     └──▶ tunic-core
 ```

@@ -1,8 +1,9 @@
 # Project Status
 
-Tunic is rebuilding around a portable Rust core embedded in native platform
-applications. The previous GPUI application, CLI, engine, DSP, and Core Audio
-prototype crates have been removed rather than carried into the new design.
+Tunic is rebuilding around a portable Rust core and a shared GPUI desktop
+interface. The previous engine, DSP, CLI, and Core Audio prototype crates were
+removed rather than carried into the new design; the new GPUI spike calls the
+simplified core directly.
 
 This file is the source of truth for implemented product capabilities.
 
@@ -39,12 +40,17 @@ This file is the source of truth for implemented product capabilities.
 - A native SwiftUI macOS app in `native/macos` that links the generated bindings
   with a compact, titleless window, a static device label, and a profile dropdown
   using local placeholder choices, built and launched through `mise run run-macos`.
+- A minimal GPUI-CE desktop spike split into shared `tunic-ui` presentation and
+  a thin `tunic-desktop` executable. Its macOS build browses both bundled presets,
+  creates and selects real core profiles, and clears selection without FFI.
+- macOS GPUI development through `mise run build-desktop` and
+  `mise run run-desktop`.
 - Automated formatting, Clippy, and workspace tests through `mise run check`.
 
 ## Not In Yet
 
-- Product UI, device discovery, permissions, audio wiring, and audio lifecycle
-  in the native app; native applications for other platforms.
+- Product-complete UI, device discovery, permissions, audio wiring, and audio
+  lifecycle; GPUI builds and platform integrations for Linux and Windows.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
   core's `Store` contract.
 - Durable backend construction and telemetry FFI bindings.
@@ -66,6 +72,12 @@ Run the complete Rust suite with:
 
 ```console
 mise run check
+```
+
+Build and launch the GPUI desktop spike on macOS with:
+
+```console
+mise run run-desktop
 ```
 
 Generate and compile the Apple package with:

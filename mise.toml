@@ -18,6 +18,14 @@ run = "cargo test --workspace --all-targets --all-features"
 description = "Run all repository checks"
 depends = ["fmt", "lint", "test"]
 
+[tasks.build-desktop]
+description = "Build the GPUI desktop application"
+run = "cargo build -p tunic-desktop"
+
+[tasks.run-desktop]
+description = "Build and launch the GPUI desktop application"
+run = "cargo run -p tunic-desktop"
+
 [tasks.ffi-apple]
 description = "Generate the Tunic Apple XCFramework and Swift package"
 run = "./scripts/package-ffi-apple"

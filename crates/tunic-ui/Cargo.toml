@@ -1,0 +1,12 @@
+[package]
+name = "tunic-ui"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+gpui.workspace = true
+tunic-core.workspace = true
+tunic-presets.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,16 @@
+[package]
+name = "tunic-desktop"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "Tunic"
+path = "src/main.rs"
+
+[dependencies]
+gpui.workspace = true
+gpui-platform.workspace = true
+tunic-ui.workspace = true
+
+[lints]
+workspace = true
