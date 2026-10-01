@@ -4,8 +4,8 @@ use std::{cell::Cell, collections::VecDeque, rc::Rc, time::Instant};
 
 use gpui::{
     Bounds, Context, Div, Entity, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent,
-    PathBuilder, Pixels, Point, Render, Stateful, Window, canvas, div, fill, point, prelude::*, px,
-    relative, rgb, size,
+    PathBuilder, Pixels, Point, Render, Rgba, Stateful, Window, canvas, div, fill, point,
+    prelude::*, px, relative, rgb, size,
 };
 use tunic_core::{
     Backend, Chain, Command, Controller, DeviceId, FrequencyHz, FrequencyResponse, GainDb,
@@ -294,6 +294,7 @@ fn equalizer_graph(
         Ok(response) => (response, None),
         Err(error) => (Vec::new(), Some(format!("Response unavailable: {error:?}"))),
     };
+    let filter_responses = individual_equalizer_responses(chain, sample_rate, max_frequency);
     let points = chain
         .equalizer
         .filters
@@ -334,24 +335,22 @@ fn equalizer_graph(
                                 rgb(0x5a5d64),
                             ));
 
-                            if !response.is_empty() {
-                                let mut path = PathBuilder::stroke(px(2.0));
-                                for (index, response) in response.iter().copied().enumerate() {
-                                    let x = bounds.origin.x
-                                        + bounds.size.width
-                                            * (index as f32 / (SPECTRUM_POINT_COUNT - 1) as f32);
-                                    let y = bounds.origin.y
-                                        + bounds.size.height * gain_fraction(f64::from(response));
-                                    if index == 0 {
-                                        path.move_to(point(x, y));
-                                    } else {
-                                        path.line_to(point(x, y));
-                                    }
-                                }
-                                if let Ok(path) = path.build() {
-                                    window.paint_path(path, rgb(0x69b578));
-                                }
+                            for filter_response in &filter_responses {
+                                paint_equalizer_response(
+                                    bounds,
+                                    filter_response,
+                                    px(1.0),
+                                    rgb(0x7b7e85),
+                                    window,
+                                );
                             }
+                            paint_equalizer_response(
+                                bounds,
+                                &response,
+                                px(2.0),
+                                rgb(0x69b578),
+                                window,
+                            );
 
                             for (x, y) in &points {
                                 let point_radius = px(EQ_POINT_RADIUS_PX);
@@ -409,6 +408,49 @@ fn equalizer_response(
             prepared.db_at(frequency).map(|response| response as f32)
         })
         .collect()
+}
+
+fn individual_equalizer_responses(
+    chain: &Chain,
+    sample_rate: SampleRateHz,
+    max_frequency: f64,
+) -> Vec<Vec<f32>> {
+    chain
+        .equalizer
+        .filters
+        .iter()
+        .filter_map(|filter| {
+            let mut filter_chain = Chain::default();
+            filter_chain.equalizer.filters.push(*filter);
+            equalizer_response(&filter_chain, sample_rate, max_frequency).ok()
+        })
+        .collect()
+}
+
+fn paint_equalizer_response(
+    bounds: Bounds<Pixels>,
+    response: &[f32],
+    stroke_width: Pixels,
+    color: Rgba,
+    window: &mut Window,
+) {
+    if response.is_empty() {
+        return;
+    }
+    let mut path = PathBuilder::stroke(stroke_width);
+    for (index, response) in response.iter().copied().enumerate() {
+        let x = bounds.origin.x
+            + bounds.size.width * (index as f32 / (SPECTRUM_POINT_COUNT - 1) as f32);
+        let y = bounds.origin.y + bounds.size.height * gain_fraction(f64::from(response));
+        if index == 0 {
+            path.move_to(point(x, y));
+        } else {
+            path.line_to(point(x, y));
+        }
+    }
+    if let Ok(path) = path.build() {
+        window.paint_path(path, color);
+    }
 }
 
 fn frequency_fraction(frequency: f64, max_frequency: f64) -> f32 {
@@ -843,7 +885,7 @@ mod tests {
     use super::{
         Model, animate_meter, animate_spectrum_point, equalizer_response, frequency_at_fraction,
         frequency_fraction, gain_at_fraction, gain_fraction, graph_point, highest_peak,
-        meter_fraction, spectrum_fraction,
+        individual_equalizer_responses, meter_fraction, spectrum_fraction,
     };
     use gpui::{Bounds, point, px, size};
     use tunic_core::{
@@ -964,6 +1006,25 @@ mod tests {
             equalizer_response(&model.active_chain(), sample_rate, 7_984.0),
             Err(ProcessorError::FilterAtOrAboveNyquist { .. })
         ));
+    }
+
+    #[test]
+    fn individual_filter_responses_sum_to_the_combined_response() {
+        let mut model = Model::new("System Output".into(), None, None);
+        model.select_preset(0);
+        let chain = model.active_chain();
+        let sample_rate = SampleRateHz::try_new(48_000.0).unwrap();
+        let combined = equalizer_response(&chain, sample_rate, 20_000.0).unwrap();
+        let individual = individual_equalizer_responses(&chain, sample_rate, 20_000.0);
+
+        assert_eq!(individual.len(), chain.equalizer.filters.len());
+        for (index, combined) in combined.into_iter().enumerate() {
+            let sum = individual
+                .iter()
+                .map(|response| response[index])
+                .sum::<f32>();
+            assert!((combined - sum).abs() < 1e-4);
+        }
     }
 
     #[test]
