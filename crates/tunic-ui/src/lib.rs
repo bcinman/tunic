@@ -23,8 +23,8 @@ const SPECTRUM_DECAY_DB_PER_SECOND: f32 = 40.0;
 const TELEMETRY_UPDATES_PER_SECOND: f32 = 60.0;
 const EQ_MIN_FREQUENCY_HZ: f64 = 20.0;
 const EQ_MAX_FREQUENCY_HZ: f64 = 20_000.0;
-const EQ_MIN_GAIN_DB: f64 = -12.0;
-const EQ_MAX_GAIN_DB: f64 = 12.0;
+const EQ_MIN_GAIN_DB: f64 = -20.0;
+const EQ_MAX_GAIN_DB: f64 = 20.0;
 const EQ_FALLBACK_SAMPLE_RATE_HZ: f64 = 48_000.0;
 const EQ_POINT_RADIUS_PX: f32 = 4.0;
 const EQ_POINT_INSET_PX: f32 = EQ_POINT_RADIUS_PX + 1.0;
@@ -317,53 +317,69 @@ fn equalizer_graph(
         .gap_1()
         .child("Equalizer")
         .child(
-            div().h_40().bg(rgb(0x35373c)).child(
-                canvas(
-                    move |bounds, _, _| graph_bounds.set(Some(bounds)),
-                    move |bounds, _, window, _| {
-                        let zero_y = bounds.origin.y + bounds.size.height * gain_fraction(0.0);
-                        window.paint_quad(fill(
-                            gpui::Bounds {
-                                origin: point(bounds.origin.x, zero_y),
-                                size: size(bounds.size.width, px(1.0)),
-                            },
-                            rgb(0x5a5d64),
-                        ));
-
-                        if !response.is_empty() {
-                            let mut path = PathBuilder::stroke(px(2.0));
-                            for (index, response) in response.iter().copied().enumerate() {
-                                let x = bounds.origin.x
-                                    + bounds.size.width
-                                        * (index as f32 / (SPECTRUM_POINT_COUNT - 1) as f32);
-                                let y = bounds.origin.y
-                                    + bounds.size.height * gain_fraction(f64::from(response));
-                                if index == 0 {
-                                    path.move_to(point(x, y));
-                                } else {
-                                    path.line_to(point(x, y));
-                                }
-                            }
-                            if let Ok(path) = path.build() {
-                                window.paint_path(path, rgb(0x69b578));
-                            }
-                        }
-
-                        for (x, y) in &points {
-                            let point_radius = px(EQ_POINT_RADIUS_PX);
-                            let center = graph_point(bounds, *x, *y);
+            div()
+                .relative()
+                .h_40()
+                .bg(rgb(0x35373c))
+                .child(
+                    canvas(
+                        move |bounds, _, _| graph_bounds.set(Some(bounds)),
+                        move |bounds, _, window, _| {
+                            let zero_y = bounds.origin.y + bounds.size.height * gain_fraction(0.0);
                             window.paint_quad(fill(
                                 gpui::Bounds {
-                                    origin: point(center.x - point_radius, center.y - point_radius),
-                                    size: size(point_radius * 2.0, point_radius * 2.0),
+                                    origin: point(bounds.origin.x, zero_y),
+                                    size: size(bounds.size.width, px(1.0)),
                                 },
-                                rgb(0xf2f2f2),
+                                rgb(0x5a5d64),
                             ));
-                        }
-                    },
+
+                            if !response.is_empty() {
+                                let mut path = PathBuilder::stroke(px(2.0));
+                                for (index, response) in response.iter().copied().enumerate() {
+                                    let x = bounds.origin.x
+                                        + bounds.size.width
+                                            * (index as f32 / (SPECTRUM_POINT_COUNT - 1) as f32);
+                                    let y = bounds.origin.y
+                                        + bounds.size.height * gain_fraction(f64::from(response));
+                                    if index == 0 {
+                                        path.move_to(point(x, y));
+                                    } else {
+                                        path.line_to(point(x, y));
+                                    }
+                                }
+                                if let Ok(path) = path.build() {
+                                    window.paint_path(path, rgb(0x69b578));
+                                }
+                            }
+
+                            for (x, y) in &points {
+                                let point_radius = px(EQ_POINT_RADIUS_PX);
+                                let center = graph_point(bounds, *x, *y);
+                                window.paint_quad(fill(
+                                    gpui::Bounds {
+                                        origin: point(
+                                            center.x - point_radius,
+                                            center.y - point_radius,
+                                        ),
+                                        size: size(point_radius * 2.0, point_radius * 2.0),
+                                    },
+                                    rgb(0xf2f2f2),
+                                ));
+                            }
+                        },
+                    )
+                    .size_full(),
                 )
-                .size_full(),
-            ),
+                .child(div().absolute().top_1().left_1().text_sm().child("+20 dB"))
+                .child(
+                    div()
+                        .absolute()
+                        .bottom_1()
+                        .left_1()
+                        .text_sm()
+                        .child("−20 dB"),
+                ),
         )
         .child(
             div()
@@ -925,17 +941,17 @@ mod tests {
                 < 1e-6
         );
         assert_eq!(frequency_fraction(20_000.0, 20_000.0), 1.0);
-        assert_eq!(gain_fraction(12.0), 0.0);
+        assert_eq!(gain_fraction(20.0), 0.0);
         assert_eq!(gain_fraction(0.0), 0.5);
-        assert_eq!(gain_fraction(-12.0), 1.0);
+        assert_eq!(gain_fraction(-20.0), 1.0);
     }
 
     #[test]
     fn equalizer_drag_coordinates_invert_the_display_mapping() {
         let middle_frequency = 20_000.0_f64.sqrt() * 20.0_f64.sqrt();
         assert!((frequency_at_fraction(0.5, 20_000.0) - middle_frequency).abs() < 1e-6);
-        assert_eq!(gain_at_fraction(0.25), 6.0);
-        assert_eq!(gain_at_fraction(0.75), -6.0);
+        assert_eq!(gain_at_fraction(0.25), 10.0);
+        assert_eq!(gain_at_fraction(0.75), -10.0);
     }
 
     #[test]
@@ -968,7 +984,7 @@ mod tests {
 
         model.drag_filter(0, bounds, dragged_position);
         let draft = model.active_chain();
-        assert_eq!(draft.equalizer.filters[0].gain.into_inner(), 6.0);
+        assert_eq!(draft.equalizer.filters[0].gain.into_inner(), 10.0);
         assert_ne!(draft, saved.chain);
         assert_eq!(
             model
