@@ -1,5 +1,6 @@
 mod apple;
 mod audio;
+mod window;
 
 use std::future::poll_fn;
 use std::sync::{Arc, Mutex};
@@ -18,6 +19,7 @@ use crate::audio::{ChangeHandler, Connection, Platform};
 
 const AUDIO_RETRY_INTERVAL: Duration = Duration::from_secs(1);
 const UNAVAILABLE_DEVICE: &str = "System Output (audio unavailable)";
+const MAX_WINDOW_WIDTH: f64 = 640.0;
 
 struct Root<P: Platform> {
     view: Entity<TunicView>,
@@ -155,7 +157,10 @@ fn main() {
                 }),
                 ..Default::default()
             },
-            |_, cx| cx.new(|cx| Root::new(Apple::default(), cx)),
+            |_, cx| {
+                window::set_max_width(MAX_WINDOW_WIDTH);
+                cx.new(|cx| Root::new(Apple::default(), cx))
+            },
         )
         .expect("failed to open Tunic window");
         cx.activate(true);

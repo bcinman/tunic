@@ -25,6 +25,11 @@ gpui = { package = "gpui-ce", version = "=0.2.2" }
 gpui-platform = { package = "gpui_ce_platform", version = "=0.1.0", features = ["font-kit"] }
 nutype = "0.8.0"
 objc2 = "0.6.4"
+objc2-app-kit = { version = "0.3.2", default-features = false, features = [
+    "NSApplication",
+    "NSResponder",
+    "NSWindow",
+] }
 objc2-core-audio = "0.3.2"
 objc2-core-audio-types = "0.3.2"
 objc2-core-foundation = "0.3.2"

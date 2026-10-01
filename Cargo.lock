@@ -5662,6 +5662,8 @@ version = "0.1.0"
 dependencies = [
  "gpui-ce",
  "gpui_ce_platform",
+ "objc2 0.6.4",
+ "objc2-app-kit 0.3.2",
  "tunic-core",
  "tunic-macos",
  "tunic-ui",

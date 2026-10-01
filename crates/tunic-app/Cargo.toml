@@ -10,6 +10,8 @@ path = "src/main.rs"
 [dependencies]
 gpui.workspace = true
 gpui-platform.workspace = true
+objc2.workspace = true
+objc2-app-kit.workspace = true
 tunic-core.workspace = true
 tunic-macos.workspace = true
 tunic-ui.workspace = true
