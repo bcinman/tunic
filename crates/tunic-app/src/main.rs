@@ -7,8 +7,8 @@ use std::task::{Poll, Waker};
 use std::time::Duration;
 
 use gpui::{
-    App, AppContext, Bounds, Context, Entity, IntoElement, Render, Task, Window, WindowBounds,
-    WindowOptions, px, size,
+    App, AppContext, Bounds, Context, Entity, IntoElement, Render, Task, TitlebarOptions, Window,
+    WindowBounds, WindowOptions, point, px, size,
 };
 use tunic_core::Chain;
 use tunic_ui::TunicView;
@@ -148,6 +148,11 @@ fn main() {
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
+                titlebar: Some(TitlebarOptions {
+                    appears_transparent: true,
+                    traffic_light_position: Some(point(px(20.0), px(20.0))),
+                    ..Default::default()
+                }),
                 ..Default::default()
             },
             |_, cx| cx.new(|cx| Root::new(Apple::default(), cx)),

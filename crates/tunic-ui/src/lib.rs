@@ -171,7 +171,7 @@ impl Render for TunicView {
             .p_6()
             .bg(rgb(0x1f2023))
             .text_color(rgb(0xf2f2f2))
-            .child(div().text_xl().child("Tunic"))
+            .child(div().pl(px(68.0)).text_xl().child("Tunic"))
             .child(format!("Device: {}", self.model.device_name))
             .child(format!("Selected profile: {selected}"))
             .child(equalizer_graph(
