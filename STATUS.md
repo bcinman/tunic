@@ -37,12 +37,12 @@ This file is the source of truth for implemented product capabilities.
   through the core `Controller`.
 - An app-owned `Platform` contract with an Apple implementation that observes
   Core Audio default-output notifications and immediately rebuilds the complete route.
-- Minimal live left/right peak meters and a real-time spectrum view with
-  UI-owned display ballistics, plus an on-screen frame-rate diagnostic.
+- A polished 640-pixel desktop shell with native traffic lights, current device
+  and profile context, and a low-opacity real-time spectrum behind the equalizer.
 - An editable logarithmic equalizer graph with the exact digital filter response,
-  live drag previews through the processor controller, and explicit save/reset.
-  The graph edits the base EQ while centered named-control sliders apply ±12 dB
-  gain adjustments.
+  live drag previews through the processor controller, endpoint frequency labels,
+  and explicit save/reset. The graph edits the base EQ while centered named-control
+  sliders apply ±12 dB gain adjustments.
 - macOS GPUI development through `mise run build-app` and `mise run run-app`.
 - Automated formatting, Clippy, and workspace tests through `mise run check`.
 

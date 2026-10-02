@@ -1,53 +1,37 @@
 //! Shared GPUI presentation for Tunic desktop applications.
 
-use std::{cell::Cell, collections::VecDeque, rc::Rc, time::Instant};
+mod components;
+
+use std::{cell::Cell, rc::Rc};
 
 use gpui::{
-    Bounds, Context, Div, Entity, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent,
-    PathBuilder, Pixels, Point, Render, Rgba, Stateful, Window, canvas, div, fill, oklcha, point,
-    prelude::*, px, relative, rgb, size,
+    Bounds, Context, Div, Entity, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent, Pixels,
+    Point, Render, Stateful, Window, canvas, div, fill, oklcha, point, prelude::*, px, rgb, size,
 };
 use tunic_core::{
-    Backend, Chain, Command, Controller, DeviceId, FilterId, FrequencyHz, FrequencyResponse,
-    GainDb, MemoryStore, PresetCatalog, PresetQuery, PresetSummary, ProcessorError, Profile,
-    ProfileId, ProfileName, ProfileSource, SPECTRUM_POINT_COUNT, SampleRateHz, Spectrum,
-    StereoLevels, Telemetry,
+    Backend, Chain, Command, Controller, DeviceId, FilterId, FrequencyHz, GainDb, MemoryStore,
+    PresetCatalog, PresetQuery, PresetSummary, Profile, ProfileId, ProfileName, ProfileSource,
+    SampleRateHz,
 };
 use tunic_presets::BundledCatalog;
 
+use components::{
+    equalizer::{closest_filter, maximum_frequency_hz, values_at_position},
+    shell,
+    telemetry::SpectrumView,
+};
+
 const SYSTEM_OUTPUT: &str = "system-output";
 const FLAT_PROFILE: &str = "flat";
-const METER_FLOOR_DB: f32 = -60.0;
-const METER_DECAY_DB_PER_SECOND: f32 = 24.0;
-const SPECTRUM_FLOOR_DB: f32 = -90.0;
-const SPECTRUM_DECAY_DB_PER_SECOND: f32 = 40.0;
-const TELEMETRY_UPDATES_PER_SECOND: f32 = 60.0;
-const EQ_MIN_FREQUENCY_HZ: f64 = 20.0;
-const EQ_MAX_FREQUENCY_HZ: f64 = 20_000.0;
-const EQ_MIN_GAIN_DB: f64 = -20.0;
-const EQ_MAX_GAIN_DB: f64 = 20.0;
 const EQ_FALLBACK_SAMPLE_RATE_HZ: f64 = 48_000.0;
-const EQ_POINT_RADIUS_PX: f32 = 4.0;
-const EQ_POINT_INSET_PX: f32 = EQ_POINT_RADIUS_PX + 1.0;
-const EQ_POINT_HIT_RADIUS_PX: f32 = 12.0;
 const CONTROL_MIN_GAIN_DB: f64 = -12.0;
 const CONTROL_MAX_GAIN_DB: f64 = 12.0;
-const FRAME_HISTORY_LENGTH: usize = 90;
-const SLOW_FRAME_MILLISECONDS: f32 = 33.0;
 
 pub struct TunicView {
     model: Model,
-    telemetry: Entity<TelemetryView>,
+    spectrum: Entity<SpectrumView>,
     dragging_filter: Option<FilterId>,
     dragging_control: Option<FilterId>,
-}
-
-struct TelemetryView {
-    telemetry: Option<Telemetry>,
-    levels: StereoLevels,
-    spectrum: Spectrum,
-    last_frame_at: Option<Instant>,
-    frame_times: VecDeque<f32>,
 }
 
 impl TunicView {
@@ -57,10 +41,10 @@ impl TunicView {
         audio_error: Option<String>,
         cx: &mut Context<Self>,
     ) -> Self {
-        let telemetry = controller.as_ref().map(Controller::subscribe_telemetry);
+        let spectrum = cx.new(|_| SpectrumView::new(controller.as_ref()));
         Self {
             model: Model::new(device_name, controller, audio_error),
-            telemetry: cx.new(|_| TelemetryView::new(telemetry)),
+            spectrum,
             dragging_filter: None,
             dragging_control: None,
         }
@@ -78,83 +62,13 @@ impl TunicView {
         audio_error: Option<String>,
         cx: &mut Context<Self>,
     ) {
-        let telemetry = controller.as_ref().map(Controller::subscribe_telemetry);
-        self.telemetry.update(cx, |view, cx| {
-            view.telemetry = telemetry;
-            view.levels = StereoLevels::default();
-            view.spectrum = Spectrum::default();
+        self.spectrum.update(cx, |view, cx| {
+            view.replace_controller(controller.as_ref());
             cx.notify();
         });
         self.model.device_name = device_name;
         self.model.controller = controller;
         self.model.audio_error = audio_error;
-    }
-}
-
-impl TelemetryView {
-    fn new(telemetry: Option<Telemetry>) -> Self {
-        Self {
-            telemetry,
-            levels: StereoLevels::default(),
-            spectrum: Spectrum::default(),
-            last_frame_at: None,
-            frame_times: VecDeque::with_capacity(FRAME_HISTORY_LENGTH),
-        }
-    }
-
-    fn update(&mut self, elapsed_seconds: f32) {
-        let mut left_peak = None;
-        let mut right_peak = None;
-        if let Some(telemetry) = &self.telemetry {
-            telemetry.for_each_unseen(|frame| {
-                left_peak = highest_peak(left_peak, frame.levels.left.peak);
-                right_peak = highest_peak(right_peak, frame.levels.right.peak);
-                animate_spectrum(
-                    &mut self.spectrum,
-                    &frame.spectrum,
-                    1.0 / TELEMETRY_UPDATES_PER_SECOND,
-                );
-            });
-        }
-        self.levels.left.peak = animate_meter(self.levels.left.peak, left_peak, elapsed_seconds);
-        self.levels.right.peak = animate_meter(self.levels.right.peak, right_peak, elapsed_seconds);
-    }
-
-    fn record_frame(&mut self, now: Instant) -> f32 {
-        let Some(previous) = self.last_frame_at.replace(now) else {
-            return 0.0;
-        };
-        let elapsed = now.duration_since(previous).as_secs_f32();
-        if elapsed <= 0.25 {
-            if self.frame_times.len() == FRAME_HISTORY_LENGTH {
-                self.frame_times.pop_front();
-            }
-            self.frame_times.push_back(elapsed * 1_000.0);
-        }
-        elapsed
-    }
-}
-
-impl Render for TelemetryView {
-    fn render(&mut self, window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        let elapsed_seconds = self.record_frame(Instant::now());
-        self.update(elapsed_seconds);
-        window.request_animation_frame();
-
-        div()
-            .flex()
-            .flex_col()
-            .gap_3()
-            .child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .gap_1()
-                    .child(meter("L", self.levels.left.peak))
-                    .child(meter("R", self.levels.right.peak)),
-            )
-            .child(spectrum_graph(&self.spectrum))
-            .child(frame_graph(&self.frame_times))
     }
 }
 
@@ -171,23 +85,30 @@ impl Render for TunicView {
         let mouse_move_bounds = Rc::clone(&graph_bounds);
 
         div()
+            .id("tunic-root")
             .size_full()
             .flex()
             .flex_col()
             .gap_3()
-            .p_6()
-            .bg(oklcha(0.21, 0.0, 0.0, 0.7))
+            .pb_5()
+            .overflow_scroll()
+            .bg(oklcha(0.21, 0.0, 0.0, 0.58))
             .text_color(rgb(0xf2f2f2))
-            .child(div().pl(px(68.0)).text_xl().child("Tunic"))
-            .child(format!("Device: {}", self.model.device_name))
-            .child(format!("Selected profile: {selected}"))
-            .child(div().text_sm().text_color(rgb(0xb8bbc2)).child("Base EQ"))
-            .child(equalizer_graph(
-                &chain,
-                &exposed,
-                sample_rate,
-                Rc::clone(&graph_bounds),
-            ))
+            .border_b_1()
+            .border_color(oklcha(1.0, 0.0, 0.0, 0.1))
+            .child(
+                div()
+                    .flex_none()
+                    .overflow_hidden()
+                    .child(shell::header(self.model.device_name.clone(), selected))
+                    .child(components::equalizer::graph(
+                        &chain,
+                        &exposed,
+                        sample_rate,
+                        self.spectrum.clone(),
+                        Rc::clone(&graph_bounds),
+                    )),
+            )
             .when(!controls.is_empty(), |view| {
                 view.child(
                     div()
@@ -220,7 +141,6 @@ impl Render for TunicView {
                         })),
                     ),
             )
-            .child(self.telemetry.clone())
             .child(
                 button("flat", "Use Flat").on_click(cx.listener(|this, _, _, cx| {
                     this.model.select_flat();
@@ -289,421 +209,6 @@ impl Render for TunicView {
                 cx.listener(|this, _, _, _| this.dragging_filter = None),
             )
     }
-}
-
-fn meter(label: &'static str, amplitude: f32) -> Div {
-    div()
-        .flex()
-        .items_center()
-        .gap_2()
-        .child(div().w_4().child(label))
-        .child(
-            div().h_2().flex_1().bg(rgb(0x35373c)).child(
-                div()
-                    .h_full()
-                    .w(relative(meter_fraction(amplitude)))
-                    .bg(rgb(0x69b578)),
-            ),
-        )
-}
-
-fn equalizer_graph(
-    chain: &Chain,
-    exposed: &[FilterId],
-    sample_rate: SampleRateHz,
-    graph_bounds: Rc<Cell<Option<Bounds<Pixels>>>>,
-) -> Div {
-    let max_frequency = EQ_MAX_FREQUENCY_HZ.min(sample_rate.into_inner() * 0.499);
-    let (response, response_error) = match equalizer_response(chain, sample_rate, max_frequency) {
-        Ok(response) => (response, None),
-        Err(error) => (Vec::new(), Some(format!("Response unavailable: {error:?}"))),
-    };
-    let filter_responses = individual_equalizer_responses(chain, sample_rate, max_frequency);
-    let points = chain
-        .equalizer
-        .filters
-        .iter()
-        .map(|filter| {
-            (
-                frequency_fraction(filter.parameters.frequency.into_inner(), max_frequency),
-                gain_fraction(filter.parameters.gain.into_inner()),
-                exposed.contains(&filter.id),
-            )
-        })
-        .collect::<Vec<_>>();
-    let max_frequency_label = if max_frequency >= 1_000.0 {
-        format!("{:.0} kHz", max_frequency / 1_000.0)
-    } else {
-        format!("{max_frequency:.0} Hz")
-    };
-
-    div()
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child("Equalizer")
-        .child(
-            div()
-                .relative()
-                .h_40()
-                .bg(rgb(0x35373c))
-                .child(
-                    canvas(
-                        move |bounds, _, _| graph_bounds.set(Some(bounds)),
-                        move |bounds, _, window, _| {
-                            let zero_y = bounds.origin.y + bounds.size.height * gain_fraction(0.0);
-                            window.paint_quad(fill(
-                                gpui::Bounds {
-                                    origin: point(bounds.origin.x, zero_y),
-                                    size: size(bounds.size.width, px(1.0)),
-                                },
-                                rgb(0x5a5d64),
-                            ));
-
-                            for filter_response in &filter_responses {
-                                paint_equalizer_response(
-                                    bounds,
-                                    filter_response,
-                                    px(1.0),
-                                    rgb(0x7b7e85),
-                                    window,
-                                );
-                            }
-                            paint_equalizer_response(
-                                bounds,
-                                &response,
-                                px(2.0),
-                                rgb(0x69b578),
-                                window,
-                            );
-
-                            for (x, y, tweakable) in &points {
-                                let point_radius = px(EQ_POINT_RADIUS_PX);
-                                let center = graph_point(bounds, *x, *y);
-                                window.paint_quad(fill(
-                                    gpui::Bounds {
-                                        origin: point(
-                                            center.x - point_radius,
-                                            center.y - point_radius,
-                                        ),
-                                        size: size(point_radius * 2.0, point_radius * 2.0),
-                                    },
-                                    if *tweakable {
-                                        rgb(0xf2f2f2)
-                                    } else {
-                                        rgb(0x8b8e95)
-                                    },
-                                ));
-                            }
-                        },
-                    )
-                    .size_full(),
-                )
-                .child(div().absolute().top_1().left_1().text_sm().child("+20 dB"))
-                .child(
-                    div()
-                        .absolute()
-                        .bottom_1()
-                        .left_1()
-                        .text_sm()
-                        .child("−20 dB"),
-                ),
-        )
-        .child(
-            div()
-                .flex()
-                .justify_between()
-                .text_sm()
-                .child("20 Hz")
-                .child(max_frequency_label),
-        )
-        .when_some(response_error, |graph, error| {
-            graph.child(div().text_color(rgb(0xff8a8a)).child(error))
-        })
-}
-
-fn equalizer_response(
-    chain: &Chain,
-    sample_rate: SampleRateHz,
-    max_frequency: f64,
-) -> Result<Vec<f32>, ProcessorError> {
-    let prepared = FrequencyResponse::new(chain, sample_rate)?;
-    (0..SPECTRUM_POINT_COUNT)
-        .map(|index| {
-            let fraction = index as f64 / (SPECTRUM_POINT_COUNT - 1) as f64;
-            let frequency =
-                EQ_MIN_FREQUENCY_HZ * (max_frequency / EQ_MIN_FREQUENCY_HZ).powf(fraction);
-            let frequency = FrequencyHz::try_new(frequency).expect("graph frequency is positive");
-            prepared.db_at(frequency).map(|response| response as f32)
-        })
-        .collect()
-}
-
-fn individual_equalizer_responses(
-    chain: &Chain,
-    sample_rate: SampleRateHz,
-    max_frequency: f64,
-) -> Vec<Vec<f32>> {
-    chain
-        .equalizer
-        .filters
-        .iter()
-        .filter_map(|filter| {
-            let mut filter_chain = Chain::default();
-            filter_chain.equalizer.filters.push(*filter);
-            equalizer_response(&filter_chain, sample_rate, max_frequency).ok()
-        })
-        .collect()
-}
-
-fn paint_equalizer_response(
-    bounds: Bounds<Pixels>,
-    response: &[f32],
-    stroke_width: Pixels,
-    color: Rgba,
-    window: &mut Window,
-) {
-    if response.is_empty() {
-        return;
-    }
-    let mut path = PathBuilder::stroke(stroke_width);
-    for (index, response) in response.iter().copied().enumerate() {
-        let x = bounds.origin.x
-            + bounds.size.width * (index as f32 / (SPECTRUM_POINT_COUNT - 1) as f32);
-        let y = bounds.origin.y + bounds.size.height * gain_fraction(f64::from(response));
-        if index == 0 {
-            path.move_to(point(x, y));
-        } else {
-            path.line_to(point(x, y));
-        }
-    }
-    if let Ok(path) = path.build() {
-        window.paint_path(path, color);
-    }
-}
-
-fn frequency_fraction(frequency: f64, max_frequency: f64) -> f32 {
-    ((frequency.clamp(EQ_MIN_FREQUENCY_HZ, max_frequency) / EQ_MIN_FREQUENCY_HZ).ln()
-        / (max_frequency / EQ_MIN_FREQUENCY_HZ).ln()) as f32
-}
-
-fn gain_fraction(gain_db: f64) -> f32 {
-    ((EQ_MAX_GAIN_DB - gain_db.clamp(EQ_MIN_GAIN_DB, EQ_MAX_GAIN_DB))
-        / (EQ_MAX_GAIN_DB - EQ_MIN_GAIN_DB)) as f32
-}
-
-fn frequency_at_fraction(fraction: f32, max_frequency: f64) -> f64 {
-    EQ_MIN_FREQUENCY_HZ
-        * (max_frequency / EQ_MIN_FREQUENCY_HZ).powf(f64::from(fraction.clamp(0.0, 1.0)))
-}
-
-fn gain_at_fraction(fraction: f32) -> f64 {
-    EQ_MAX_GAIN_DB - f64::from(fraction.clamp(0.0, 1.0)) * (EQ_MAX_GAIN_DB - EQ_MIN_GAIN_DB)
-}
-
-fn graph_point(bounds: Bounds<Pixels>, x: f32, y: f32) -> Point<Pixels> {
-    let inset = px(EQ_POINT_INSET_PX);
-    point(
-        bounds.origin.x + inset + (bounds.size.width - inset * 2.0) * x,
-        bounds.origin.y + inset + (bounds.size.height - inset * 2.0) * y,
-    )
-}
-
-fn graph_fractions(bounds: Bounds<Pixels>, position: Point<Pixels>) -> (f32, f32) {
-    let inset = px(EQ_POINT_INSET_PX);
-    let width = bounds.size.width - inset * 2.0;
-    let height = bounds.size.height - inset * 2.0;
-    (
-        ((position.x - bounds.origin.x - inset) / width).clamp(0.0, 1.0),
-        ((position.y - bounds.origin.y - inset) / height).clamp(0.0, 1.0),
-    )
-}
-
-fn closest_filter(
-    chain: &Chain,
-    sample_rate: SampleRateHz,
-    bounds: Bounds<Pixels>,
-    position: Point<Pixels>,
-) -> Option<FilterId> {
-    let max_frequency = EQ_MAX_FREQUENCY_HZ.min(sample_rate.into_inner() * 0.499);
-    chain
-        .equalizer
-        .filters
-        .iter()
-        .filter_map(|filter| {
-            let center = graph_point(
-                bounds,
-                frequency_fraction(filter.parameters.frequency.into_inner(), max_frequency),
-                gain_fraction(filter.parameters.gain.into_inner()),
-            );
-            let x = (position.x - center.x).as_f32();
-            let y = (position.y - center.y).as_f32();
-            let distance_squared = x.mul_add(x, y * y);
-            (distance_squared <= EQ_POINT_HIT_RADIUS_PX.powi(2))
-                .then_some((filter.id, distance_squared))
-        })
-        .min_by(|(_, left), (_, right)| left.total_cmp(right))
-        .map(|(id, _)| id)
-}
-
-fn meter_fraction(amplitude: f32) -> f32 {
-    if !amplitude.is_finite() || amplitude <= 0.0 {
-        return 0.0;
-    }
-    ((20.0 * amplitude.log10() - METER_FLOOR_DB) / -METER_FLOOR_DB).clamp(0.0, 1.0)
-}
-
-fn animate_meter(current: f32, measured: Option<f32>, elapsed_seconds: f32) -> f32 {
-    let current = if current.is_finite() {
-        current.max(0.0)
-    } else {
-        0.0
-    };
-    let decay = 10.0_f32.powf(-METER_DECAY_DB_PER_SECOND * elapsed_seconds / 20.0);
-    let decayed = current * decay;
-    measured
-        .filter(|level| level.is_finite())
-        .map_or(decayed, |level| decayed.max(level.max(0.0)))
-}
-
-fn highest_peak(current: Option<f32>, measured: f32) -> Option<f32> {
-    measured
-        .is_finite()
-        .then(|| current.map_or(measured, |current| current.max(measured)))
-        .or(current)
-}
-
-fn animate_spectrum(current: &mut Spectrum, measured: &Spectrum, elapsed_seconds: f32) {
-    for (current, measured) in current.points.iter_mut().zip(measured.points) {
-        *current = animate_spectrum_point(*current, measured, elapsed_seconds);
-    }
-}
-
-fn animate_spectrum_point(current: f32, measured: f32, elapsed_seconds: f32) -> f32 {
-    let current = finite_amplitude(current);
-    let measured = finite_amplitude(measured);
-    if current == 0.0 {
-        return measured;
-    }
-    if measured >= current {
-        measured
-    } else {
-        let decay = 10.0_f32.powf(-SPECTRUM_DECAY_DB_PER_SECOND * elapsed_seconds / 20.0);
-        measured.max(current * decay)
-    }
-}
-
-fn finite_amplitude(amplitude: f32) -> f32 {
-    if amplitude.is_finite() {
-        amplitude.max(0.0)
-    } else {
-        0.0
-    }
-}
-
-fn spectrum_fraction(amplitude: f32) -> f32 {
-    if !amplitude.is_finite() || amplitude <= 0.0 {
-        return 0.0;
-    }
-    ((20.0 * amplitude.log10() - SPECTRUM_FLOOR_DB) / -SPECTRUM_FLOOR_DB).clamp(0.0, 1.0)
-}
-
-fn spectrum_graph(spectrum: &Spectrum) -> Div {
-    let bars = spectrum.points.map(spectrum_fraction);
-    div()
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child("Spectrum")
-        .child(
-            div().h_32().bg(rgb(0x35373c)).child(
-                canvas(
-                    |_, _, _| {},
-                    move |bounds, _, window, _| {
-                        let bar_width = bounds.size.width / SPECTRUM_POINT_COUNT as f32;
-                        for (index, fraction) in bars.iter().copied().enumerate() {
-                            let height = bounds.size.height * fraction;
-                            window.paint_quad(fill(
-                                gpui::Bounds {
-                                    origin: point(
-                                        bounds.origin.x + bar_width * index as f32,
-                                        bounds.origin.y + bounds.size.height - height,
-                                    ),
-                                    size: size(bar_width, height),
-                                },
-                                rgb(0x69b578),
-                            ));
-                        }
-                    },
-                )
-                .size_full(),
-            ),
-        )
-        .child(
-            div()
-                .flex()
-                .justify_between()
-                .text_sm()
-                .child("20 Hz")
-                .child("20 kHz"),
-        )
-}
-
-fn frame_graph(frame_times: &VecDeque<f32>) -> Div {
-    let average = if frame_times.is_empty() {
-        0.0
-    } else {
-        frame_times.iter().sum::<f32>() / frame_times.len() as f32
-    };
-    let fps = if average > 0.0 {
-        1_000.0 / average
-    } else {
-        0.0
-    };
-    let bars = frame_times.iter().copied().collect::<Vec<_>>();
-
-    div()
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child(format!("Frame rate: {fps:.0} fps / {average:.1} ms"))
-        .child(
-            div().flex().items_end().h_10().bg(rgb(0x35373c)).child(
-                canvas(
-                    |_, _, _| {},
-                    move |bounds, _, window, _| {
-                        let count = bars.len() as f32;
-                        if count == 0.0 {
-                            return;
-                        }
-                        let bar_width = bounds.size.width / count;
-                        for (index, milliseconds) in bars.iter().copied().enumerate() {
-                            let fraction =
-                                (milliseconds / SLOW_FRAME_MILLISECONDS).clamp(0.05, 1.0);
-                            let height = bounds.size.height * fraction;
-                            let color = if milliseconds > SLOW_FRAME_MILLISECONDS {
-                                rgb(0xd16d6d)
-                            } else if milliseconds > 20.0 {
-                                rgb(0xd1b56d)
-                            } else {
-                                rgb(0x69b578)
-                            };
-                            window.paint_quad(fill(
-                                gpui::Bounds {
-                                    origin: point(
-                                        bounds.origin.x + bar_width * index as f32,
-                                        bounds.origin.y + bounds.size.height - height,
-                                    ),
-                                    size: size(bar_width, height),
-                                },
-                                color,
-                            ));
-                        }
-                    },
-                )
-                .size_full(),
-            ),
-        )
 }
 
 fn gain_control(
@@ -968,12 +473,11 @@ impl Model {
         let Some(profile) = self.backend.state().selected_profile(&self.device).cloned() else {
             return;
         };
-        let (x, y) = graph_fractions(bounds, position);
-        let max_frequency = EQ_MAX_FREQUENCY_HZ.min(self.sample_rate().into_inner() * 0.499);
+        let max_frequency = maximum_frequency_hz().min(self.sample_rate().into_inner() * 0.499);
+        let (frequency, gain) = values_at_position(bounds, position, max_frequency);
         let mut draft = self.draft.clone().unwrap_or(profile);
-        let frequency = FrequencyHz::try_new(frequency_at_fraction(x, max_frequency))
-            .expect("dragged frequency stays positive");
-        let gain = GainDb::try_new(gain_at_fraction(y)).expect("dragged gain stays finite");
+        let frequency = FrequencyHz::try_new(frequency).expect("dragged frequency stays positive");
+        let gain = GainDb::try_new(gain).expect("dragged gain stays finite");
         let mut base = draft.base().clone();
         let Some(filter) = base
             .equalizer
@@ -1056,10 +560,14 @@ impl Model {
 mod tests {
     use std::num::NonZeroUsize;
 
-    use super::{
-        Model, animate_meter, animate_spectrum_point, equalizer_response, frequency_at_fraction,
-        frequency_fraction, gain_at_fraction, gain_at_slider_position, gain_fraction, graph_point,
-        highest_peak, individual_equalizer_responses, meter_fraction, spectrum_fraction,
+    use super::{Model, gain_at_slider_position};
+    use crate::components::{
+        equalizer::{
+            frequency_at_fraction, frequency_fraction, gain_at_fraction, gain_fraction,
+            graph_point, individual_responses as individual_equalizer_responses,
+            response as equalizer_response,
+        },
+        telemetry::{animate_spectrum_point, spectrum_fraction},
     };
     use gpui::{Bounds, point, px, size};
     use tunic_core::{
@@ -1102,33 +610,6 @@ mod tests {
 
         assert!(samples.iter().any(|sample| *sample != 0.25));
         assert!(model.action_error.is_none());
-    }
-
-    #[test]
-    fn meter_maps_decibels_to_a_clamped_fraction() {
-        assert_eq!(meter_fraction(0.0), 0.0);
-        assert_eq!(meter_fraction(0.001), 0.0);
-        assert!((meter_fraction(0.1) - 2.0 / 3.0).abs() < 1e-6);
-        assert_eq!(meter_fraction(1.0), 1.0);
-        assert_eq!(meter_fraction(2.0), 1.0);
-        assert_eq!(meter_fraction(f32::NAN), 0.0);
-    }
-
-    #[test]
-    fn meter_attacks_immediately_and_decays_at_twenty_four_decibels_per_second() {
-        assert_eq!(animate_meter(0.25, Some(1.0), 0.1), 1.0);
-        assert!((animate_meter(1.0, None, 0.1) - 0.758_577_6).abs() < 1e-6);
-        assert_eq!(animate_meter(1.0, Some(0.9), 0.1), 0.9);
-    }
-
-    #[test]
-    fn meter_keeps_the_highest_peak_from_unseen_telemetry() {
-        let peak = [0.2, 0.9, 0.1]
-            .into_iter()
-            .fold(None, highest_peak)
-            .unwrap();
-
-        assert_eq!(peak, 0.9);
     }
 
     #[test]
