@@ -10,7 +10,6 @@ struct Document {
     summary: Summary,
     attribution: Attribution,
     equalizer: Equalizer,
-    adjustments: Vec<Adjustment>,
 }
 
 #[derive(Deserialize)]
@@ -43,6 +42,7 @@ struct Equalizer {
 #[serde(deny_unknown_fields)]
 struct Filter {
     id: u32,
+    control_name: Option<String>,
     kind: FilterKind,
     frequency_hz: f64,
     gain_db: f64,
@@ -57,22 +57,6 @@ enum FilterKind {
     HighShelf,
 }
 
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Adjustment {
-    label: String,
-    filter: u32,
-    parameter: Parameter,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum Parameter {
-    GainDb,
-    FrequencyHz,
-    QualityFactor,
-}
-
 fn text(value: String, field: &str) -> Result<String, String> {
     if value.trim().is_empty() {
         return Err(format!("{field} must not be blank"));
@@ -85,6 +69,8 @@ pub(crate) fn decode(json: &str) -> Result<core::Preset, String> {
     let summary = document.summary;
     let attribution = document.attribution;
     let mut ids = HashSet::new();
+    let mut names = HashSet::new();
+    let mut controls = Vec::new();
     let filters = document
         .equalizer
         .filters
@@ -95,42 +81,38 @@ pub(crate) fn decode(json: &str) -> Result<core::Preset, String> {
             if !ids.insert(id) {
                 return Err(format!("duplicate filter id {id}"));
             }
+            let control_name = filter
+                .control_name
+                .map(|name| {
+                    let name = core::FilterControlName::try_new(text(name, "filter control name")?)
+                        .map_err(|_| String::from("invalid filter control name"))?;
+                    if !names.insert(name.clone()) {
+                        return Err(format!("duplicate filter control name {name}"));
+                    }
+                    Ok(name)
+                })
+                .transpose()?;
+            if let Some(name) = control_name {
+                controls.push(core::FilterControl::new(id, name));
+            }
             Ok(core::Filter {
                 id,
-                kind: match filter.kind {
-                    FilterKind::Peaking => core::FilterKind::Peaking,
-                    FilterKind::LowShelf => core::FilterKind::LowShelf,
-                    FilterKind::HighShelf => core::FilterKind::HighShelf,
+                parameters: core::FilterParameters {
+                    kind: match filter.kind {
+                        FilterKind::Peaking => core::FilterKind::Peaking,
+                        FilterKind::LowShelf => core::FilterKind::LowShelf,
+                        FilterKind::HighShelf => core::FilterKind::HighShelf,
+                    },
+                    frequency: core::FrequencyHz::try_new(filter.frequency_hz)
+                        .map_err(|_| String::from("invalid filter frequency"))?,
+                    gain: core::GainDb::try_new(filter.gain_db)
+                        .map_err(|_| String::from("invalid filter gain"))?,
+                    quality_factor: core::QualityFactor::try_new(filter.quality_factor)
+                        .map_err(|_| String::from("invalid filter Q"))?,
                 },
-                frequency: core::FrequencyHz::try_new(filter.frequency_hz)
-                    .map_err(|_| String::from("invalid filter frequency"))?,
-                gain: core::GainDb::try_new(filter.gain_db)
-                    .map_err(|_| String::from("invalid filter gain"))?,
-                quality_factor: core::QualityFactor::try_new(filter.quality_factor)
-                    .map_err(|_| String::from("invalid filter Q"))?,
             })
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let adjustments = document
-        .adjustments
-        .into_iter()
-        .map(|adjustment| {
-            let filter = core::FilterId::try_new(adjustment.filter)
-                .map_err(|_| String::from("invalid adjustment filter id"))?;
-            if !ids.contains(&filter) {
-                return Err(format!("adjustment references missing filter {filter}"));
-            }
-            Ok(core::Adjustment {
-                label: text(adjustment.label, "adjustment label")?,
-                filter,
-                parameter: match adjustment.parameter {
-                    Parameter::GainDb => core::AdjustableParameter::GainDb,
-                    Parameter::FrequencyHz => core::AdjustableParameter::FrequencyHz,
-                    Parameter::QualityFactor => core::AdjustableParameter::QualityFactor,
-                },
-            })
-        })
-        .collect::<Result<_, _>>()?;
     Ok(core::Preset {
         summary: core::PresetSummary {
             id: core::PresetId::try_new(text(summary.id, "preset id")?)
@@ -157,6 +139,6 @@ pub(crate) fn decode(json: &str) -> Result<core::Preset, String> {
                 filters,
             },
         },
-        adjustments,
+        controls,
     })
 }

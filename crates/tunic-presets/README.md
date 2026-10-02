@@ -16,13 +16,16 @@ decoder ship together without schema-version negotiation.
 
 - `summary`: stable ID, revision, brand, model, optional variant, and target.
 - `attribution`: provider, optional measurement source, and original source URL.
-- `equalizer`: preamp in dB and ordered filters with positive integer IDs, kind
-  (`peaking`, `low_shelf`, `high_shelf`), frequency in Hz, gain in dB, and Q.
-- `adjustments`: label, referenced filter ID, and parameter (`gain_db`,
-  `frequency_hz`, `quality_factor`). Only encode mappings stated by the source.
+- `equalizer`: preamp in dB and ordered filters with positive integer IDs,
+  optional `control_name`, kind (`peaking`, `low_shelf`, `high_shelf`), frequency
+  in Hz, gain in dB, and Q. A control name exposes that filter for tweaking while
+  leaving the decoded base filter independent of presentation metadata. Exposed
+  controls adjust only gain. Only expose filters the source explicitly identifies
+  as adjustable.
 
 Preset IDs must be globally unique and remain unchanged when files are renamed.
-Filter IDs are unique within a chain; do not renumber them when reordering.
+Filter IDs and control names are unique within a preset; do not renumber filters
+when reordering.
 The initial entries use source-date plus transcription revision (`YYYY-MM-DD.1`);
 bump the revision whenever payload or attribution changes. It is distinct from
 the source PDF's template version.

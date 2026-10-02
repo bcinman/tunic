@@ -26,7 +26,7 @@ processing.
 - Generates static brand/model and preset-ID indexes at build time.
 - Decodes only the requested payload; browsing never parses JSON or scans files.
 - Implements the core's `PresetCatalog` interface. The backend copies selected
-  preset chains, attribution, and adjustment mappings into independent profiles.
+  preset base chains, named controls, and attribution into independent profiles.
 - Depends on `tunic-core`; the core does not depend on the bundled catalog.
 
 ## `tunic-ui`
@@ -35,7 +35,9 @@ processing.
 
 - Owns GPUI entities, rendering, click handlers, and transient presentation state.
 - Calls `tunic-core` and `tunic-presets` directly.
-- Publishes the selected profile chain through a core `Controller`.
+- Keeps a cloned `Profile` as its transient draft. The graph edits its base chain;
+  named sliders edit relative filter-gain adjustments. The UI publishes only the
+  derived effective `Chain` through a core `Controller`.
 - Polls the controller's latest telemetry for lightweight level presentation.
 - Does not own platform devices, audio callbacks, or native resources.
 

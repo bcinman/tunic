@@ -6,7 +6,7 @@
 use std::f64::consts::TAU;
 
 use super::{ProcessorError, SampleRateHz};
-use crate::{Chain, Filter, FilterKind, FrequencyHz};
+use crate::{Chain, FilterKind, FilterParameters, FrequencyHz};
 
 pub(super) struct PreparedResponse {
     sample_rate: f64,
@@ -23,9 +23,8 @@ impl PreparedResponse {
             .equalizer
             .filters
             .iter()
-            .copied()
             .enumerate()
-            .map(|(index, filter)| coefficients(filter, sample_rate, index))
+            .map(|(index, filter)| coefficients(filter.parameters, sample_rate, index))
             .collect::<Result<_, _>>()?;
         Ok(Self {
             sample_rate,
@@ -68,9 +67,8 @@ impl PreparedChain {
             .equalizer
             .filters
             .iter()
-            .copied()
             .enumerate()
-            .map(|(index, filter)| StereoBiquad::prepare(filter, sample_rate, index))
+            .map(|(index, filter)| StereoBiquad::prepare(filter.parameters, sample_rate, index))
             .collect::<Result<_, _>>()?;
 
         Ok(Self {
@@ -109,8 +107,12 @@ struct StereoBiquad {
 }
 
 impl StereoBiquad {
-    fn prepare(filter: Filter, sample_rate: f64, index: usize) -> Result<Self, ProcessorError> {
-        let coefficients = coefficients(filter, sample_rate, index)?;
+    fn prepare(
+        parameters: FilterParameters,
+        sample_rate: f64,
+        index: usize,
+    ) -> Result<Self, ProcessorError> {
+        let coefficients = coefficients(parameters, sample_rate, index)?;
 
         Ok(Self {
             left: Biquad::new(coefficients),
@@ -120,15 +122,15 @@ impl StereoBiquad {
 }
 
 fn coefficients(
-    filter: Filter,
+    parameters: FilterParameters,
     sample_rate: f64,
     index: usize,
 ) -> Result<Coefficients, ProcessorError> {
-    if filter.frequency.into_inner() >= sample_rate / 2.0 {
+    if parameters.frequency.into_inner() >= sample_rate / 2.0 {
         return Err(ProcessorError::FilterAtOrAboveNyquist { filter: index });
     }
 
-    let coefficients = Coefficients::for_filter(filter, sample_rate);
+    let coefficients = Coefficients::for_filter(parameters, sample_rate);
     if !coefficients.is_finite() || !coefficients.is_stable() {
         return Err(ProcessorError::UnstableFilter { filter: index });
     }
@@ -145,18 +147,18 @@ struct Coefficients {
 }
 
 impl Coefficients {
-    fn for_filter(filter: Filter, sample_rate: f64) -> Self {
-        match filter.kind {
-            FilterKind::Peaking => Self::peaking(filter, sample_rate),
-            FilterKind::LowShelf => Self::low_shelf(filter, sample_rate),
-            FilterKind::HighShelf => Self::high_shelf(filter, sample_rate),
+    fn for_filter(parameters: FilterParameters, sample_rate: f64) -> Self {
+        match parameters.kind {
+            FilterKind::Peaking => Self::peaking(parameters, sample_rate),
+            FilterKind::LowShelf => Self::low_shelf(parameters, sample_rate),
+            FilterKind::HighShelf => Self::high_shelf(parameters, sample_rate),
         }
     }
 
-    fn peaking(filter: Filter, sample_rate: f64) -> Self {
-        let amplitude = 10.0_f64.powf(filter.gain.into_inner() / 40.0);
-        let angular_frequency = TAU * filter.frequency.into_inner() / sample_rate;
-        let alpha = angular_frequency.sin() / (2.0 * filter.quality_factor.into_inner());
+    fn peaking(parameters: FilterParameters, sample_rate: f64) -> Self {
+        let amplitude = 10.0_f64.powf(parameters.gain.into_inner() / 40.0);
+        let angular_frequency = TAU * parameters.frequency.into_inner() / sample_rate;
+        let alpha = angular_frequency.sin() / (2.0 * parameters.quality_factor.into_inner());
         let cosine = angular_frequency.cos();
         let a0 = 1.0 + alpha / amplitude;
         Self {
@@ -168,10 +170,10 @@ impl Coefficients {
         }
     }
 
-    fn low_shelf(filter: Filter, sample_rate: f64) -> Self {
-        let amplitude = 10.0_f64.powf(filter.gain.into_inner() / 40.0);
-        let angular_frequency = TAU * filter.frequency.into_inner() / sample_rate;
-        let alpha = angular_frequency.sin() / (2.0 * filter.quality_factor.into_inner());
+    fn low_shelf(parameters: FilterParameters, sample_rate: f64) -> Self {
+        let amplitude = 10.0_f64.powf(parameters.gain.into_inner() / 40.0);
+        let angular_frequency = TAU * parameters.frequency.into_inner() / sample_rate;
+        let alpha = angular_frequency.sin() / (2.0 * parameters.quality_factor.into_inner());
         let cosine = angular_frequency.cos();
         let two_sqrt_a_alpha = 2.0 * amplitude.sqrt() * alpha;
         let a0 = (amplitude + 1.0) + (amplitude - 1.0) * cosine + two_sqrt_a_alpha;
@@ -186,10 +188,10 @@ impl Coefficients {
         }
     }
 
-    fn high_shelf(filter: Filter, sample_rate: f64) -> Self {
-        let amplitude = 10.0_f64.powf(filter.gain.into_inner() / 40.0);
-        let angular_frequency = TAU * filter.frequency.into_inner() / sample_rate;
-        let alpha = angular_frequency.sin() / (2.0 * filter.quality_factor.into_inner());
+    fn high_shelf(parameters: FilterParameters, sample_rate: f64) -> Self {
+        let amplitude = 10.0_f64.powf(parameters.gain.into_inner() / 40.0);
+        let angular_frequency = TAU * parameters.frequency.into_inner() / sample_rate;
+        let alpha = angular_frequency.sin() / (2.0 * parameters.quality_factor.into_inner());
         let cosine = angular_frequency.cos();
         let two_sqrt_a_alpha = 2.0 * amplitude.sqrt() * alpha;
         let a0 = (amplitude + 1.0) - (amplitude - 1.0) * cosine + two_sqrt_a_alpha;
@@ -268,8 +270,8 @@ mod tests {
 
     use super::{PreparedChain, PreparedResponse};
     use crate::{
-        Chain, Equalizer, Filter, FilterKind, FrequencyHz, GainDb, ProcessorError, QualityFactor,
-        SampleRateHz,
+        Chain, Equalizer, Filter, FilterKind, FilterParameters, FrequencyHz, GainDb,
+        ProcessorError, QualityFactor, SampleRateHz,
     };
 
     const SAMPLE_RATE: usize = 48_000;
@@ -416,10 +418,12 @@ mod tests {
     fn filter(kind: FilterKind, frequency: f64, gain: f64) -> Filter {
         Filter {
             id: crate::FilterId::try_new(1).unwrap(),
-            kind,
-            frequency: FrequencyHz::try_new(frequency).unwrap(),
-            gain: GainDb::try_new(gain).unwrap(),
-            quality_factor: QualityFactor::try_new(1.0).unwrap(),
+            parameters: FilterParameters {
+                kind,
+                frequency: FrequencyHz::try_new(frequency).unwrap(),
+                gain: GainDb::try_new(gain).unwrap(),
+                quality_factor: QualityFactor::try_new(1.0).unwrap(),
+            },
         }
     }
 

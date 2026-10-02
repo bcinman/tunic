@@ -12,9 +12,9 @@ mod store;
 pub use catalog::{PresetCatalog, PresetQuery};
 pub use command::{Command, ProfileSource};
 pub use profile::{
-    AdjustableParameter, Adjustment, Attribution, Preset, PresetId, PresetIdError, PresetOrigin,
-    PresetRevision, PresetRevisionError, PresetSummary, Profile, ProfileId, ProfileIdError,
-    ProfileName, ProfileNameError, ProfileRevision,
+    Attribution, FilterControl, FilterControlName, FilterControlNameError, Preset, PresetId,
+    PresetIdError, PresetOrigin, PresetRevision, PresetRevisionError, PresetSummary, Profile,
+    ProfileError, ProfileId, ProfileIdError, ProfileName, ProfileNameError, ProfileRevision,
 };
 pub use state::{DeviceId, DeviceIdError, DeviceProfileSelection, State};
 pub use store::{MemoryStore, Store, StoreError};
@@ -77,57 +77,59 @@ fn apply(
                 return Err(BackendError::ProfileAlreadyExists(id));
             }
             ensure_name_available(state, &name, None)?;
-            let (chain, origin, adjustments) = match source {
-                ProfileSource::Flat => (Default::default(), None, Vec::new()),
-                ProfileSource::Preset(id) => {
-                    let preset = catalog.get(&id).ok_or(BackendError::PresetNotFound(id))?;
-                    ensure_unique_filter_ids(&preset.chain)
-                        .expect("catalog must provide unique filter IDs");
-                    validate_adjustments(&preset.chain, &preset.adjustments)
-                        .expect("catalog must provide valid adjustment references");
+            let profile = match source {
+                ProfileSource::Flat => Profile::new(id, name, Default::default(), Vec::new(), None),
+                ProfileSource::Preset(preset_id) => {
+                    let preset = catalog
+                        .get(&preset_id)
+                        .ok_or(BackendError::PresetNotFound(preset_id))?;
                     let origin = PresetOrigin {
                         id: preset.summary.id.clone(),
                         revision: preset.summary.revision.clone(),
                         attribution: preset.attribution.clone(),
                     };
-                    (preset.chain, Some(origin), preset.adjustments)
+                    Profile::new(id, name, preset.chain, preset.controls, Some(origin))
                 }
-                ProfileSource::Copy(id) => {
-                    let profile = state
-                        .profile(&id)
-                        .ok_or(BackendError::ProfileNotFound(id))?;
-                    (
-                        profile.chain.clone(),
-                        profile.origin.clone(),
-                        profile.adjustments.clone(),
+                ProfileSource::Copy(source) => {
+                    let source = state
+                        .profile(&source)
+                        .ok_or(BackendError::ProfileNotFound(source))?;
+                    Profile::new(
+                        id,
+                        name,
+                        source.base().clone(),
+                        source.controls().to_vec(),
+                        source.origin().cloned(),
                     )
                 }
-            };
-            next.profiles.push(Profile {
-                id,
-                name,
-                chain,
-                revision: ProfileRevision::default(),
-                origin,
-                adjustments,
-            });
+            }
+            .map_err(BackendError::InvalidProfile)?;
+            next.profiles.push(profile);
         }
         Command::RenameProfile { profile, name } => {
-            if state.profile(&profile).is_none() {
-                return Err(BackendError::ProfileNotFound(profile));
-            }
+            let current = state
+                .profile(&profile)
+                .ok_or_else(|| BackendError::ProfileNotFound(profile.clone()))?;
             ensure_name_available(state, &name, Some(&profile))?;
-            next.profiles
-                .iter_mut()
-                .find(|candidate| candidate.id == profile)
-                .expect("profile existence checked above")
-                .name = name;
+            if current.name() != &name {
+                let revision = current
+                    .revision()
+                    .next()
+                    .ok_or_else(|| BackendError::ProfileRevisionExhausted(profile.clone()))?;
+                let candidate = next
+                    .profiles
+                    .iter_mut()
+                    .find(|candidate| candidate.id() == &profile)
+                    .expect("profile existence checked above");
+                candidate.rename(name);
+                candidate.set_revision(revision);
+            }
         }
         Command::DeleteProfile(profile) => {
             let Some(position) = next
                 .profiles
                 .iter()
-                .position(|candidate| candidate.id == profile)
+                .position(|candidate| candidate.id() == &profile)
             else {
                 return Err(BackendError::ProfileNotFound(profile));
             };
@@ -154,33 +156,28 @@ fn apply(
             next.selections
                 .retain(|selection| selection.device != device);
         }
-        Command::UpdateProfile {
-            profile,
-            chain,
-            expected_revision,
-        } => {
-            ensure_unique_filter_ids(&chain).map_err(BackendError::DuplicateFilterId)?;
+        Command::SaveProfile(mut draft) => {
+            let profile = draft.id().clone();
             let profile_state = next
                 .profiles
                 .iter_mut()
-                .find(|candidate| candidate.id == profile)
+                .find(|candidate| candidate.id() == &profile)
                 .ok_or_else(|| BackendError::ProfileNotFound(profile.clone()))?;
-            if profile_state.revision != expected_revision {
+            if profile_state.revision() != draft.revision() {
                 return Err(BackendError::ProfileRevisionMismatch {
                     profile,
-                    expected: expected_revision,
-                    actual: profile_state.revision,
+                    expected: draft.revision(),
+                    actual: profile_state.revision(),
                 });
             }
-            if profile_state.chain != chain {
-                profile_state.revision = profile_state
-                    .revision
+            draft.validate().map_err(BackendError::InvalidProfile)?;
+            if profile_state != &draft {
+                let revision = profile_state
+                    .revision()
                     .next()
                     .ok_or_else(|| BackendError::ProfileRevisionExhausted(profile.clone()))?;
-                profile_state.adjustments.retain(|adjustment| {
-                    adjustment_survives(adjustment, &profile_state.chain, &chain)
-                });
-                profile_state.chain = chain;
+                draft.set_revision(revision);
+                *profile_state = draft;
             }
         }
     }
@@ -195,7 +192,7 @@ fn ensure_name_available(
     if state
         .profiles
         .iter()
-        .any(|profile| &profile.name == name && except != Some(&profile.id))
+        .any(|profile| profile.name() == name && except != Some(profile.id()))
     {
         Err(BackendError::ProfileNameAlreadyExists(name.clone()))
     } else {
@@ -207,16 +204,16 @@ fn validate_state(state: &State) -> Result<(), BackendError> {
     let mut profile_ids = HashSet::new();
     let mut profile_names = HashSet::new();
     for profile in &state.profiles {
-        ensure_unique_filter_ids(&profile.chain)
-            .map_err(|id| corrupt(format!("duplicate filter id '{id}'")))?;
-        validate_adjustments(&profile.chain, &profile.adjustments).map_err(corrupt)?;
-        if !profile_ids.insert(profile.id.clone()) {
-            return Err(corrupt(format!("duplicate profile id '{}'", profile.id)));
+        profile
+            .validate()
+            .map_err(|error| corrupt(format!("{error:?}")))?;
+        if !profile_ids.insert(profile.id().clone()) {
+            return Err(corrupt(format!("duplicate profile id '{}'", profile.id())));
         }
-        if !profile_names.insert(profile.name.clone()) {
+        if !profile_names.insert(profile.name().clone()) {
             return Err(corrupt(format!(
                 "duplicate profile name '{}'",
-                profile.name
+                profile.name()
             )));
         }
     }
@@ -239,64 +236,6 @@ fn validate_state(state: &State) -> Result<(), BackendError> {
     Ok(())
 }
 
-fn ensure_unique_filter_ids(chain: &crate::Chain) -> Result<(), crate::FilterId> {
-    let mut ids = HashSet::new();
-    for filter in &chain.equalizer.filters {
-        if !ids.insert(filter.id) {
-            return Err(filter.id);
-        }
-    }
-    Ok(())
-}
-
-fn validate_adjustments(chain: &crate::Chain, adjustments: &[Adjustment]) -> Result<(), String> {
-    for adjustment in adjustments {
-        if !chain
-            .equalizer
-            .filters
-            .iter()
-            .any(|filter| filter.id == adjustment.filter)
-        {
-            return Err(format!(
-                "adjustment references missing filter '{}'",
-                adjustment.filter
-            ));
-        }
-    }
-    Ok(())
-}
-
-fn adjustment_survives(adjustment: &Adjustment, old: &crate::Chain, new: &crate::Chain) -> bool {
-    let Some(old) = old
-        .equalizer
-        .filters
-        .iter()
-        .find(|f| f.id == adjustment.filter)
-    else {
-        return false;
-    };
-    let Some(new) = new
-        .equalizer
-        .filters
-        .iter()
-        .find(|f| f.id == adjustment.filter)
-    else {
-        return false;
-    };
-    old.kind == new.kind
-        && match adjustment.parameter {
-            AdjustableParameter::GainDb => {
-                old.frequency == new.frequency && old.quality_factor == new.quality_factor
-            }
-            AdjustableParameter::FrequencyHz => {
-                old.gain == new.gain && old.quality_factor == new.quality_factor
-            }
-            AdjustableParameter::QualityFactor => {
-                old.frequency == new.frequency && old.gain == new.gain
-            }
-        }
-}
-
 fn corrupt(message: String) -> BackendError {
     BackendError::StoreFailed(StoreError::Corrupt { message })
 }
@@ -307,7 +246,7 @@ pub enum BackendError {
     ProfileNotFound(ProfileId),
     ProfileAlreadyExists(ProfileId),
     PresetNotFound(PresetId),
-    DuplicateFilterId(crate::FilterId),
+    InvalidProfile(ProfileError),
     ProfileNameAlreadyExists(ProfileName),
     ProfileRevisionMismatch {
         profile: ProfileId,
@@ -327,11 +266,11 @@ mod tests {
 
     use super::{Backend, BackendError};
     use crate::{
-        AdjustableParameter, Adjustment, Attribution, Chain, Command, DeviceId,
-        DeviceProfileSelection, Equalizer, Filter, FilterId, FilterKind, FrequencyHz, GainDb,
-        Preset, PresetCatalog, PresetId, PresetQuery, PresetRevision, PresetSummary, Profile,
-        ProfileId, ProfileName, ProfileRevision, ProfileSource, QualityFactor, State, Store,
-        StoreError,
+        Attribution, Chain, Command, DeviceId, DeviceProfileSelection, Equalizer, Filter,
+        FilterControl, FilterControlName, FilterId, FilterKind, FilterParameters, FrequencyHz,
+        GainDb, Preset, PresetCatalog, PresetId, PresetQuery, PresetRevision, PresetSummary,
+        Profile, ProfileId, ProfileName, ProfileRevision, ProfileSource, QualityFactor, State,
+        Store, StoreError,
     };
 
     impl PresetCatalog for Vec<Preset> {
@@ -417,11 +356,20 @@ mod tests {
     fn filter(id: u32, frequency: f64, gain: f64, quality: f64) -> Filter {
         Filter {
             id: FilterId::try_new(id).unwrap(),
-            kind: FilterKind::Peaking,
-            frequency: FrequencyHz::try_new(frequency).unwrap(),
-            gain: GainDb::try_new(gain).unwrap(),
-            quality_factor: QualityFactor::try_new(quality).unwrap(),
+            parameters: FilterParameters {
+                kind: FilterKind::Peaking,
+                frequency: FrequencyHz::try_new(frequency).unwrap(),
+                gain: GainDb::try_new(gain).unwrap(),
+                quality_factor: QualityFactor::try_new(quality).unwrap(),
+            },
         }
+    }
+
+    fn control(id: u32, name: &str) -> FilterControl {
+        FilterControl::new(
+            FilterId::try_new(id).unwrap(),
+            FilterControlName::try_new(name).unwrap(),
+        )
     }
 
     fn preset(id: &str, gain: f64) -> Preset {
@@ -440,19 +388,19 @@ mod tests {
                 source_url: "https://example.com".into(),
             },
             chain: chain(gain),
-            adjustments: Vec::new(),
+            controls: Vec::new(),
         }
     }
 
     fn profile(id: &str, name: &str) -> Profile {
-        Profile {
-            id: profile_id(id),
-            name: profile_name(name),
-            chain: Chain::default(),
-            revision: ProfileRevision::default(),
-            origin: None,
-            adjustments: Vec::new(),
-        }
+        Profile::new(
+            profile_id(id),
+            profile_name(name),
+            Chain::default(),
+            Vec::new(),
+            None,
+        )
+        .unwrap()
     }
 
     fn create(id: &str, name: &str, source: ProfileSource) -> Command {
@@ -487,9 +435,9 @@ mod tests {
             ))
             .unwrap();
 
-        assert_eq!(backend.state().profiles[0].chain, Chain::default());
-        assert_eq!(backend.state().profiles[1].chain, chain(-4.0));
-        assert_eq!(backend.state().profiles[2].chain, chain(-4.0));
+        assert_eq!(backend.state().profiles[0].base(), &Chain::default());
+        assert_eq!(backend.state().profiles[1].base(), &chain(-4.0));
+        assert_eq!(backend.state().profiles[2].base(), &chain(-4.0));
         assert_eq!(store.state().as_ref(), Some(backend.state()));
         assert_eq!(store.save_count.load(Ordering::Relaxed), 3);
     }
@@ -531,8 +479,20 @@ mod tests {
             })
             .unwrap();
         assert_eq!(
-            backend.state().profile(&profile_id("second")).unwrap().name,
-            profile_name("Renamed")
+            backend
+                .state()
+                .profile(&profile_id("second"))
+                .unwrap()
+                .name(),
+            &profile_name("Renamed")
+        );
+        assert_eq!(
+            backend
+                .state()
+                .profile(&profile_id("second"))
+                .unwrap()
+                .revision(),
+            ProfileRevision(1)
         );
     }
 
@@ -566,16 +526,16 @@ mod tests {
                 .state()
                 .selected_profile(&device_id("speakers"))
                 .unwrap()
-                .id,
-            profile_id("movies")
+                .id(),
+            &profile_id("movies")
         );
         assert_eq!(
             backend
                 .state()
                 .selected_profile(&device_id("headphones"))
                 .unwrap()
-                .id,
-            profile_id("music")
+                .id(),
+            &profile_id("music")
         );
 
         backend
@@ -615,42 +575,41 @@ mod tests {
     #[test]
     fn updates_require_the_current_revision_and_only_changes_advance_it() {
         let store = TestStore::default();
-        let mut backend = Backend::new(store.clone(), Vec::new()).unwrap();
+        let mut source = preset("reference", 0.0);
+        source.chain.equalizer.filters = vec![filter(1, 100.0, 2.0, 0.7)];
+        source.controls = vec![control(1, "Bass")];
+        let mut backend = Backend::new(store.clone(), vec![source.clone()]).unwrap();
         backend
-            .execute(create("music", "Music", ProfileSource::Flat))
+            .execute(create(
+                "music",
+                "Music",
+                ProfileSource::Preset(source.summary.id),
+            ))
             .unwrap();
 
+        let stale = backend.state().profiles[0].clone();
+        let mut draft = stale.clone();
+        draft
+            .adjust_filter_gain(FilterId::try_new(1).unwrap(), GainDb::try_new(4.0).unwrap())
+            .unwrap();
         backend
-            .execute(Command::UpdateProfile {
-                profile: profile_id("music"),
-                chain: chain(-3.0),
-                expected_revision: ProfileRevision(0),
-            })
+            .execute(Command::SaveProfile(draft.clone()))
             .unwrap();
         let saves_after_change = store.save_count.load(Ordering::Relaxed);
-        backend
-            .execute(Command::UpdateProfile {
-                profile: profile_id("music"),
-                chain: chain(-3.0),
-                expected_revision: ProfileRevision(1),
-            })
-            .unwrap();
+        draft.set_revision(ProfileRevision(1));
+        backend.execute(Command::SaveProfile(draft)).unwrap();
 
         assert_eq!(
             backend
                 .state()
                 .profile(&profile_id("music"))
                 .unwrap()
-                .revision,
+                .revision(),
             ProfileRevision(1)
         );
         assert_eq!(store.save_count.load(Ordering::Relaxed), saves_after_change);
         assert_eq!(
-            backend.execute(Command::UpdateProfile {
-                profile: profile_id("music"),
-                chain: chain(-6.0),
-                expected_revision: ProfileRevision(0),
-            }),
+            backend.execute(Command::SaveProfile(stale)),
             Err(BackendError::ProfileRevisionMismatch {
                 profile: profile_id("music"),
                 expected: ProfileRevision(0),
@@ -661,21 +620,17 @@ mod tests {
 
     #[test]
     fn profile_revision_overflow_is_rejected() {
+        let mut saved = profile("music", "Music");
+        saved.set_revision(ProfileRevision(u64::MAX));
         let store = TestStore::with_state(State {
-            profiles: vec![Profile {
-                revision: ProfileRevision(u64::MAX),
-                ..profile("music", "Music")
-            }],
+            profiles: vec![saved.clone()],
             selections: Vec::new(),
         });
         let mut backend = Backend::new(store, Vec::new()).unwrap();
+        saved.replace_base(chain(-1.0)).unwrap();
 
         assert_eq!(
-            backend.execute(Command::UpdateProfile {
-                profile: profile_id("music"),
-                chain: chain(-3.0),
-                expected_revision: ProfileRevision(u64::MAX),
-            }),
+            backend.execute(Command::SaveProfile(saved)),
             Err(BackendError::ProfileRevisionExhausted(profile_id("music")))
         );
     }
@@ -712,28 +667,22 @@ mod tests {
                 .state()
                 .selected_profile(&device_id("speakers"))
                 .unwrap()
-                .name,
-            profile_name("Music")
+                .name(),
+            &profile_name("Music")
         );
     }
 
     #[test]
     fn rejects_corrupt_stored_state() {
         let first = profile("first", "First");
-        let second = profile("second", "Second");
+        let duplicate_name = profile("second", "First");
         let invalid_states = [
             State {
-                profiles: vec![first.clone(), Profile { ..first.clone() }],
+                profiles: vec![first.clone(), first.clone()],
                 selections: Vec::new(),
             },
             State {
-                profiles: vec![
-                    first.clone(),
-                    Profile {
-                        name: first.name.clone(),
-                        ..second.clone()
-                    },
-                ],
+                profiles: vec![first.clone(), duplicate_name],
                 selections: Vec::new(),
             },
             State {
@@ -741,11 +690,11 @@ mod tests {
                 selections: vec![
                     DeviceProfileSelection {
                         device: device_id("speakers"),
-                        profile: first.id.clone(),
+                        profile: first.id().clone(),
                     },
                     DeviceProfileSelection {
                         device: device_id("speakers"),
-                        profile: first.id.clone(),
+                        profile: first.id().clone(),
                     },
                 ],
             },
@@ -773,189 +722,91 @@ mod tests {
     }
 
     #[test]
-    fn adjustments_follow_ids_and_only_survive_changes_to_their_own_axis() {
-        let mut source = preset("reference", 0.0);
-        source.chain.equalizer.filters = vec![
-            filter(1, 100.0, 1.0, 0.7),
-            filter(2, 200.0, 2.0, 1.2),
-            filter(3, 300.0, 3.0, 1.7),
-        ];
-        source.adjustments = vec![
-            Adjustment {
-                label: "gain".into(),
-                filter: FilterId::try_new(1).unwrap(),
-                parameter: AdjustableParameter::GainDb,
-            },
-            Adjustment {
-                label: "frequency".into(),
-                filter: FilterId::try_new(2).unwrap(),
-                parameter: AdjustableParameter::FrequencyHz,
-            },
-            Adjustment {
-                label: "quality".into(),
-                filter: FilterId::try_new(3).unwrap(),
-                parameter: AdjustableParameter::QualityFactor,
-            },
-        ];
+    fn base_chain_updates_and_gain_adjustments_compose_independently() {
+        let mut source = preset("reference", -4.0);
+        source.chain.equalizer.filters =
+            vec![filter(3, 105.0, 5.5, 0.71), filter(4, 1_000.0, -2.0, 1.2)];
+        source.controls = vec![control(3, "Bass")];
         let mut backend = Backend::new(TestStore::default(), vec![source.clone()]).unwrap();
         backend
             .execute(create(
                 "profile",
                 "Profile",
-                ProfileSource::Preset(source.summary.id.clone()),
+                ProfileSource::Preset(source.summary.id),
             ))
             .unwrap();
+
+        let mut draft = backend.state().profiles[0].clone();
+        draft
+            .adjust_filter_gain(FilterId::try_new(3).unwrap(), GainDb::try_new(4.0).unwrap())
+            .unwrap();
+        let mut updated_base = source.chain;
+        updated_base.equalizer.preamp = GainDb::try_new(-6.0).unwrap();
+        updated_base.equalizer.filters[0].parameters.gain = GainDb::try_new(6.0).unwrap();
+        updated_base.equalizer.filters[0].parameters.quality_factor =
+            QualityFactor::try_new(1.5).unwrap();
+        updated_base.equalizer.filters[1].parameters.gain = GainDb::try_new(-4.0).unwrap();
+        draft.replace_base(updated_base.clone()).unwrap();
+        backend.execute(Command::SaveProfile(draft)).unwrap();
+
+        let saved = &backend.state().profiles[0];
+        assert_eq!(saved.base(), &updated_base);
+        let effective = saved.effective_chain();
+        assert_eq!(
+            effective.equalizer.filters[0]
+                .parameters
+                .frequency
+                .into_inner(),
+            105.0
+        );
+        assert_eq!(
+            effective.equalizer.filters[0].parameters.gain.into_inner(),
+            10.0
+        );
+        assert_eq!(
+            effective.equalizer.filters[0].parameters.quality_factor,
+            updated_base.equalizer.filters[0].parameters.quality_factor
+        );
+        assert_eq!(
+            effective.equalizer.filters[1],
+            updated_base.equalizer.filters[1]
+        );
+    }
+
+    #[test]
+    fn reset_adjustment_preserves_the_exposed_control() {
+        let mut source = preset("reference", 0.0);
+        source.chain.equalizer.filters = vec![filter(1, 100.0, 2.0, 0.7)];
+        source.controls = vec![control(1, "Bass")];
+        let store = TestStore::default();
+        let mut backend = Backend::new(store.clone(), vec![source.clone()]).unwrap();
         backend
             .execute(create(
-                "copy",
-                "Copy",
-                ProfileSource::Copy(profile_id("profile")),
+                "profile",
+                "Profile",
+                ProfileSource::Preset(source.summary.id),
             ))
             .unwrap();
-        assert_eq!(
-            backend.state().profiles[1].origin,
-            backend.state().profiles[0].origin
-        );
-
-        let mut updated = source.chain;
-        updated.equalizer.filters.reverse();
-        updated.equalizer.filters[2].gain = GainDb::try_new(9.0).unwrap();
-        updated.equalizer.filters[1].frequency = FrequencyHz::try_new(250.0).unwrap();
-        updated.equalizer.filters[0].quality_factor = QualityFactor::try_new(2.0).unwrap();
-        backend
-            .execute(Command::UpdateProfile {
-                profile: profile_id("profile"),
-                chain: updated,
-                expected_revision: ProfileRevision(0),
-            })
+        let mut draft = backend.state().profiles[0].clone();
+        draft
+            .adjust_filter_gain(FilterId::try_new(1).unwrap(), GainDb::try_new(8.0).unwrap())
             .unwrap();
-        assert_eq!(backend.state().profiles[0].adjustments.len(), 3);
-
-        let mut invalidating = backend.state().profiles[0].chain.clone();
-        invalidating
-            .equalizer
-            .filters
-            .iter_mut()
-            .find(|f| f.id == FilterId::try_new(1).unwrap())
-            .unwrap()
-            .frequency = FrequencyHz::try_new(110.0).unwrap();
-        invalidating
-            .equalizer
-            .filters
-            .iter_mut()
-            .find(|f| f.id == FilterId::try_new(2).unwrap())
-            .unwrap()
-            .quality_factor = QualityFactor::try_new(2.2).unwrap();
-        invalidating
-            .equalizer
-            .filters
-            .iter_mut()
-            .find(|f| f.id == FilterId::try_new(3).unwrap())
-            .unwrap()
-            .kind = FilterKind::LowShelf;
-        backend
-            .execute(Command::UpdateProfile {
-                profile: profile_id("profile"),
-                chain: invalidating,
-                expected_revision: ProfileRevision(1),
-            })
+        draft
+            .reset_adjustment(FilterId::try_new(1).unwrap())
             .unwrap();
-        assert!(backend.state().profiles[0].adjustments.is_empty());
+        backend.execute(Command::SaveProfile(draft)).unwrap();
+
+        let saved = &backend.state().profiles[0];
+        assert_eq!(saved.controls().len(), 1);
+        assert_eq!(saved.controls()[0].gain_adjustment(), GainDb::default());
+        assert_eq!(saved.effective_chain(), source.chain);
     }
 
     #[test]
-    fn duplicate_filter_ids_are_rejected_on_update_and_restore() {
-        let duplicate = Chain {
-            equalizer: Equalizer {
-                preamp: GainDb::default(),
-                filters: vec![filter(1, 100.0, 0.0, 1.0), filter(1, 200.0, 0.0, 1.0)],
-            },
-        };
-        let mut backend = Backend::new(TestStore::default(), Vec::<Preset>::new()).unwrap();
-        backend
-            .execute(create("profile", "Profile", ProfileSource::Flat))
-            .unwrap();
-        assert!(matches!(
-            backend.execute(Command::UpdateProfile {
-                profile: profile_id("profile"),
-                chain: duplicate.clone(),
-                expected_revision: ProfileRevision(0)
-            }),
-            Err(BackendError::DuplicateFilterId(_))
-        ));
-        let state = State {
-            profiles: vec![Profile {
-                chain: duplicate,
-                ..profile("profile", "Profile")
-            }],
-            selections: Vec::new(),
-        };
-        assert!(matches!(
-            Backend::new(TestStore::with_state(state), Vec::<Preset>::new()),
-            Err(BackendError::StoreFailed(StoreError::Corrupt { .. }))
-        ));
-    }
-
-    #[test]
-    fn each_adjustment_axis_has_an_independent_retention_rule() {
-        let old = Chain {
-            equalizer: Equalizer {
-                preamp: GainDb::default(),
-                filters: vec![filter(7, 100.0, 2.0, 0.7), filter(4, 3000.0, -3.0, 2.0)],
-            },
-        };
-        for parameter in [
-            AdjustableParameter::GainDb,
-            AdjustableParameter::FrequencyHz,
-            AdjustableParameter::QualityFactor,
-        ] {
-            let adjustment = Adjustment {
-                label: "Control".into(),
-                filter: FilterId::try_new(7).unwrap(),
-                parameter,
-            };
-            for edit in 0..7 {
-                let mut new = old.clone();
-                match edit {
-                    0 => new.equalizer.filters[0].gain = GainDb::try_new(4.0).unwrap(),
-                    1 => new.equalizer.filters[0].frequency = FrequencyHz::try_new(200.0).unwrap(),
-                    2 => {
-                        new.equalizer.filters[0].quality_factor =
-                            QualityFactor::try_new(1.5).unwrap()
-                    }
-                    3 => new.equalizer.filters[0].kind = FilterKind::HighShelf,
-                    4 => {
-                        new.equalizer.filters.remove(0);
-                    }
-                    5 => new.equalizer.filters.reverse(),
-                    6 => new.equalizer.filters[1].frequency = FrequencyHz::try_new(4000.0).unwrap(),
-                    _ => unreachable!(),
-                }
-                let expected = edit >= 5
-                    || matches!(
-                        (parameter, edit),
-                        (AdjustableParameter::GainDb, 0)
-                            | (AdjustableParameter::FrequencyHz, 1)
-                            | (AdjustableParameter::QualityFactor, 2)
-                    );
-                assert_eq!(
-                    super::adjustment_survives(&adjustment, &old, &new),
-                    expected,
-                    "{parameter:?}, edit {edit}"
-                );
-            }
-        }
-    }
-
-    #[test]
-    fn adjustment_edits_are_atomic_and_saved_profiles_need_no_catalog_entry() {
+    fn profile_edits_are_atomic_and_saved_profiles_need_no_catalog_entry() {
         let mut source = preset("reference", -4.0);
         source.chain.equalizer.filters = vec![filter(3, 105.0, 5.5, 0.71)];
-        source.adjustments = vec![Adjustment {
-            label: "Bass".into(),
-            filter: FilterId::try_new(3).unwrap(),
-            parameter: AdjustableParameter::GainDb,
-        }];
+        source.controls = vec![control(3, "Bass")];
         let store = TestStore::default();
         let mut backend = Backend::new(store.clone(), vec![source.clone()]).unwrap();
         backend
@@ -966,38 +817,25 @@ mod tests {
             ))
             .unwrap();
         let original = backend.state().clone();
-        let origin = original.profiles[0].origin.as_ref().unwrap();
+        let origin = original.profiles[0].origin().unwrap();
         assert_eq!(origin.id, source.summary.id);
         assert_eq!(origin.revision, source.summary.revision);
         assert_eq!(origin.attribution, source.attribution);
+
+        let mut draft = original.profiles[0].clone();
+        draft
+            .adjust_filter_gain(FilterId::try_new(3).unwrap(), GainDb::try_new(8.0).unwrap())
+            .unwrap();
         store.fail_saves.store(true, Ordering::Relaxed);
-        let mut edited = source.chain;
-        edited.equalizer.filters.clear();
         assert!(matches!(
-            backend.execute(Command::UpdateProfile {
-                profile: profile_id("profile"),
-                chain: edited.clone(),
-                expected_revision: ProfileRevision(0),
-            }),
+            backend.execute(Command::SaveProfile(draft)),
             Err(BackendError::StoreFailed(_))
         ));
         assert_eq!(backend.state(), &original);
         assert_eq!(store.state(), Some(original.clone()));
-        store.fail_saves.store(false, Ordering::Relaxed);
-        backend
-            .execute(Command::UpdateProfile {
-                profile: profile_id("profile"),
-                chain: edited,
-                expected_revision: ProfileRevision(0),
-            })
-            .unwrap();
-        assert!(store.state().unwrap().profiles[0].adjustments.is_empty());
 
-        let mut restored = Backend::new(
-            TestStore::with_state(original.clone()),
-            Vec::<Preset>::new(),
-        )
-        .unwrap();
+        let mut restored =
+            Backend::new(TestStore::with_state(original), Vec::<Preset>::new()).unwrap();
         restored
             .execute(create(
                 "copy",
@@ -1006,20 +844,17 @@ mod tests {
             ))
             .unwrap();
         assert_eq!(
-            restored.state().profiles[1].origin,
-            original.profiles[0].origin
+            restored.state().profiles[1].base(),
+            restored.state().profiles[0].base()
         );
-        assert_eq!(restored.state().profiles[1].adjustments, source.adjustments);
         assert_eq!(
-            restored.state().profiles[1].chain,
-            original.profiles[0].chain
+            restored.state().profiles[1].controls(),
+            restored.state().profiles[0].controls()
         );
-        let mut corrupt = original;
-        corrupt.profiles[0].chain.equalizer.filters.clear();
-        assert!(matches!(
-            Backend::new(TestStore::with_state(corrupt), Vec::<Preset>::new()),
-            Err(BackendError::StoreFailed(StoreError::Corrupt { .. }))
-        ));
+        assert_eq!(
+            restored.state().profiles[1].origin(),
+            restored.state().profiles[0].origin()
+        );
     }
 
     #[test]

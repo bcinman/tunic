@@ -17,9 +17,9 @@ This file is the source of truth for implemented product capabilities.
 - An offline `tunic-presets` catalog with build-validated JSON, static brand/model
   indexes, and on-demand payload decoding. Initial oratory1990 presets cover
   Sennheiser HD650 and Sony MDR-7506.
-- Stable filter identities and source-provided adjustment mappings. Profiles copy
-  preset attribution, revision, and adjustments; edits to other filter parameters
-  remove obsolete adjustments without changing the source preset.
+- Profiles own an editable base chain plus named controls targeting stable filter
+  identities. Each control holds a relative gain adjustment; effective DSP chains
+  add those adjustments without changing base values.
 - Sample-rate-specific stereo DSP with preamp gain, ordered peaking and shelf
   filters, post-quantization stability validation, and allocation-free audio
   processing.
@@ -41,6 +41,8 @@ This file is the source of truth for implemented product capabilities.
   UI-owned display ballistics, plus an on-screen frame-rate diagnostic.
 - An editable logarithmic equalizer graph with the exact digital filter response,
   live drag previews through the processor controller, and explicit save/reset.
+  The graph edits the base EQ while centered named-control sliders apply ±12 dB
+  gain adjustments.
 - macOS GPUI development through `mise run build-app` and `mise run run-app`.
 - Automated formatting, Clippy, and workspace tests through `mise run check`.
 

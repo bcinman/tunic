@@ -22,7 +22,7 @@ pub struct State {
 impl State {
     #[must_use]
     pub fn profile(&self, id: &ProfileId) -> Option<&Profile> {
-        self.profiles.iter().find(|profile| &profile.id == id)
+        self.profiles.iter().find(|profile| profile.id() == id)
     }
 
     #[must_use]

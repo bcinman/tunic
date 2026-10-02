@@ -96,7 +96,7 @@ impl PresetCatalog for BundledCatalog {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tunic_core::{AdjustableParameter, AudioFormat, FilterKind, Processor, SampleRateHz};
+    use tunic_core::{AudioFormat, FilterKind, Processor, SampleRateHz};
 
     #[test]
     fn indexes_resolve_every_entry_and_intersect_exact_filters() {
@@ -155,7 +155,7 @@ mod tests {
     }
 
     #[test]
-    fn hd650_preserves_source_values_and_adjustment_references() {
+    fn hd650_preserves_source_values_and_filter_controls() {
         let preset = BundledCatalog
             .get(&PresetId::try_new("oratory1990/sennheiser/hd650/harman").unwrap())
             .unwrap();
@@ -168,26 +168,22 @@ mod tests {
             .iter()
             .find(|f| f.id.into_inner() == 3)
             .unwrap();
-        assert_eq!(bass.kind, FilterKind::LowShelf);
-        assert_eq!(bass.frequency.into_inner(), 105.0);
-        assert_eq!(bass.gain.into_inner(), 5.5);
-        assert_eq!(bass.quality_factor.into_inner(), 0.71);
+        assert_eq!(bass.parameters.kind, FilterKind::LowShelf);
+        assert_eq!(bass.parameters.frequency.into_inner(), 105.0);
+        assert_eq!(bass.parameters.gain.into_inner(), 5.5);
+        assert_eq!(bass.parameters.quality_factor.into_inner(), 0.71);
         assert_eq!(
             preset
-                .adjustments
+                .controls
                 .iter()
-                .map(|a| (a.label.as_str(), a.filter.into_inner(), a.parameter))
+                .map(|control| (control.name().to_string(), control.target().into_inner()))
                 .collect::<Vec<_>>(),
             vec![
-                ("Bass", 3, AdjustableParameter::GainDb),
-                ("Warmth / muddiness", 4, AdjustableParameter::GainDb),
-                (
-                    "Midrange accuracy / shoutiness",
-                    5,
-                    AdjustableParameter::GainDb
-                ),
-                ("Treble", 6, AdjustableParameter::GainDb),
-                ("Airiness", 10, AdjustableParameter::GainDb),
+                ("Bass".into(), 3),
+                ("Warmth / muddiness".into(), 4),
+                ("Midrange accuracy / shoutiness".into(), 5),
+                ("Treble".into(), 6),
+                ("Airiness".into(), 10),
             ]
         );
     }
@@ -226,9 +222,11 @@ mod tests {
             ("/equalizer/filters/0/quality_factor", serde_json::json!(-1)),
             ("/equalizer/filters/0/kind", serde_json::json!("notch")),
             ("/equalizer/preamp_gain_db", serde_json::json!("NaN")),
-            ("/adjustments/0/filter", serde_json::json!(999)),
-            ("/adjustments/0/parameter", serde_json::json!("slope")),
-            ("/adjustments/0/label", serde_json::json!(" ")),
+            ("/equalizer/filters/2/control_name", serde_json::json!(" ")),
+            (
+                "/equalizer/filters/3/control_name",
+                serde_json::json!("Bass"),
+            ),
         ] {
             let mut invalid = valid.clone();
             *invalid.pointer_mut(pointer).unwrap() = value;
@@ -240,7 +238,6 @@ mod tests {
             "/attribution",
             "/equalizer",
             "/equalizer/filters/0",
-            "/adjustments/0",
         ] {
             let mut invalid = valid.clone();
             invalid

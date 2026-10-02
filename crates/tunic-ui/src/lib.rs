@@ -8,9 +8,10 @@ use gpui::{
     prelude::*, px, relative, rgb, size,
 };
 use tunic_core::{
-    Backend, Chain, Command, Controller, DeviceId, FrequencyHz, FrequencyResponse, GainDb,
-    MemoryStore, PresetCatalog, PresetQuery, PresetSummary, ProcessorError, ProfileId, ProfileName,
-    ProfileSource, SPECTRUM_POINT_COUNT, SampleRateHz, Spectrum, StereoLevels, Telemetry,
+    Backend, Chain, Command, Controller, DeviceId, FilterId, FrequencyHz, FrequencyResponse,
+    GainDb, MemoryStore, PresetCatalog, PresetQuery, PresetSummary, ProcessorError, Profile,
+    ProfileId, ProfileName, ProfileSource, SPECTRUM_POINT_COUNT, SampleRateHz, Spectrum,
+    StereoLevels, Telemetry,
 };
 use tunic_presets::BundledCatalog;
 
@@ -29,13 +30,16 @@ const EQ_FALLBACK_SAMPLE_RATE_HZ: f64 = 48_000.0;
 const EQ_POINT_RADIUS_PX: f32 = 4.0;
 const EQ_POINT_INSET_PX: f32 = EQ_POINT_RADIUS_PX + 1.0;
 const EQ_POINT_HIT_RADIUS_PX: f32 = 12.0;
+const CONTROL_MIN_GAIN_DB: f64 = -12.0;
+const CONTROL_MAX_GAIN_DB: f64 = 12.0;
 const FRAME_HISTORY_LENGTH: usize = 90;
 const SLOW_FRAME_MILLISECONDS: f32 = 33.0;
 
 pub struct TunicView {
     model: Model,
     telemetry: Entity<TelemetryView>,
-    dragging_filter: Option<usize>,
+    dragging_filter: Option<FilterId>,
+    dragging_control: Option<FilterId>,
 }
 
 struct TelemetryView {
@@ -58,6 +62,7 @@ impl TunicView {
             model: Model::new(device_name, controller, audio_error),
             telemetry: cx.new(|_| TelemetryView::new(telemetry)),
             dragging_filter: None,
+            dragging_control: None,
         }
     }
 
@@ -157,7 +162,9 @@ impl Render for TunicView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let selected = self.model.selected_profile_name();
         let presets = self.model.presets.clone();
-        let chain = self.model.active_chain();
+        let chain = self.model.base_chain();
+        let controls = self.model.controls();
+        let exposed = controls.iter().map(|(id, _, _)| *id).collect::<Vec<_>>();
         let sample_rate = self.model.sample_rate();
         let graph_bounds = Rc::new(Cell::new(None));
         let mouse_down_bounds = Rc::clone(&graph_bounds);
@@ -174,11 +181,27 @@ impl Render for TunicView {
             .child(div().pl(px(68.0)).text_xl().child("Tunic"))
             .child(format!("Device: {}", self.model.device_name))
             .child(format!("Selected profile: {selected}"))
+            .child(div().text_sm().text_color(rgb(0xb8bbc2)).child("Base EQ"))
             .child(equalizer_graph(
                 &chain,
+                &exposed,
                 sample_rate,
                 Rc::clone(&graph_bounds),
             ))
+            .when(!controls.is_empty(), |view| {
+                view.child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .gap_2()
+                        .child("Adjustments")
+                        .children(controls.into_iter().enumerate().map(
+                            |(index, (target, name, gain))| {
+                                gain_control(index, target, name, gain, cx)
+                            },
+                        )),
+                )
+            })
             .child(
                 div()
                     .flex()
@@ -238,7 +261,7 @@ impl Render for TunicView {
                         return;
                     };
                     this.dragging_filter = closest_filter(
-                        &this.model.active_chain(),
+                        &this.model.base_chain(),
                         this.model.sample_rate(),
                         bounds,
                         event.position,
@@ -286,6 +309,7 @@ fn meter(label: &'static str, amplitude: f32) -> Div {
 
 fn equalizer_graph(
     chain: &Chain,
+    exposed: &[FilterId],
     sample_rate: SampleRateHz,
     graph_bounds: Rc<Cell<Option<Bounds<Pixels>>>>,
 ) -> Div {
@@ -301,8 +325,9 @@ fn equalizer_graph(
         .iter()
         .map(|filter| {
             (
-                frequency_fraction(filter.frequency.into_inner(), max_frequency),
-                gain_fraction(filter.gain.into_inner()),
+                frequency_fraction(filter.parameters.frequency.into_inner(), max_frequency),
+                gain_fraction(filter.parameters.gain.into_inner()),
+                exposed.contains(&filter.id),
             )
         })
         .collect::<Vec<_>>();
@@ -352,7 +377,7 @@ fn equalizer_graph(
                                 window,
                             );
 
-                            for (x, y) in &points {
+                            for (x, y, tweakable) in &points {
                                 let point_radius = px(EQ_POINT_RADIUS_PX);
                                 let center = graph_point(bounds, *x, *y);
                                 window.paint_quad(fill(
@@ -363,7 +388,11 @@ fn equalizer_graph(
                                         ),
                                         size: size(point_radius * 2.0, point_radius * 2.0),
                                     },
-                                    rgb(0xf2f2f2),
+                                    if *tweakable {
+                                        rgb(0xf2f2f2)
+                                    } else {
+                                        rgb(0x8b8e95)
+                                    },
                                 ));
                             }
                         },
@@ -495,27 +524,26 @@ fn closest_filter(
     sample_rate: SampleRateHz,
     bounds: Bounds<Pixels>,
     position: Point<Pixels>,
-) -> Option<usize> {
+) -> Option<FilterId> {
     let max_frequency = EQ_MAX_FREQUENCY_HZ.min(sample_rate.into_inner() * 0.499);
     chain
         .equalizer
         .filters
         .iter()
-        .enumerate()
-        .filter_map(|(index, filter)| {
+        .filter_map(|filter| {
             let center = graph_point(
                 bounds,
-                frequency_fraction(filter.frequency.into_inner(), max_frequency),
-                gain_fraction(filter.gain.into_inner()),
+                frequency_fraction(filter.parameters.frequency.into_inner(), max_frequency),
+                gain_fraction(filter.parameters.gain.into_inner()),
             );
             let x = (position.x - center.x).as_f32();
             let y = (position.y - center.y).as_f32();
             let distance_squared = x.mul_add(x, y * y);
             (distance_squared <= EQ_POINT_HIT_RADIUS_PX.powi(2))
-                .then_some((index, distance_squared))
+                .then_some((filter.id, distance_squared))
         })
         .min_by(|(_, left), (_, right)| left.total_cmp(right))
-        .map(|(index, _)| index)
+        .map(|(id, _)| id)
 }
 
 fn meter_fraction(amplitude: f32) -> f32 {
@@ -678,6 +706,106 @@ fn frame_graph(frame_times: &VecDeque<f32>) -> Div {
         )
 }
 
+fn gain_control(
+    index: usize,
+    target: FilterId,
+    name: String,
+    gain: f64,
+    cx: &mut Context<TunicView>,
+) -> Div {
+    let fraction = ((gain - CONTROL_MIN_GAIN_DB) / (CONTROL_MAX_GAIN_DB - CONTROL_MIN_GAIN_DB))
+        .clamp(0.0, 1.0) as f32;
+    let bounds = Rc::new(Cell::new(None));
+    let prepaint_bounds = Rc::clone(&bounds);
+    let mouse_down_bounds = Rc::clone(&bounds);
+    let mouse_move_bounds = Rc::clone(&bounds);
+
+    div()
+        .flex()
+        .items_center()
+        .gap_3()
+        .child(div().w(px(205.0)).text_sm().child(name))
+        .child(
+            div()
+                .id(("gain-control", index))
+                .relative()
+                .h_5()
+                .flex_1()
+                .cursor_pointer()
+                .child(
+                    canvas(
+                        move |bounds, _, _| prepaint_bounds.set(Some(bounds)),
+                        move |bounds, _, window, _| {
+                            let track_y = bounds.origin.y + bounds.size.height / 2.0;
+                            let center_x = bounds.origin.x + bounds.size.width / 2.0;
+                            let thumb_x = bounds.origin.x + bounds.size.width * fraction;
+                            window.paint_quad(fill(
+                                Bounds {
+                                    origin: point(bounds.origin.x, track_y - px(2.0)),
+                                    size: size(bounds.size.width, px(4.0)),
+                                },
+                                rgb(0x484b52),
+                            ));
+                            window.paint_quad(fill(
+                                Bounds {
+                                    origin: point(center_x.min(thumb_x), track_y - px(2.0)),
+                                    size: size((thumb_x - center_x).abs(), px(4.0)),
+                                },
+                                rgb(0x69b578),
+                            ));
+                            window.paint_quad(fill(
+                                Bounds {
+                                    origin: point(thumb_x - px(4.0), track_y - px(8.0)),
+                                    size: size(px(8.0), px(16.0)),
+                                },
+                                rgb(0xf2f2f2),
+                            ));
+                        },
+                    )
+                    .size_full(),
+                )
+                .on_mouse_down(
+                    MouseButton::Left,
+                    cx.listener(move |this, event: &MouseDownEvent, _, cx| {
+                        let Some(bounds) = mouse_down_bounds.get() else {
+                            return;
+                        };
+                        this.dragging_control = Some(target);
+                        this.model.set_control_gain(
+                            target,
+                            gain_at_slider_position(bounds, event.position),
+                        );
+                        cx.notify();
+                    }),
+                )
+                .on_mouse_move(cx.listener(move |this, event: &MouseMoveEvent, _, cx| {
+                    if this.dragging_control != Some(target) || !event.dragging() {
+                        return;
+                    }
+                    let Some(bounds) = mouse_move_bounds.get() else {
+                        return;
+                    };
+                    this.model
+                        .set_control_gain(target, gain_at_slider_position(bounds, event.position));
+                    cx.notify();
+                }))
+                .on_mouse_up(
+                    MouseButton::Left,
+                    cx.listener(|this, _, _, _| this.dragging_control = None),
+                )
+                .on_mouse_up_out(
+                    MouseButton::Left,
+                    cx.listener(|this, _, _, _| this.dragging_control = None),
+                ),
+        )
+        .child(div().w(px(64.0)).text_sm().child(format!("{gain:+.1} dB")))
+}
+
+fn gain_at_slider_position(bounds: Bounds<Pixels>, position: Point<Pixels>) -> f64 {
+    let fraction = ((position.x - bounds.origin.x) / bounds.size.width).clamp(0.0, 1.0);
+    CONTROL_MIN_GAIN_DB + f64::from(fraction) * (CONTROL_MAX_GAIN_DB - CONTROL_MIN_GAIN_DB)
+}
+
 fn button(id: impl Into<gpui::ElementId>, label: impl Into<gpui::SharedString>) -> Stateful<Div> {
     div()
         .id(id)
@@ -694,7 +822,7 @@ struct Model {
     device: DeviceId,
     device_name: String,
     controller: Option<Controller>,
-    draft_chain: Option<Chain>,
+    draft: Option<Profile>,
     presets: Vec<PresetSummary>,
     audio_error: Option<String>,
     action_error: Option<String>,
@@ -715,7 +843,7 @@ impl Model {
             device: DeviceId::try_new(SYSTEM_OUTPUT).expect("static device ID is valid"),
             device_name,
             controller,
-            draft_chain: None,
+            draft: None,
             presets,
             audio_error,
             action_error: None,
@@ -726,7 +854,7 @@ impl Model {
         self.backend
             .state()
             .selected_profile(&self.device)
-            .map_or_else(|| "None".into(), |profile| profile.name.to_string())
+            .map_or_else(|| "None".into(), |profile| profile.name().to_string())
     }
 
     fn sample_rate(&self) -> SampleRateHz {
@@ -760,7 +888,7 @@ impl Model {
     }
 
     fn select(&mut self, id: ProfileId, name: ProfileName, source: ProfileSource) {
-        self.draft_chain = None;
+        self.draft = None;
         let result = if self.backend.state().profile(&id).is_none() {
             self.backend.execute(Command::CreateProfile {
                 id: id.clone(),
@@ -783,7 +911,7 @@ impl Model {
     }
 
     fn clear_selection(&mut self) {
-        self.draft_chain = None;
+        self.draft = None;
         self.action_error = self
             .backend
             .execute(Command::ClearProfile(self.device.clone()))
@@ -793,58 +921,104 @@ impl Model {
     }
 
     fn active_chain(&self) -> Chain {
-        self.draft_chain.clone().unwrap_or_else(|| {
-            self.backend
-                .state()
-                .selected_profile(&self.device)
-                .map_or_else(Chain::default, |profile| profile.chain.clone())
-        })
+        self.backend
+            .state()
+            .selected_profile(&self.device)
+            .map_or_else(Chain::default, |profile| {
+                self.draft.as_ref().unwrap_or(profile).effective_chain()
+            })
+    }
+
+    fn base_chain(&self) -> Chain {
+        let Some(profile) = self
+            .draft
+            .as_ref()
+            .or_else(|| self.backend.state().selected_profile(&self.device))
+        else {
+            return Chain::default();
+        };
+        profile.base().clone()
+    }
+
+    fn controls(&self) -> Vec<(FilterId, String, f64)> {
+        self.draft
+            .as_ref()
+            .or_else(|| self.backend.state().selected_profile(&self.device))
+            .map_or_else(Vec::new, |profile| {
+                profile
+                    .controls()
+                    .iter()
+                    .map(|control| {
+                        (
+                            control.target(),
+                            control.name().to_string(),
+                            control.gain_adjustment().into_inner(),
+                        )
+                    })
+                    .collect()
+            })
     }
 
     fn drag_filter(
         &mut self,
-        filter_index: usize,
+        filter_id: FilterId,
         bounds: Bounds<Pixels>,
         position: Point<Pixels>,
     ) {
-        if self
-            .backend
-            .state()
-            .selected_profile(&self.device)
-            .is_none()
-        {
-            return;
-        }
-        let (x, y) = graph_fractions(bounds, position);
-        let max_frequency = EQ_MAX_FREQUENCY_HZ.min(self.sample_rate().into_inner() * 0.499);
-        let mut chain = self.active_chain();
-        let Some(filter) = chain.equalizer.filters.get_mut(filter_index) else {
+        let Some(profile) = self.backend.state().selected_profile(&self.device).cloned() else {
             return;
         };
-        filter.frequency = FrequencyHz::try_new(frequency_at_fraction(x, max_frequency))
+        let (x, y) = graph_fractions(bounds, position);
+        let max_frequency = EQ_MAX_FREQUENCY_HZ.min(self.sample_rate().into_inner() * 0.499);
+        let mut draft = self.draft.clone().unwrap_or(profile);
+        let frequency = FrequencyHz::try_new(frequency_at_fraction(x, max_frequency))
             .expect("dragged frequency stays positive");
-        filter.gain = GainDb::try_new(gain_at_fraction(y)).expect("dragged gain stays finite");
+        let gain = GainDb::try_new(gain_at_fraction(y)).expect("dragged gain stays finite");
+        let mut base = draft.base().clone();
+        let Some(filter) = base
+            .equalizer
+            .filters
+            .iter_mut()
+            .find(|filter| filter.id == filter_id)
+        else {
+            return;
+        };
+        filter.parameters.frequency = frequency;
+        filter.parameters.gain = gain;
+        if let Err(error) = draft.replace_base(base) {
+            self.action_error = Some(format!("{error:?}"));
+            return;
+        }
 
-        self.action_error = self.publish_chain(chain.clone());
+        self.action_error = self.publish_chain(draft.effective_chain());
         if self.action_error.is_none() {
-            self.draft_chain = Some(chain);
+            self.draft = Some(draft);
+        }
+    }
+
+    fn set_control_gain(&mut self, target: FilterId, gain: f64) {
+        let Some(profile) = self.backend.state().selected_profile(&self.device).cloned() else {
+            return;
+        };
+        let mut draft = self.draft.clone().unwrap_or(profile);
+        let gain = GainDb::try_new(gain).expect("slider gain is finite");
+        if let Err(error) = draft.adjust_filter_gain(target, gain) {
+            self.action_error = Some(format!("{error:?}"));
+            return;
+        }
+        self.action_error = self.publish_chain(draft.effective_chain());
+        if self.action_error.is_none() {
+            self.draft = Some(draft);
         }
     }
 
     fn save_draft(&mut self) {
-        let Some(chain) = self.draft_chain.clone() else {
+        let Some(draft) = self.draft.clone() else {
             return;
         };
-        let Some(profile) = self.backend.state().selected_profile(&self.device).cloned() else {
-            return;
-        };
-        match self.backend.execute(Command::UpdateProfile {
-            profile: profile.id,
-            chain,
-            expected_revision: profile.revision,
-        }) {
+        match self.backend.execute(Command::SaveProfile(draft)) {
             Ok(_) => {
-                self.draft_chain = None;
+                self.draft = None;
                 self.action_error = None;
             }
             Err(error) => self.action_error = Some(format!("{error:?}")),
@@ -852,17 +1026,17 @@ impl Model {
     }
 
     fn reset_draft(&mut self) {
-        if self.draft_chain.is_none() {
+        if self.draft.is_none() {
             return;
         }
         let saved = self
             .backend
             .state()
             .selected_profile(&self.device)
-            .map_or_else(Chain::default, |profile| profile.chain.clone());
+            .map_or_else(Chain::default, |profile| profile.effective_chain());
         self.action_error = self.publish_chain(saved);
         if self.action_error.is_none() {
-            self.draft_chain = None;
+            self.draft = None;
         }
     }
 
@@ -884,8 +1058,8 @@ mod tests {
 
     use super::{
         Model, animate_meter, animate_spectrum_point, equalizer_response, frequency_at_fraction,
-        frequency_fraction, gain_at_fraction, gain_fraction, graph_point, highest_peak,
-        individual_equalizer_responses, meter_fraction, spectrum_fraction,
+        frequency_fraction, gain_at_fraction, gain_at_slider_position, gain_fraction, graph_point,
+        highest_peak, individual_equalizer_responses, meter_fraction, spectrum_fraction,
     };
     use gpui::{Bounds, point, px, size};
     use tunic_core::{
@@ -997,6 +1171,30 @@ mod tests {
     }
 
     #[test]
+    fn gain_slider_is_centered_on_zero_and_clamped_to_twelve_decibels() {
+        let bounds = Bounds {
+            origin: point(px(10.0), px(20.0)),
+            size: size(px(200.0), px(20.0)),
+        };
+        assert_eq!(
+            gain_at_slider_position(bounds, point(px(10.0), px(20.0))),
+            -12.0
+        );
+        assert_eq!(
+            gain_at_slider_position(bounds, point(px(110.0), px(20.0))),
+            0.0
+        );
+        assert_eq!(
+            gain_at_slider_position(bounds, point(px(210.0), px(20.0))),
+            12.0
+        );
+        assert_eq!(
+            gain_at_slider_position(bounds, point(px(500.0), px(20.0))),
+            12.0
+        );
+    }
+
+    #[test]
     fn incompatible_equalizer_response_is_reported_instead_of_panicking() {
         let mut model = Model::new("System Output".into(), None, None);
         model.select_preset(1);
@@ -1028,7 +1226,7 @@ mod tests {
     }
 
     #[test]
-    fn dragged_filters_are_live_drafts_until_saved_or_reset() {
+    fn gain_controls_are_live_drafts_until_saved_or_reset() {
         let mut model = Model::new("System Output".into(), None, None);
         model.select_preset(0);
         let saved = model
@@ -1037,16 +1235,11 @@ mod tests {
             .selected_profile(&model.device)
             .unwrap()
             .clone();
-        let bounds = Bounds {
-            origin: point(px(10.0), px(20.0)),
-            size: size(px(1_000.0), px(200.0)),
-        };
-        let dragged_position = graph_point(bounds, 0.75, 0.25);
-
-        model.drag_filter(0, bounds, dragged_position);
+        let filter_id = saved.controls()[0].target();
+        model.set_control_gain(filter_id, 4.0);
         let draft = model.active_chain();
-        assert_eq!(draft.equalizer.filters[0].gain.into_inner(), 10.0);
-        assert_ne!(draft, saved.chain);
+        assert_eq!(draft.equalizer.filters[2].parameters.gain.into_inner(), 9.5);
+        assert_ne!(draft, saved.effective_chain());
         assert_eq!(
             model
                 .backend
@@ -1057,9 +1250,9 @@ mod tests {
         );
 
         model.reset_draft();
-        assert_eq!(model.active_chain(), saved.chain);
+        assert_eq!(model.active_chain(), saved.effective_chain());
 
-        model.drag_filter(0, bounds, dragged_position);
+        model.set_control_gain(filter_id, 4.0);
         let draft = model.active_chain();
         model.save_draft();
         let persisted = model
@@ -1067,9 +1260,56 @@ mod tests {
             .state()
             .selected_profile(&model.device)
             .unwrap();
-        assert_eq!(persisted.chain, draft);
-        assert_eq!(persisted.revision.0, saved.revision.0 + 1);
-        assert!(model.draft_chain.is_none());
+        assert_eq!(persisted.effective_chain(), draft);
+        assert_eq!(persisted.base(), saved.base());
+        assert_eq!(
+            persisted
+                .control(filter_id)
+                .unwrap()
+                .gain_adjustment()
+                .into_inner(),
+            4.0
+        );
+        assert_eq!(persisted.revision().0, saved.revision().0 + 1);
+        assert!(model.draft.is_none());
+    }
+
+    #[test]
+    fn graph_edits_an_exposed_filter_base_without_changing_its_adjustment() {
+        let mut model = Model::new("System Output".into(), None, None);
+        model.select_preset(0);
+        let saved = model
+            .backend
+            .state()
+            .selected_profile(&model.device)
+            .unwrap()
+            .clone();
+        let filter_id = saved.controls()[0].target();
+        let bounds = Bounds {
+            origin: point(px(10.0), px(20.0)),
+            size: size(px(1_000.0), px(200.0)),
+        };
+
+        model.drag_filter(filter_id, bounds, graph_point(bounds, 0.75, 0.25));
+        model.save_draft();
+
+        let persisted = model
+            .backend
+            .state()
+            .selected_profile(&model.device)
+            .unwrap();
+        assert_eq!(
+            persisted.base().equalizer.filters[2]
+                .parameters
+                .gain
+                .into_inner(),
+            10.0
+        );
+        assert_ne!(persisted.base(), saved.base());
+        assert_eq!(
+            persisted.control(filter_id).unwrap().gain_adjustment(),
+            GainDb::default()
+        );
     }
 
     #[test]
@@ -1078,8 +1318,8 @@ mod tests {
         model.select_preset(1);
         let mut draft = model.active_chain();
         for filter in &mut draft.equalizer.filters {
-            if filter.frequency.into_inner() >= 8_000.0 {
-                filter.frequency = FrequencyHz::try_new(4_000.0).unwrap();
+            if filter.parameters.frequency.into_inner() >= 8_000.0 {
+                filter.parameters.frequency = FrequencyHz::try_new(4_000.0).unwrap();
             }
         }
         let (_, controller) = Processor::new(
@@ -1092,7 +1332,14 @@ mod tests {
         )
         .unwrap();
         model.controller = Some(controller);
-        model.draft_chain = Some(draft.clone());
+        let mut profile = model
+            .backend
+            .state()
+            .selected_profile(&model.device)
+            .unwrap()
+            .clone();
+        profile.replace_base(draft.clone()).unwrap();
+        model.draft = Some(profile);
 
         model.reset_draft();
 
@@ -1105,7 +1352,7 @@ mod tests {
         let mut model = Model::new("System Output".into(), None, None);
         model.select_preset(0);
         let mut draft = model.active_chain();
-        draft.equalizer.filters[0].gain = GainDb::try_new(8.0).unwrap();
+        draft.equalizer.filters[0].parameters.gain = GainDb::try_new(8.0).unwrap();
         let format = || AudioFormat {
             sample_rate: SampleRateHz::try_new(48_000.0).unwrap(),
             maximum_frame_count: NonZeroUsize::new(512).unwrap(),
@@ -1113,7 +1360,14 @@ mod tests {
         let (mut processor, controller) = Processor::new(format(), draft.clone(), false).unwrap();
         let (mut reference, _) = Processor::new(format(), draft.clone(), false).unwrap();
         model.controller = Some(controller);
-        model.draft_chain = Some(draft);
+        let mut profile = model
+            .backend
+            .state()
+            .selected_profile(&model.device)
+            .unwrap()
+            .clone();
+        profile.replace_base(draft).unwrap();
+        model.draft = Some(profile);
 
         let mut warmup = vec![0.25_f32; 512 * 2];
         let mut reference_warmup = warmup.clone();

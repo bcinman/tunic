@@ -3,8 +3,7 @@
 //! Commands describe requested state changes without performing persistence,
 //! device I/O, or real-time processor control.
 
-use super::{DeviceId, PresetId, ProfileId, ProfileName, ProfileRevision};
-use crate::Chain;
+use super::{DeviceId, PresetId, Profile, ProfileId, ProfileName};
 
 /// An intended change to Tunic's product state.
 #[derive(Clone, Debug, PartialEq)]
@@ -24,11 +23,7 @@ pub enum Command {
         profile: ProfileId,
     },
     ClearProfile(DeviceId),
-    UpdateProfile {
-        profile: ProfileId,
-        chain: Chain,
-        expected_revision: ProfileRevision,
-    },
+    SaveProfile(Profile),
 }
 
 /// Initial contents for a newly created profile.

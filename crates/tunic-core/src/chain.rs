@@ -23,6 +23,12 @@ pub struct Equalizer {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Filter {
     pub id: FilterId,
+    pub parameters: FilterParameters,
+}
+
+/// The signal-processing parameters of a [`Filter`].
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct FilterParameters {
     pub kind: FilterKind,
     pub frequency: FrequencyHz,
     pub gain: GainDb,
