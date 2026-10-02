@@ -4,7 +4,7 @@ use std::{cell::Cell, collections::VecDeque, rc::Rc, time::Instant};
 
 use gpui::{
     Bounds, Context, Div, Entity, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent,
-    PathBuilder, Pixels, Point, Render, Rgba, Stateful, Window, canvas, div, fill, point,
+    PathBuilder, Pixels, Point, Render, Rgba, Stateful, Window, canvas, div, fill, oklcha, point,
     prelude::*, px, relative, rgb, size,
 };
 use tunic_core::{
@@ -176,7 +176,7 @@ impl Render for TunicView {
             .flex_col()
             .gap_3()
             .p_6()
-            .bg(rgb(0x1f2023))
+            .bg(oklcha(0.21, 0.0, 0.0, 0.7))
             .text_color(rgb(0xf2f2f2))
             .child(div().pl(px(68.0)).text_xl().child("Tunic"))
             .child(format!("Device: {}", self.model.device_name))

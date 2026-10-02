@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use gpui::{
     App, AppContext, Bounds, Context, Entity, IntoElement, Render, Task, TitlebarOptions, Window,
-    WindowBounds, WindowOptions, point, px, size,
+    WindowBackgroundAppearance, WindowBounds, WindowOptions, point, px, size,
 };
 use tunic_core::Chain;
 use tunic_ui::TunicView;
@@ -150,6 +150,7 @@ fn main() {
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
+                window_background: WindowBackgroundAppearance::Blurred,
                 titlebar: Some(TitlebarOptions {
                     appears_transparent: true,
                     traffic_light_position: Some(point(px(20.0), px(20.0))),
@@ -159,6 +160,7 @@ fn main() {
             },
             |_, cx| {
                 window::set_max_width(MAX_WINDOW_WIDTH);
+                window::configure_backdrop_blur();
                 cx.new(|cx| Root::new(Apple::default(), cx))
             },
         )
