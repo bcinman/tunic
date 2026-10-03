@@ -15,7 +15,11 @@ run = "cargo test --workspace --all-targets --all-features"
 
 [tasks.check]
 description = "Run all repository checks"
-depends = ["fmt", "lint", "test"]
+depends = ["fmt", "lint", "test", "check-native"]
+
+[tasks.check-native]
+description = "Build the native Swift menu-bar app"
+run = "swift build --package-path apps/tunic-native"
 
 [tasks.build-app]
 description = "Build the GPUI application"
@@ -24,3 +28,7 @@ run = "cargo build -p tunic-app"
 [tasks.run-app]
 description = "Build and launch the GPUI application"
 run = "cargo run -p tunic-app"
+
+[tasks.run-native]
+description = "Build and launch the native Swift menu-bar app"
+run = "swift run --package-path apps/tunic-native Tunic"

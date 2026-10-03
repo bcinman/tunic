@@ -67,6 +67,10 @@ processing.
 output through `tunic-core`; selecting a bundled or flat profile publishes that
 chain to the live processor.
 
+`apps/tunic-native` is a separate SwiftUI menu-bar prototype. It currently owns
+only a static status item and application lifecycle, and does not depend on or
+link to the Rust workspace.
+
 The desktop application and future platform integrations own all side effects:
 
 - UI and application lifecycle;

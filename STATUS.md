@@ -44,6 +44,8 @@ This file is the source of truth for implemented product capabilities.
   and explicit save/reset. The graph edits the base EQ while centered named-control
   sliders apply ±12 dB gain adjustments.
 - macOS GPUI development through `mise run build-app` and `mise run run-app`.
+- An independent native SwiftUI menu-bar app shell with no Rust integration,
+  runnable through `mise run run-native`.
 - Automated formatting, Clippy, and workspace tests through `mise run check`.
 
 ## Not In Yet
@@ -51,6 +53,8 @@ This file is the source of truth for implemented product capabilities.
 - Product-complete UI, explicit permission UX, recovery beyond retrying the
   current default output, bypass, and full equalizer controls; GPUI builds and
   platform integrations for Linux and Windows.
+- Native menu-bar UI beyond the empty app shell, and any bridge from that app to
+  the Rust core.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
   core's `Store` contract.
 - Bulk preset ingestion, AutoEq data, and catalog updates independent of app releases.
