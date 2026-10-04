@@ -1,14 +1,15 @@
 import AppKit
 import SwiftUI
+import TunicUI
 
 @main
 struct TunicApp: App {
     var body: some Scene {
         MenuBarExtra("Tunic", systemImage: "slider.horizontal.3") {
-            Button("Quit Tunic") {
+            ContentView {
                 NSApplication.shared.terminate(nil)
             }
-            .keyboardShortcut("q")
         }
+        .menuBarExtraStyle(.window)
     }
 }

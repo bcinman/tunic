@@ -5,12 +5,16 @@ import PackageDescription
 let package = Package(
     name: "TunicNative",
     platforms: [
-        .macOS(.v14),
+        .macOS(.v26),
     ],
     products: [
         .executable(name: "Tunic", targets: ["Tunic"]),
     ],
     targets: [
-        .executableTarget(name: "Tunic"),
+        .executableTarget(
+            name: "Tunic",
+            dependencies: ["TunicUI"]
+        ),
+        .target(name: "TunicUI"),
     ]
 )

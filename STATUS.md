@@ -53,8 +53,9 @@ This file is the source of truth for implemented product capabilities.
 - Product-complete UI, explicit permission UX, recovery beyond retrying the
   current default output, bypass, and full equalizer controls; GPUI builds and
   platform integrations for Linux and Windows.
-- Native menu-bar UI beyond the empty app shell, and any bridge from that app to
-  the Rust core.
+- Production-ready native menu-bar UI and any bridge from that app to the Rust
+  core. The shell currently has a previewable SwiftUI popup with placeholder
+  device and equalizer controls.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
   core's `Store` contract.
 - Bulk preset ingestion, AutoEq data, and catalog updates independent of app releases.
