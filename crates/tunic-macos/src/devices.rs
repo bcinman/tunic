@@ -20,13 +20,13 @@ use crate::{Error, address, check_status};
 type ListenerBlock = RcBlock<dyn Fn(u32, NonNull<AudioObjectPropertyAddress>)>;
 
 /// Owns a listener for changes to the system's default output.
-pub struct DefaultOutputWatcher {
+pub(super) struct DefaultOutputWatcher {
     property: AudioObjectPropertyAddress,
     block: ListenerBlock,
 }
 
 impl DefaultOutputWatcher {
-    pub fn start(notify: Arc<dyn Fn() + Send + Sync + 'static>) -> Result<Self, Error> {
+    pub(super) fn start(notify: Arc<dyn Fn() + Send + Sync + 'static>) -> Result<Self, Error> {
         let property = address(
             kAudioHardwarePropertyDefaultOutputDevice,
             kAudioObjectPropertyScopeGlobal,

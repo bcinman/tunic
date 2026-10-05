@@ -1,9 +1,8 @@
 # Project Status
 
-Tunic is rebuilding around a portable Rust core and a shared GPUI desktop
-interface. The previous engine, DSP, CLI, and Core Audio prototype crates were
-removed rather than carried into the new design; the new GPUI spike calls the
-simplified core directly.
+Tunic has a portable Rust core with GPUI and native SwiftUI frontends. GPUI calls
+Session directly; SwiftUI uses the BoltFFI application boundary in `tunic-ffi`.
+Both frontends use the same macOS audio adapter and Rust DSP.
 
 This file is the source of truth for implemented product capabilities.
 
@@ -42,9 +41,9 @@ This file is the source of truth for implemented product capabilities.
   tap, private aggregate device, callback-owned core `Processor`, native-buffer
   normalization, and ordered teardown. Profile clicks publish live chain changes
   through the core `Controller`.
-- A Session-owned `Platform` contract with an app-provided Apple implementation
+- A Session-owned `Platform` contract with a shared `tunic-macos::MacosPlatform`
   that observes Core Audio default-output notifications and rebuilds the complete
-  route with the current draft. The app schedules refresh commands and retries.
+  route with the current draft. Each host schedules refresh commands and retries.
 - A polished 640-pixel desktop shell with native traffic lights, current device
   and profile context, and a low-opacity real-time spectrum behind the equalizer.
 - An editable logarithmic equalizer graph with the exact digital filter response,
@@ -52,25 +51,35 @@ This file is the source of truth for implemented product capabilities.
   and explicit save/reset. The graph edits the base EQ while centered named-control
   sliders apply ±12 dB gain adjustments.
 - macOS GPUI development through `mise run build-app` and `mise run run-app`.
-- An independent native SwiftUI menu-bar app shell with no Rust integration,
-  runnable through `mise run run-native`.
-- Automated formatting, Clippy, and workspace tests through `mise run check`.
+- A `tunic-ffi` crate exporting a thread-safe engine handle, validated commands,
+  owned snapshots, state invalidations, batched EQ response queries, and
+  demand-driven peak/RMS/spectrum telemetry. One Rust worker owns Session and
+  native resources, retries route failures, and tears down on explicit shutdown
+  or handle drop. No audio buffers or real-time callbacks cross into Swift.
+- A SwiftUI menu-bar app linked to generated BoltFFI bindings, with real device
+  status, preset selection, named gain controls, save/reset, response graph, and
+  live RMS readings. Closing the popup stops telemetry demand, not processing.
+  Run it with `mise run run-native`.
+- Reproducible macOS arm64 XCFramework/Swift package generation under `target/`
+  through `mise run build-ffi`, with matching pinned BoltFFI CLI/library versions.
+- Automated formatting, Clippy, Rust tests, binding generation, and Swift
+  integration tests through `mise run check`.
 
 ## Not In Yet
 
 - Product-complete UI, explicit permission UX, recovery beyond retrying the
   current default output, bypass, and full equalizer controls; GPUI builds and
   platform integrations for Linux and Windows.
-- Production-ready native menu-bar UI and any bridge from that app to the Rust
-  core. The shell currently has a previewable SwiftUI popup with placeholder
-  device and equalizer controls.
+- Production-ready native menu-bar UI, editable graph gestures, and animated
+  spectrum presentation in SwiftUI. Non-Swift bindings and non-macOS audio
+  adapters are not yet integrated or verified.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
   core's `Persistence` contract; the app currently uses `MemoryPersistence`.
 - Bulk preset ingestion, AutoEq data, and catalog updates independent of app releases.
 - Filter types other than peaking, low-shelf, and high-shelf EQ.
 - Profile import/export.
 - Profile rename, delete, and copy workflows; independent concurrent editors.
-- Packaging, signing, release automation, or end-user installation.
+- Application packaging, signing, release automation, or end-user installation.
 
 ## Current Non-Goals
 
@@ -80,7 +89,7 @@ This file is the source of truth for implemented product capabilities.
 
 ## Verification
 
-Run the complete Rust suite with:
+Run the Rust and Swift checks with:
 
 ```console
 mise run check

@@ -1,0 +1,16 @@
+[package]
+name = "tunic-ffi"
+crate = "tunic-ffi"
+
+[targets.apple]
+output = "target/tunic-ffi/apple"
+include_macos = true
+ios_architectures = []
+simulator_architectures = []
+macos_architectures = ["arm64"]
+
+[targets.apple.swift]
+module_name = "TunicEngine"
+
+[targets.apple.spm]
+layout = "ffi-only"

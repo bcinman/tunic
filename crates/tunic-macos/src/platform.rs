@@ -1,13 +1,14 @@
+use crate::{AudioSession, DefaultOutputWatcher};
 use tunic_core::{Chain, ChangeHandler, Connection, Platform};
-use tunic_macos::{AudioSession, DefaultOutputWatcher};
 
+/// Core Audio implementation of the portable session's platform contract.
 #[derive(Default)]
-pub struct Apple {
+pub struct MacosPlatform {
     session: Option<AudioSession>,
     watcher: Option<DefaultOutputWatcher>,
 }
 
-impl Platform for Apple {
+impl Platform for MacosPlatform {
     fn watch_default_output(&mut self, notify: ChangeHandler) -> Result<(), String> {
         self.watcher = Some(DefaultOutputWatcher::start(notify).map_err(|e| e.to_string())?);
         Ok(())

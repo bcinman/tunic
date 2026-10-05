@@ -2,6 +2,7 @@
 members = [
     "crates/tunic-app",
     "crates/tunic-core",
+    "crates/tunic-ffi",
     "crates/tunic-macos",
     "crates/tunic-presets",
     "crates/tunic-ui",

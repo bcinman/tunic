@@ -1,4 +1,3 @@
-mod apple;
 mod window;
 
 use std::future::poll_fn;
@@ -14,7 +13,7 @@ use tunic_core::{ChangeHandler, Command, MemoryPersistence, Platform, Session};
 use tunic_presets::BundledCatalog;
 use tunic_ui::TunicView;
 
-use crate::apple::Apple;
+use tunic_macos::MacosPlatform;
 
 const AUDIO_RETRY_INTERVAL: Duration = Duration::from_secs(1);
 const MAX_WINDOW_WIDTH: f64 = 640.0;
@@ -133,7 +132,7 @@ fn main() {
             |_, cx| {
                 window::set_max_width(MAX_WINDOW_WIDTH);
                 window::configure_backdrop_blur();
-                cx.new(|cx| Root::new(Apple::default(), cx))
+                cx.new(|cx| Root::new(MacosPlatform::default(), cx))
             },
         )
         .expect("failed to open Tunic window");

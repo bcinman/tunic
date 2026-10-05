@@ -69,17 +69,45 @@ audio processing.
 - Owns the process tap, private aggregate device, IOProc, and ordered teardown.
 - Normalizes native buffers to interleaved stereo for a callback-owned core `Processor`.
 - Returns a core `Controller` for non-real-time chain publication.
+- Implements the core `Platform` contract as `MacosPlatform`, shared by both hosts.
+- Exposes only `MacosPlatform`; route sessions, watchers, and native errors are private.
 - Contains no profile, persistence, or UI policy.
+
+## `tunic-ffi`
+
+**Responsibility:** Foreign-language application composition and binding conversion.
+
+- Wraps one Session with a thread-safe BoltFFI `Engine` handle. A standard-library
+  channel serializes commands on a Rust worker; Session and native resources are
+  constructed, used, and destroyed on that worker without requiring `Send`.
+- Composes `MemoryPersistence`, `BundledCatalog`, and (on macOS) `MacosPlatform`.
+  Offline construction supports tests and previews without opening an audio route.
+- Validates foreign values into core's branded types and exposes owned snapshots.
+  `enqueue` accepts commands without waiting for execution. Validation/enqueue
+  errors throw immediately; execution errors appear in the latest snapshot and
+  can be superseded by a later successful command before observation.
+- Exposes independent invalidation streams. Consumers reread the latest snapshot
+  rather than treating notifications as a history of state changes. Rust buffers
+  one invalidation per subscriber; BoltFFI's Swift AsyncStream is unbounded, so
+  consumers should keep draining it (the native model does, even with the popup closed).
+- Owns route notifications, delayed retries, and telemetry subscription replacement.
+  Frontends enable telemetry while visible and poll bounded frame batches.
+- Exposes core frequency-response calculations in batches; no DSP is rewritten in
+  Swift, and no real-time audio buffers cross the language boundary.
+- Generates a macOS arm64 Swift package/XCFramework through `mise run build-ffi`.
+  Neither core nor the platform crate depends on BoltFFI.
 
 ## Application
 
-`tunic-app` is the active application. Its current macOS build processes system
+`tunic-app` is the GPUI application. Its current macOS build processes system
 output through `tunic-core`; selecting a bundled or flat profile publishes that
 chain to the live processor.
 
-`apps/tunic-native` is a separate SwiftUI menu-bar prototype. It currently owns
-only a static status item and application lifecycle, and does not depend on or
-link to the Rust workspace.
+`apps/tunic-native` is a thin SwiftUI menu-bar frontend using `tunic-ffi`. An
+application-owned observable model projects Rust snapshots into views and owns
+the update task. Popup visibility controls telemetry demand, not engine lifetime.
+The application delegate shuts the engine down before quitting. Save remains
+in-memory in both applications; neither implements durable storage yet.
 
 The desktop host and platform integrations implement native side effects:
 
@@ -99,4 +127,9 @@ on GPUI or native platform APIs.
 │ tunic-app │────▶ tunic-presets ────┤
 └─────┬─────┘                       ▼
       └─────────▶ tunic-macos ──▶ tunic-core
+
+SwiftUI ──▶ tunic-ffi ──▶ tunic-presets ──▶ tunic-core
+                │                              ▲
+                ├──────────────────────────────┤
+                └─────▶ tunic-macos ────────────┘
 ```

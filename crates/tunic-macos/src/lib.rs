@@ -1,6 +1,7 @@
 //! Minimal macOS system-output route for Tunic's portable processor.
 
 mod devices;
+mod platform;
 mod route;
 
 use std::fmt;
@@ -10,13 +11,13 @@ use objc2_core_audio::{
 };
 use tunic_core::{Chain, Controller};
 
-use crate::devices::{default_output_id, device_name, sample_rate};
+use crate::devices::{DefaultOutputWatcher, default_output_id, device_name, sample_rate};
 use crate::route::Route;
 
-pub use crate::devices::DefaultOutputWatcher;
+pub use crate::platform::MacosPlatform;
 
 /// Owns the Core Audio resources that keep system-output processing active.
-pub struct AudioSession {
+struct AudioSession {
     output_id: AudioObjectID,
     device_name: String,
     _route: Route,
@@ -24,7 +25,7 @@ pub struct AudioSession {
 
 impl AudioSession {
     /// Starts processing the current default output with `initial_chain`.
-    pub fn start(initial_chain: Chain) -> Result<(Self, Controller), Error> {
+    fn start(initial_chain: Chain) -> Result<(Self, Controller), Error> {
         let output = default_output_id()?;
         let device_name = device_name(output)?;
         let (route, controller) = Route::start(output, sample_rate(output)?, initial_chain)?;
@@ -39,18 +40,18 @@ impl AudioSession {
     }
 
     #[must_use]
-    pub fn device_name(&self) -> &str {
+    fn device_name(&self) -> &str {
         &self.device_name
     }
 
     /// Whether this session still targets the system's default output.
-    pub fn is_current_default_output(&self) -> Result<bool, Error> {
+    fn is_current_default_output(&self) -> Result<bool, Error> {
         Ok(self.output_id == default_output_id()?)
     }
 }
 
 #[derive(Debug)]
-pub struct Error(String);
+struct Error(String);
 
 impl Error {
     pub(crate) fn new(message: impl Into<String>) -> Self {

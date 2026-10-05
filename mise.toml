@@ -1,5 +1,6 @@
 [tools]
 rust = "nightly-2026-09-20"
+"cargo:boltffi_cli" = "0.30.1"
 
 [tasks.fmt]
 description = "Check Rust formatting"
@@ -18,8 +19,13 @@ description = "Run all repository checks"
 depends = ["fmt", "lint", "test", "check-native"]
 
 [tasks.check-native]
-description = "Build the native Swift menu-bar app"
-run = "swift build --package-path apps/tunic-native"
+description = "Build and test the native Swift menu-bar app"
+depends = ["build-ffi"]
+run = "swift test --package-path apps/tunic-native"
+
+[tasks.build-ffi]
+description = "Generate and package the macOS Rust bindings"
+run = "boltffi pack apple"
 
 [tasks.build-app]
 description = "Build the GPUI application"
@@ -31,4 +37,5 @@ run = "cargo run -p tunic-app"
 
 [tasks.run-native]
 description = "Build and launch the native Swift menu-bar app"
+depends = ["build-ffi"]
 run = "swift run --package-path apps/tunic-native Tunic"
