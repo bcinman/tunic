@@ -1,4 +1,4 @@
-//! Backend-owned processing profiles and built-in profile presets.
+//! Session-owned processing profiles and built-in profile presets.
 //!
 //! A profile owns its editable base chain and named filter controls. The
 //! effective chain is derived before crossing into real-time processing.
@@ -39,15 +39,6 @@ pub struct ProfileName(String);
     derive(Clone, Debug, Display, Eq, Hash, PartialEq, TryFrom)
 )]
 pub struct FilterControlName(String);
-
-#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-pub struct ProfileRevision(pub u64);
-
-impl ProfileRevision {
-    pub(crate) fn next(self) -> Option<Self> {
-        self.0.checked_add(1).map(Self)
-    }
-}
 
 /// A user-facing control targeting one filter in a profile's base chain.
 #[derive(Clone, Debug, PartialEq)]
@@ -90,7 +81,6 @@ pub struct Profile {
     name: ProfileName,
     base: Chain,
     controls: Vec<FilterControl>,
-    revision: ProfileRevision,
     origin: Option<PresetOrigin>,
 }
 
@@ -107,7 +97,6 @@ impl Profile {
             name,
             base,
             controls,
-            revision: ProfileRevision::default(),
             origin,
         };
         profile.validate()?;
@@ -139,11 +128,6 @@ impl Profile {
         self.controls
             .iter()
             .find(|control| control.target == target)
-    }
-
-    #[must_use]
-    pub fn revision(&self) -> ProfileRevision {
-        self.revision
     }
 
     #[must_use]
@@ -269,14 +253,6 @@ impl Profile {
             .ok_or(ProfileError::ControlNotFound(target))?;
         self.controls.remove(position);
         Ok(())
-    }
-
-    pub(crate) fn rename(&mut self, name: ProfileName) {
-        self.name = name;
-    }
-
-    pub(crate) fn set_revision(&mut self, revision: ProfileRevision) {
-        self.revision = revision;
     }
 
     pub(crate) fn validate(&self) -> Result<(), ProfileError> {

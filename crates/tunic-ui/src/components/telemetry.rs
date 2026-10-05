@@ -1,7 +1,7 @@
 use gpui::{
     Context, IntoElement, PathBuilder, Render, Window, canvas, div, point, prelude::*, rgba,
 };
-use tunic_core::{Controller, SPECTRUM_POINT_COUNT, Spectrum, Telemetry};
+use tunic_core::{SPECTRUM_POINT_COUNT, Spectrum, Telemetry};
 
 const SPECTRUM_FLOOR_DB: f32 = -90.0;
 const SPECTRUM_DECAY_DB_PER_SECOND: f32 = 40.0;
@@ -13,15 +13,15 @@ pub(crate) struct SpectrumView {
 }
 
 impl SpectrumView {
-    pub(crate) fn new(controller: Option<&Controller>) -> Self {
+    pub(crate) fn new(telemetry: Option<Telemetry>) -> Self {
         Self {
-            telemetry: controller.map(Controller::subscribe_telemetry),
+            telemetry,
             spectrum: Spectrum::default(),
         }
     }
 
-    pub(crate) fn replace_controller(&mut self, controller: Option<&Controller>) {
-        self.telemetry = controller.map(Controller::subscribe_telemetry);
+    pub(crate) fn replace_telemetry(&mut self, telemetry: Option<Telemetry>) {
+        self.telemetry = telemetry;
         self.spectrum = Spectrum::default();
     }
 

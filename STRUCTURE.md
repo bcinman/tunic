@@ -4,13 +4,21 @@ Tunic separates portable product behavior from native platform integration.
 
 ## `tunic-core`
 
-**Responsibility:** Side-effect-free domain logic and real-time audio
-processing.
+**Responsibility:** Pure domain logic, application orchestration, and real-time
+audio processing.
 
-- Defines profiles, chains, filters, commands, and backend state.
-- Applies commands as pure state transitions.
-- Persists snapshots through an abstract `Store`; it does not implement durable
-  storage.
+- Defines profiles, chains, filters, Session commands, and application state.
+- Keeps profile rules and durable state transitions pure. Session owns saved
+  state, drafts, selection, errors, and desired versus controller-accepted chains.
+- Commands describe the active editing workflow, not arbitrary profile replacement.
+  Only Session's draft can be saved; there are no profile revision counters.
+  Source preset revisions remain provenance metadata.
+- Persists snapshots through `Persistence`; it does not implement durable storage.
+- Coordinates previews and route lifecycle through the controller and an abstract
+  `Platform`. Native notifications enter as `RefreshAudio` commands.
+- Retains a platform only after watcher installation succeeds. Route failures,
+  unresolved desired-chain publication failures, and action errors have separate
+  lifetimes, so an unrelated successful action cannot hide an audio failure.
 - Compiles chains into sample-rate-specific DSP.
 - Processes interleaved stereo without allocation or locking.
 - Publishes live chain and bypass changes through a callback-safe controller.
@@ -25,7 +33,7 @@ processing.
 - Shares strict Serde decoding between build-time validation and runtime lookup.
 - Generates static brand/model and preset-ID indexes at build time.
 - Decodes only the requested payload; browsing never parses JSON or scans files.
-- Implements the core's `PresetCatalog` interface. The backend copies selected
+- Implements the core's `PresetCatalog` interface. Session copies selected
   preset base chains, named controls, and attribution into independent profiles.
 - Depends on `tunic-core`; the core does not depend on the bundled catalog.
 
@@ -34,11 +42,11 @@ processing.
 **Responsibility:** Shared GPUI presentation.
 
 - Owns GPUI entities, rendering, click handlers, and transient presentation state.
-- Calls `tunic-core` and `tunic-presets` directly.
-- Keeps a cloned `Profile` as its transient draft. The graph edits its base chain;
-  named sliders edit relative filter-gain adjustments. The UI publishes only the
-  derived effective `Chain` through a core `Controller`.
-- Polls the controller's latest telemetry for lightweight level presentation.
+- Receives a Session from the app; sends commands and reads state through
+  read-only methods. It has no mutable access to Session internals.
+- Converts pointer coordinates to frequency/gain commands. Drafts, save/reset,
+  profile creation, catalog access, and controller publication belong to Session.
+- Animates telemetry supplied by Session; route changes replace the subscription.
 - Does not own platform devices, audio callbacks, or native resources.
 
 ## `tunic-app`
@@ -46,9 +54,11 @@ processing.
 **Responsibility:** GPUI application lifecycle and composition.
 
 - Selects GPUI's native platform backend and opens the application window.
-- Defines the small `Platform`/`Connection` contract used by the application.
-- Responds to native default-output notifications and replaces complete audio routes.
-- Passes each route's core `Controller` to the shared `tunic-ui` root view.
+- Constructs Session with `MemoryPersistence`, the bundled catalog, and Apple’s
+  implementation of the core `Platform` contract.
+- Schedules Session refresh commands after native notifications and retries when
+  Session reports a retryable failure.
+- Passes Session to the shared `tunic-ui` root view.
 - Is currently built and visually verified on macOS only.
 
 ## `tunic-macos`
@@ -71,22 +81,22 @@ chain to the live processor.
 only a static status item and application lifecycle, and does not depend on or
 link to the Rust workspace.
 
-The desktop application and future platform integrations own all side effects:
+The desktop host and platform integrations implement native side effects:
 
 - UI and application lifecycle;
 - device discovery and permissions;
 - native audio capture and playback wiring;
 - processor creation and callback ownership;
-- coordinating backend state with transient processor previews;
-- loading and saving state through a platform storage adapter.
+
+Session coordinates those interfaces with drafts and saved state, including
+loading and saving through an injected persistence adapter. It does not depend
+on GPUI or native platform APIs.
 
 ## Dependency Direction
 
 ```text
-                   ┌──────────┐────▶ tunic-presets
-┌───────────┐─────▶│ tunic-ui │
-│ tunic-app │      └────┬─────┘
-└─────┬─────┘           └─────────▶ tunic-core
-      │                              ▲
-      └────────▶ tunic-macos ────────┘
+┌───────────┐────▶ tunic-ui ─────────┐
+│ tunic-app │────▶ tunic-presets ────┤
+└─────┬─────┘                       ▼
+      └─────────▶ tunic-macos ──▶ tunic-core
 ```

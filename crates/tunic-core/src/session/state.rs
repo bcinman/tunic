@@ -1,4 +1,4 @@
-//! The backend's current read model.
+//! The session's current read model.
 //!
 //! State contains global reusable profiles and each device's optional profile
 //! selection; devices do not own profiles.
@@ -12,7 +12,7 @@ use nutype::nutype;
 )]
 pub struct DeviceId(String);
 
-/// The latest read model exposed by the backend.
+/// The latest read model exposed by the session.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct State {
     pub profiles: Vec<Profile>,

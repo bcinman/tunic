@@ -9,11 +9,18 @@ This file is the source of truth for implemented product capabilities.
 
 ## In
 
-- A side-effect-free `tunic-core` containing validated profile, chain, and
-  device-selection domain types.
-- Complete backend command handling with revision-checked profile updates,
-  atomic whole-state persistence through a `Store` contract, and rejection of
-  corrupt restored state.
+- A portable `tunic-core` containing pure profile, chain, and device-selection
+  rules, with a GPUI-independent `Session` application boundary.
+- Session commands own profile selection, draft editing, save/reset, audio
+  previews, and route refresh. Read-only accessors expose application state;
+  GPUI retains only gestures, presentation, and spectrum animation.
+- A narrow command API for flat/preset selection, filter/control edits,
+  save/reset, clear selection, and audio refresh. Session owns the only draft;
+  callers cannot submit replacement profiles, and profiles need no revision counters.
+- Atomic whole-state persistence through a `Persistence` contract and rejection
+  of corrupt restored state. Failed saves retain drafts. DSP publication errors
+  remain visible across no-op commands until resolved; refresh cannot bypass a
+  failed output-watcher installation.
 - An offline `tunic-presets` catalog with build-validated JSON, static brand/model
   indexes, and on-demand payload decoding. Initial oratory1990 presets cover
   Sennheiser HD650 and Sony MDR-7506.
@@ -35,8 +42,9 @@ This file is the source of truth for implemented product capabilities.
   tap, private aggregate device, callback-owned core `Processor`, native-buffer
   normalization, and ordered teardown. Profile clicks publish live chain changes
   through the core `Controller`.
-- An app-owned `Platform` contract with an Apple implementation that observes
-  Core Audio default-output notifications and immediately rebuilds the complete route.
+- A Session-owned `Platform` contract with an app-provided Apple implementation
+  that observes Core Audio default-output notifications and rebuilds the complete
+  route with the current draft. The app schedules refresh commands and retries.
 - A polished 640-pixel desktop shell with native traffic lights, current device
   and profile context, and a low-opacity real-time spectrum behind the equalizer.
 - An editable logarithmic equalizer graph with the exact digital filter response,
@@ -57,10 +65,11 @@ This file is the source of truth for implemented product capabilities.
   core. The shell currently has a previewable SwiftUI popup with placeholder
   device and equalizer controls.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
-  core's `Store` contract.
+  core's `Persistence` contract; the app currently uses `MemoryPersistence`.
 - Bulk preset ingestion, AutoEq data, and catalog updates independent of app releases.
 - Filter types other than peaking, low-shelf, and high-shelf EQ.
 - Profile import/export.
+- Profile rename, delete, and copy workflows; independent concurrent editors.
 - Packaging, signing, release automation, or end-user installation.
 
 ## Current Non-Goals

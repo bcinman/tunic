@@ -6,6 +6,8 @@ edition.workspace = true
 [dependencies]
 gpui.workspace = true
 tunic-core.workspace = true
+
+[dev-dependencies]
 tunic-presets.workspace = true
 
 [lints]

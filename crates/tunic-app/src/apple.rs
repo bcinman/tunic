@@ -1,7 +1,5 @@
-use tunic_core::Chain;
+use tunic_core::{Chain, ChangeHandler, Connection, Platform};
 use tunic_macos::{AudioSession, DefaultOutputWatcher};
-
-use crate::audio::{ChangeHandler, Connection, Platform};
 
 #[derive(Default)]
 pub struct Apple {
@@ -10,30 +8,29 @@ pub struct Apple {
 }
 
 impl Platform for Apple {
-    type Error = tunic_macos::Error;
-
-    fn watch_default_output(&mut self, notify: ChangeHandler) -> Result<(), Self::Error> {
-        self.watcher = Some(DefaultOutputWatcher::start(notify)?);
+    fn watch_default_output(&mut self, notify: ChangeHandler) -> Result<(), String> {
+        self.watcher = Some(DefaultOutputWatcher::start(notify).map_err(|e| e.to_string())?);
         Ok(())
     }
 
     fn refresh_default_output(
         &mut self,
         active_chain: &Chain,
-    ) -> Result<Option<Connection>, Self::Error> {
+    ) -> Result<Option<Connection>, String> {
         if let Some(session) = self.session.as_ref() {
             match session.is_current_default_output() {
                 Ok(true) => return Ok(None),
                 Ok(false) => {}
                 Err(error) => {
                     self.session = None;
-                    return Err(error);
+                    return Err(error.to_string());
                 }
             }
         }
 
         self.session = None;
-        let (session, controller) = AudioSession::start(active_chain.clone())?;
+        let (session, controller) =
+            AudioSession::start(active_chain.clone()).map_err(|e| e.to_string())?;
         let connection = Connection {
             device_name: session.device_name().to_owned(),
             controller,

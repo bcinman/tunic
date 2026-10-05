@@ -1,5 +1,4 @@
 mod apple;
-mod audio;
 mod window;
 
 use std::future::poll_fn;
@@ -11,42 +10,34 @@ use gpui::{
     App, AppContext, Bounds, Context, Entity, IntoElement, Render, Task, TitlebarOptions, Window,
     WindowBackgroundAppearance, WindowBounds, WindowOptions, point, px, size,
 };
-use tunic_core::Chain;
+use tunic_core::{ChangeHandler, Command, MemoryPersistence, Platform, Session};
+use tunic_presets::BundledCatalog;
 use tunic_ui::TunicView;
 
 use crate::apple::Apple;
-use crate::audio::{ChangeHandler, Connection, Platform};
 
 const AUDIO_RETRY_INTERVAL: Duration = Duration::from_secs(1);
-const UNAVAILABLE_DEVICE: &str = "System Output (audio unavailable)";
 const MAX_WINDOW_WIDTH: f64 = 640.0;
 
-struct Root<P: Platform> {
+struct Root {
     view: Entity<TunicView>,
-    platform: P,
     _event_task: Task<()>,
 }
 
-impl<P: Platform + 'static> Root<P> {
-    fn new(mut platform: P, cx: &mut Context<Self>) -> Self {
+impl Root {
+    fn new(platform: impl Platform + 'static, cx: &mut Context<Self>) -> Self {
         let changes = Arc::new(ChangeSignal::default());
         let notify: ChangeHandler = {
             let changes = Arc::clone(&changes);
             Arc::new(move || changes.notify())
         };
-        let (connection, retry_initial) = match platform.watch_default_output(notify) {
-            Ok(()) => {
-                let connection = platform.refresh_default_output(&Chain::default());
-                let retry = connection.is_err();
-                (connection, retry)
-            }
-            Err(error) => (Err(error), false),
-        };
-        let (device, controller, error) = connection_state(connection);
-        let view = cx.new(|cx| TunicView::new(device, controller, error, cx));
-        if retry_initial {
+        let session = Session::new(MemoryPersistence::default(), BundledCatalog)
+            .expect("the in-memory store starts with valid state")
+            .with_audio(platform, notify);
+        if session.audio_retry_needed() {
             changes.notify();
         }
+        let view = cx.new(|cx| TunicView::new(session, cx));
         let event_task = cx.spawn(async move |this, cx| {
             loop {
                 changes.changed().await;
@@ -63,40 +54,21 @@ impl<P: Platform + 'static> Root<P> {
         });
         Self {
             view,
-            platform,
             _event_task: event_task,
         }
     }
 
     fn refresh_default_output(&mut self, cx: &mut Context<Self>) -> bool {
-        let chain = self.view.read(cx).active_chain();
-        let update = self.platform.refresh_default_output(&chain);
-        if matches!(update, Ok(None)) {
-            return true;
-        }
-        let connected = update.is_ok();
-        let (device, controller, error) = connection_state(update);
         self.view.update(cx, |view, cx| {
-            view.replace_audio(device, controller, error, cx);
-            cx.notify();
-        });
-        connected
+            view.execute(Command::RefreshAudio, cx);
+            !view.session().audio_retry_needed()
+        })
     }
 }
 
-impl<P: Platform + 'static> Render for Root<P> {
+impl Render for Root {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         self.view.clone()
-    }
-}
-
-fn connection_state<E: std::fmt::Display>(
-    result: Result<Option<Connection>, E>,
-) -> (String, Option<tunic_core::Controller>, Option<String>) {
-    match result {
-        Ok(Some(connection)) => (connection.device_name, Some(connection.controller), None),
-        Ok(None) => (UNAVAILABLE_DEVICE.into(), None, None),
-        Err(error) => (UNAVAILABLE_DEVICE.into(), None, Some(error.to_string())),
     }
 }
 
