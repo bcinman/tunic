@@ -41,9 +41,9 @@ public struct ContentView: View {
                 }
                 .accessibilityLabel("Profile")
 
-                ResponseGraph(response: model.response)
+                LiveResponseGraph(model: model, maximumFrequency: min(20_000, state.sampleRate * 0.499))
                     .frame(height: 75)
-                    .accessibilityLabel("Equalizer frequency response")
+                    .accessibilityLabel("Equalizer frequency response and live output spectrum")
 
                 ForEach(state.controls, id: \.filter) { control in
                     VStack(alignment: .leading, spacing: 2) {
@@ -64,9 +64,7 @@ public struct ContentView: View {
                 }
 
                 HStack {
-                    Text(model.telemetry.map { String(format: "L %.3f  R %.3f", $0.leftRms, $0.rightRms) } ?? "No audio measurements")
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                    LiveLevels(model: model)
                     Spacer()
                     Button("Reset") { model.enqueue(.resetDraft) }
                         .disabled(!state.hasDraft)
@@ -98,11 +96,43 @@ public struct ContentView: View {
     ContentView(model: TunicModel(connectAudio: false))
 }
 
-private struct ResponseGraph: View {
+// Read telemetry inside these bodies so a frame doesn't invalidate the controls.
+private struct LiveResponseGraph: View {
+    let model: TunicModel
+    let maximumFrequency: Double
+
+    var body: some View {
+        ResponseGraph(
+            response: model.response,
+            spectrum: model.telemetry?.spectrum ?? [],
+            maximumFrequency: maximumFrequency
+        )
+    }
+}
+
+private struct LiveLevels: View {
+    let model: TunicModel
+
+    var body: some View {
+        Text(model.levelText)
+            .font(.caption2.monospacedDigit())
+            .foregroundStyle(.secondary)
+    }
+}
+
+struct ResponseGraph: View {
     let response: [Double]
+    let spectrum: [Float]
+    let maximumFrequency: Double
 
     var body: some View {
         Canvas { context, size in
+            let bounds = CGRect(origin: .zero, size: size)
+            context.clip(to: Path(bounds))
+            context.fill(
+                SpectrumShape(amplitudes: spectrum, maximumFrequency: maximumFrequency).path(in: bounds),
+                with: .color(.primary.opacity(0.12))
+            )
             var zero = Path()
             zero.move(to: CGPoint(x: 0, y: size.height / 2))
             zero.addLine(to: CGPoint(x: size.width, y: size.height / 2))
@@ -118,5 +148,30 @@ private struct ResponseGraph: View {
             }
             context.stroke(curve, with: .color(.primary.opacity(0.8)), lineWidth: 1.5)
         }
+    }
+}
+
+/// Raw bins span 20 Hz–20 kHz. Spectrum height uses −90…0 dBFS,
+/// independently of the response curve's ±18 dB gain scale.
+struct SpectrumShape: Shape {
+    let amplitudes: [Float]
+    let maximumFrequency: Double
+
+    func path(in rect: CGRect) -> Path {
+        guard amplitudes.count > 1 else { return Path() }
+        let frequencyScale = log(1_000.0) / log(maximumFrequency / 20)
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        for (index, amplitude) in amplitudes.enumerated() {
+            let db = 20 * log10(max(Double(amplitude), 0.000_001))
+            let height = min(1, max(0, (db + 90) / 90))
+            path.addLine(to: CGPoint(
+                x: rect.minX + rect.width * Double(index) / Double(amplitudes.count - 1) * frequencyScale,
+                y: rect.maxY - rect.height * height
+            ))
+        }
+        path.addLine(to: CGPoint(x: rect.minX + rect.width * frequencyScale, y: rect.maxY))
+        path.closeSubpath()
+        return path
     }
 }

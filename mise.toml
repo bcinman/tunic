@@ -39,3 +39,10 @@ run = "cargo run -p tunic-app"
 description = "Build and launch the native Swift menu-bar app"
 depends = ["build-ffi"]
 run = "swift run --package-path apps/tunic-native Tunic"
+
+[tasks.run-native-release]
+description = "Build and launch the native Swift menu-bar app with Rust and Swift in release mode"
+run = [
+    "boltffi pack apple --release",
+    "swift run -c release --package-path apps/tunic-native Tunic",
+]

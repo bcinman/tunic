@@ -58,7 +58,10 @@ This file is the source of truth for implemented product capabilities.
   or handle drop. No audio buffers or real-time callbacks cross into Swift.
 - A SwiftUI menu-bar app linked to generated BoltFFI bindings, with real device
   status, preset selection, named gain controls, save/reset, response graph, and
-  live RMS readings. Closing the popup stops telemetry demand, not processing.
+  live RMS readings. A minimal Canvas spectrum renders behind the response at
+  the ~30 Hz telemetry polling rate, with numeric RMS readings limited to 5 Hz.
+  Telemetry observation is isolated from profile controls. Closing the popup
+  stops telemetry demand, not processing.
   Run it with `mise run run-native`.
 - Reproducible macOS arm64 XCFramework/Swift package generation under `target/`
   through `mise run build-ffi`, with matching pinned BoltFFI CLI/library versions.
@@ -70,8 +73,8 @@ This file is the source of truth for implemented product capabilities.
 - Product-complete UI, explicit permission UX, recovery beyond retrying the
   current default output, bypass, and full equalizer controls; GPUI builds and
   platform integrations for Linux and Windows.
-- Production-ready native menu-bar UI, editable graph gestures, and animated
-  spectrum presentation in SwiftUI. Non-Swift bindings and non-macOS audio
+- Production-ready native menu-bar UI, editable graph gestures, and smoothed
+  spectrum ballistics in SwiftUI. Non-Swift bindings and non-macOS audio
   adapters are not yet integrated or verified.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
   core's `Persistence` contract; the app currently uses `MemoryPersistence`.

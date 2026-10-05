@@ -15,6 +15,54 @@ private func waitUntil(_ condition: String = "expected state", _ predicate: () -
 
 private struct Timeout: Error { let condition: String }
 
+@Test
+func spectrumUsesDecibelsAndLogarithmicFrequencyCoordinates() {
+    let rect = CGRect(x: 10, y: 20, width: 300, height: 90)
+    let shape = SpectrumShape(amplitudes: [0, 0.001, 0.1, 2], maximumFrequency: 20_000)
+    var points: [CGPoint] = []
+    shape.path(in: rect).forEach { element in
+        if case .line(let point) = element { points.append(point) }
+    }
+    #expect(points.count == 5)
+    for (actual, expected) in zip(points, [
+        CGPoint(x: 10, y: 110), CGPoint(x: 110, y: 80),
+        CGPoint(x: 210, y: 40), CGPoint(x: 310, y: 20),
+        CGPoint(x: 310, y: 110),
+    ]) {
+        #expect(abs(actual.x - expected.x) < 0.001)
+        #expect(abs(actual.y - expected.y) < 0.001)
+    }
+    // A narrower frequency range expands the bins before the Canvas clips them.
+    let cropped = SpectrumShape(amplitudes: [0, 1, 0, 0], maximumFrequency: 200)
+    #expect(abs(cropped.path(in: rect).boundingRect.width - 900) < 0.001)
+    #expect(SpectrumShape(amplitudes: [], maximumFrequency: 20_000).path(in: rect).isEmpty)
+    let silent = SpectrumShape(amplitudes: [0, 0, 0], maximumFrequency: 20_000)
+    #expect(silent.path(in: rect).boundingRect.height == 0)
+}
+
+@Test(.enabled(if: ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] != nil)) @MainActor
+func renderSpectrumStates() throws {
+    guard let directory = ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] else { return }
+    let spectrum: [Float] = (0..<256).map { index in
+        let x = Double(index) / 255
+        let db = -80 + 60 * exp(-pow((x - 0.32) / 0.12, 2))
+            + 35 * exp(-pow((x - 0.73) / 0.05, 2))
+        return Float(pow(10, db / 20))
+    }
+    for scheme in [ColorScheme.dark, .light] {
+        let renderer = ImageRenderer(content: VStack(spacing: 16) {
+            ResponseGraph(response: [-3, 6, -2, 0], spectrum: spectrum, maximumFrequency: 20_000)
+            ResponseGraph(response: [0, 0], spectrum: [], maximumFrequency: 20_000)
+        }
+        .frame(width: 296, height: 166).padding(12)
+        .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, scheme))
+        renderer.scale = 2
+        let image = try #require(renderer.cgImage)
+        let png = try #require(NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]))
+        try png.write(to: URL(fileURLWithPath: directory).appendingPathComponent("spectrum-\(scheme).png"))
+    }
+}
+
 @Test @MainActor
 func swiftModelUsesRustDraftsAndReceivesFailedCommands() async throws {
     let model = TunicModel(connectAudio: false)
@@ -142,13 +190,23 @@ func liveAudioThroughSwiftBindings() async throws {
         model.telemetry.map { $0.leftRms > 0 || $0.rightRms > 0 } ?? false
     }
     #expect(model.telemetry?.spectrum.count == 256)
+    try await waitUntil("numeric level readout") { model.levelText.hasPrefix("L ") }
     if let directory = ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] {
         try render(model, to: directory, name: "live")
     }
     measurements.cancel()
     await measurements.value
     #expect(model.telemetry == nil)
+    #expect(model.levelText == "No audio measurements")
     #expect(model.snapshot?.acceptedChain != nil)
+
+    let reopened = Task { await model.measureWhileVisible() }
+    defer { reopened.cancel() }
+    try await waitUntil("readout after reopening") { model.levelText.hasPrefix("L ") }
+    #expect(model.telemetry != nil)
+    reopened.cancel()
+    await reopened.value
+    #expect(model.levelText == "No audio measurements")
 }
 
 @MainActor

@@ -8,6 +8,7 @@ public final class TunicModel {
     public private(set) var snapshot: StateSnapshot?
     public private(set) var response: [Double] = []
     public private(set) var telemetry: TelemetryFrame?
+    public private(set) var levelText = "No audio measurements"
     public private(set) var error: String?
 
     private let engine: Engine?
@@ -43,7 +44,10 @@ public final class TunicModel {
 
     private func refresh(from engine: Engine) {
         guard let next = engine.snapshot(), next.revision != snapshot?.revision else { return }
-        if next.audioGeneration != snapshot?.audioGeneration { telemetry = nil }
+        if next.audioGeneration != snapshot?.audioGeneration {
+            telemetry = nil
+            levelText = "No audio measurements"
+        }
         snapshot = next
         let maximum = min(20_000, next.sampleRate * 0.499)
         let frequencies = (0..<128).map { 20 * pow(maximum / 20, Double($0) / 127) }
@@ -65,13 +69,28 @@ public final class TunicModel {
             defer {
                 try? engine.setTelemetryEnabled(enabled: false)
                 telemetry = nil
+                levelText = "No audio measurements"
             }
             var generation: UInt64?
+            var nextLevelUpdate = ContinuousClock.now
             while !Task.isCancelled {
                 let batch = engine.pollTelemetry()
-                if generation != batch.audioGeneration { telemetry = nil }
+                if generation != batch.audioGeneration {
+                    telemetry = nil
+                    levelText = "No audio measurements"
+                    nextLevelUpdate = .now
+                }
                 generation = batch.audioGeneration
-                if let frame = batch.frames.last { telemetry = frame }
+                if let frame = batch.frames.last {
+                    telemetry = frame
+                    // Numeric readings need less frequent layout than the live spectrum.
+                    let now = ContinuousClock.now
+                    if now >= nextLevelUpdate {
+                        let text = String(format: "L %.3f  R %.3f", frame.leftRms, frame.rightRms)
+                        if text != levelText { levelText = text }
+                        nextLevelUpdate = now + .milliseconds(200)
+                    }
+                }
                 try await Task.sleep(for: .milliseconds(33))
             }
         } catch is CancellationError {
