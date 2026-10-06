@@ -70,11 +70,6 @@ This file is the source of truth for implemented product capabilities.
   dots toward the top or bottom of each frequency's filled area. Optional bass-hit
   chromatic aberration splits color channels across the entire halftone image,
   with adjustable strength, 20–180 Hz trigger threshold, and time-based decay.
-  Optional bass ripples distort the halftone image and silhouette with traveling
-  vertical wave displacement rather than dot growth, with strength in points,
-  speed, width, and decay controls plus a manual preview button for static demo input.
-  Up to four waves overlap; held bass does not retrigger. Ripples share the bass
-  threshold with chromatic aberration and stop redrawing when faded or offscreen.
   Extra redraws stop when the pulse settles or the view is hidden. A static demo
   input supports tuning without audio. Visual settings are ephemeral and separate
   from audio settings. Distance and color are separate shader functions in one
@@ -86,13 +81,13 @@ This file is the source of truth for implemented product capabilities.
   toward treble. It reuses scratch storage and runs on input updates, not per pixel;
   dots stay crisp and raw bass-hit detection is unchanged. Zero restores raw geometry.
   Startup and Reset default to 0 ms attack, 100 ms decay, white grid halftone with
-  3 pt dots, 4 pt spacing, 0.5 amplitude response, and both chromatic aberration
-  and ripples enabled. Continuous redraws run only during spectrum settling or
-  chromatic pulses or ripples; numeric RMS readings are
+  3 pt dots, 4 pt spacing, 0.5 amplitude response, and chromatic aberration
+  enabled. Continuous redraws run only during spectrum settling or
+  chromatic pulses; numeric RMS readings are
   limited to 5 Hz.
-  Visualization settings, pure envelope/pulse/ripple dynamics, SwiftUI lifecycle,
+  Visualization settings, pure envelope/pulse dynamics, SwiftUI lifecycle,
   and Metal resource ownership are separate components. Shader composition applies
-  chromatic offsets, ripple coordinates, then halftone coverage/color in one pass.
+  chromatic offsets, then halftone coverage/color in one pass.
   Optional Deep glow follows chromatic aberration for all visualization styles,
   combining five octave-spaced Gaussian scales to approximate inverse-square
   falloff (not the proprietary plugin's exact kernel). It uses linear-light

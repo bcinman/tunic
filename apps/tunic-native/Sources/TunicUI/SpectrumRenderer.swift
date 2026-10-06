@@ -14,8 +14,7 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
     }
     var style = SpectrumStyle()
     private(set) var bassPulse = BassPulse()
-    private(set) var ripples = SpectrumRipples()
-    private var ripplePreview = 0
+
     func receiveSpectrum(_ spectrum: [Float], maximumFrequency: Double, at time: Double) {
         envelope.observe(spectrum, maximumFrequency: maximumFrequency, at: time,
                          attack: style.attack, decay: style.decay, smoothing: style.shapeSmoothing)
@@ -26,32 +25,16 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
         envelope.advance(to: time, attack: style.attack, decay: style.decay)
     }
 
-    func advanceRipples(to time: Double) {
-        if style.rippleActive {
-            ripples.advance(to: time, speed: style.rippleSpeed, decay: style.rippleDecay)
-        } else {
-            ripples = SpectrumRipples()
-        }
-    }
-
     func receiveBass(_ spectrum: [Float], at time: Double) {
-        advanceRipples(to: time)
-        let drive = style.rippleActive || style.chromaticActive ? bassDrive(spectrum, threshold: style.bassThreshold) : 0
-        if style.rippleActive {
-            ripples.observe(drive, at: time,
-                            preview: style.ripplePreview != ripplePreview)
-        }
-        ripplePreview = style.ripplePreview
         guard style.chromaticActive, !spectrum.isEmpty else {
             bassPulse = BassPulse()
             return
         }
-        bassPulse.observe(drive, at: time, decay: style.chromaticDecay)
+        bassPulse.observe(bassDrive(spectrum, threshold: style.bassThreshold), at: time, decay: style.chromaticDecay)
     }
 
     func updateAnimation(_ view: MTKView) {
-        view.isPaused = !(envelope.isAnimating || (style.chromaticActive && bassPulse.level > 0)
-            || (style.rippleActive && !ripples.waves.isEmpty))
+        view.isPaused = !(envelope.isAnimating || (style.chromaticActive && bassPulse.level > 0))
         view.enableSetNeedsDisplay = view.isPaused
     }
 
@@ -87,15 +70,12 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
     func draw(in view: MTKView) {
         guard view.window?.isVisible == true else {
             bassPulse = BassPulse()
-            ripples = SpectrumRipples()
             envelope.settle()
             updateAnimation(view)
             return
         }
         let time = CACurrentMediaTime()
         advanceSpectrum(to: time)
-        advanceRipples(to: time)
-        ripples.retire(beyond: view.bounds.width + style.rippleWidth + style.dotSpacing + style.chromaticStrength)
         bassPulse.advance(to: time, decay: style.chromaticDecay)
         updateAnimation(view)
         guard let pass = view.currentRenderPassDescriptor,
@@ -142,8 +122,7 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
                 var parameters = SpectrumUniforms(
                     size: SIMD2(Float(texture.width) / scale, Float(texture.height) / scale),
                     scale: scale, count: points.count, style: style,
-                    chromaticShift: style.chromaticActive ? Float(style.chromaticStrength * bassPulse.level) : 0,
-                    ripples: ripples)
+                    chromaticShift: style.chromaticActive ? Float(style.chromaticStrength * bassPulse.level) : 0)
                 encoder.setFragmentBytes(&parameters, length: MemoryLayout<SpectrumUniforms>.stride, index: 1)
                 encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
             }

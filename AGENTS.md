@@ -3,6 +3,7 @@
 - Lint and check rust code with clippy
 - Use the tool versions managed by `mise.toml`; add new project tools and common commands to mise when appropriate.
 - Run `mise run check` after cross-component changes
+- For native visualizer appearance changes, run `renderVisualizerLab` and inspect the affected screenshots. From the repository root, create `.amp/in/artifacts/`, then run `TUNIC_SCREENSHOTS="$PWD/.amp/in/artifacts" mise exec -- swift test --package-path apps/tunic-native --filter renderVisualizerLab`. Extend its preview cases when adding visual states; use the real window capture because SwiftUI `ImageRenderer` does not capture embedded Metal views.
 - The terminal being used for development has System Sound Recording permissions on mac.
 - Do not preserve backward compatibility when changing existing code; nothing has been released yet.
 - Funcitonal core, imperative shell.

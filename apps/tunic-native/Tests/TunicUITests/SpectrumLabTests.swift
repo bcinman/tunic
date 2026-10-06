@@ -54,73 +54,6 @@ private struct FieldImage {
     }
 }
 
-@Test
-func rippleFrontsTravelDecayAndRejectHeldBass() {
-    var ripples = SpectrumRipples()
-    ripples.advance(to: 0, speed: 200, decay: 500)
-    ripples.observe(1, at: 0)
-    var stepped = ripples
-    ripples.advance(to: 0.5, speed: 200, decay: 500)
-    for step in 1...10 { stepped.advance(to: Double(step) / 20, speed: 200, decay: 500) }
-    #expect(ripples.waves[0].x == 100)
-    #expect(abs(ripples.waves[0].y - exp(-1.0)) < 0.000001)
-    #expect(abs(stepped.waves[0].y - ripples.waves[0].y) < 0.000001)
-    ripples.observe(1, at: 0.5)
-    #expect(ripples.waves.count == 1)
-    ripples.observe(0, at: 0.6)
-    ripples.observe(0.5, at: 0.7)
-    #expect(ripples.waves.count == 2)
-    #expect(ripples.waves[1].y == 0.5)
-    ripples.retire(beyond: 99)
-    #expect(ripples.waves.count == 1)
-    ripples.advance(to: 10, speed: 200, decay: 500)
-    #expect(ripples.waves.isEmpty)
-    for _ in 0..<6 { ripples.observe(0, at: 10, preview: true) }
-    #expect(ripples.waves.count == 4)
-}
-
-@Test @MainActor
-func ripplesWarpDotsAndSilhouetteNearTravelingFrontAndStop() async throws {
-    let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
-    renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)]
-    renderer.style = SpectrumStyle(shading: .halftone, dotSize: 2, dotSpacing: 10,
-                                   amplitudeResponse: 0, chromaticEnabled: false, whiteHalftone: true,
-                                   rippleEnabled: true, rippleStrength: 12,
-                                   rippleSpeed: 100, rippleWidth: 20, rippleDecay: 2000)
-    let baseline = try await fieldPixels(renderer)
-    renderer.receiveBass([1, 0], at: 0)
-    renderer.advanceRipples(to: 0.255) // At x=15.5, phase −0.5 shifts upward by ~5.28pt.
-    let early = try await fieldPixels(renderer)
-    #expect(baseline[15, 49].w == 0)
-    #expect(early[15, 49].w > 200)
-    #expect(early[15, 55].w == 0) // Dot moved, not enlarged.
-    #expect(early[35, 50].w > 200) // Opposite lobe moves downward.
-    #expect(early[15, 29].w > 200) // Silhouette moves above the original y=30 boundary.
-    #expect(early[75, 55].w == baseline[75, 55].w)
-    renderer.advanceRipples(to: 0.755)
-    let late = try await fieldPixels(renderer)
-    #expect(late[15, 55].w == baseline[15, 55].w)
-    #expect(late[65, 50].w > 150)
-    renderer.style.rippleStrength = 0
-    let zero = try await fieldPixels(renderer)
-    #expect(zero.bytes == baseline.bytes)
-    renderer.style.rippleStrength = 12
-    let view = MTKView(frame: .zero, device: renderer.device)
-    renderer.updateAnimation(view)
-    #expect(!view.isPaused)
-    renderer.draw(in: view)
-    #expect(view.isPaused)
-    #expect(renderer.ripples.waves.isEmpty)
-    renderer.style.ripplePreview += 1
-    renderer.receiveBass([], at: 1)
-    #expect(renderer.ripples.waves.count == 1)
-    renderer.style.rippleEnabled = false
-    renderer.receiveBass([], at: 1.1)
-    renderer.updateAnimation(view)
-    #expect(view.isPaused)
-    #expect(renderer.ripples.waves.isEmpty)
-}
-
 /// Render the real shader at a fixed logical size, with independently chosen geometry.
 @MainActor
 private func fieldPixels(_ renderer: SpectrumRenderer, scale: Int = 1) async throws -> FieldImage {
@@ -389,7 +322,7 @@ func bassChromaticSplitAffectsBothEndsAndStopsWhenDisabledOrHidden() async throw
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)]
     renderer.style = SpectrumStyle(shading: .halftone, hue: 5 / 6, dotSize: 2, dotSpacing: 10,
                                    amplitudeResponse: 0, chromaticEnabled: true, chromaticStrength: 3,
-                                   whiteHalftone: false, rippleEnabled: false)
+                                   whiteHalftone: false)
     let baseline = try await fieldPixels(renderer)
     var bins = [Float](repeating: 0, count: 256)
     bins[30] = 1
@@ -426,7 +359,7 @@ func whiteHalftonePreservesCoverageAndSplitsAllThreeChannels() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)]
     renderer.style = SpectrumStyle(shading: .halftone, hue: 0, dotSize: 2, dotSpacing: 10,
-                                   amplitudeResponse: 0, whiteHalftone: true, rippleEnabled: false)
+                                   amplitudeResponse: 0, whiteHalftone: true)
     let white = try await fieldPixels(renderer)
     #expect(white[105, 55].w > 150)
     for i in stride(from: 0, to: white.bytes.count, by: 4) {
@@ -567,23 +500,15 @@ func renderVisualizerLab() async throws {
         ("Deep-Glow-Hue", SpectrumStyle(hue: 0.58, whiteHalftone: false,
                                         deepGlowEnabled: true, deepGlowStrength: 4), true, .dark),
         ("Deep-Glow-Light", SpectrumStyle(deepGlowEnabled: true, deepGlowStrength: 4), true, .light),
-        ("Shape-Before", SpectrumStyle(chromaticEnabled: false, rippleEnabled: false, shapeSmoothing: 0), true, .dark),
-        ("Shape-After", SpectrumStyle(chromaticEnabled: false, rippleEnabled: false, shapeSmoothing: 0.5), true, .dark),
+        ("Shape-Before", SpectrumStyle(chromaticEnabled: false, shapeSmoothing: 0), true, .dark),
+        ("Shape-After", SpectrumStyle(chromaticEnabled: false, shapeSmoothing: 0.5), true, .dark),
         ("Points", SpectrumStyle(mode: .points), true, .dark),
-        ("Ripples", SpectrumStyle(shading: .halftone, dotSize: 2, dotSpacing: 7,
-                                   amplitudeResponse: 0, whiteHalftone: true,
-                                   rippleEnabled: true, rippleStrength: 24, ripplePreview: 1), true, .dark),
-        ("Ripples-Hex", SpectrumStyle(shading: .halftone, dotSize: 2, dotSpacing: 7,
-                                       amplitudeResponse: 0, dotPattern: .hex, chromaticEnabled: true,
-                                       chromaticDecay: 1000, rippleEnabled: true,
-                                       rippleStrength: 24, ripplePreview: 2), true, .dark),
         ("Envelope", SpectrumStyle(attack: 150, decay: 800), true, .dark),
         ("Empty", SpectrumStyle(), false, .dark),
         ("Light", SpectrumStyle(), true, .light),
     ]
     for (name, style, demo, scheme) in cases {
         state.style.chromaticEnabled = false
-        state.style.rippleEnabled = false
         try await Task.sleep(for: .milliseconds(50))
         state.style = style
         state.demo = demo
@@ -609,21 +534,14 @@ func renderVisualizerLab() async throws {
             let renderer = try #require(metal.delegate as? SpectrumRenderer)
             #expect(!metal.isPaused)
             #expect(renderer.bassPulse.level > 0)
-            // No new samples: a real MTKView must keep drawing the tail, then stop.
+            // Isolate the chromatic tail from any spectrum transition left by the
+            // preceding preview (especially the slow-envelope case).
+            state.style.attack = 0
+            state.style.decay = 0
             state.style.chromaticDecay = 50
-            state.style.rippleEnabled = false
             try await Task.sleep(for: .milliseconds(650))
-            #expect(metal.isPaused)
+            #expect(metal.isPaused, "State: \(name), spectrum animating: \(renderer.envelope.isAnimating)")
             #expect(renderer.bassPulse.level == 0)
-        }
-        if demo && style.mode == .sdf && style.shading == .halftone && style.rippleEnabled && !style.chromaticEnabled {
-            let metal = try #require(findMetalView(host))
-            let renderer = try #require(metal.delegate as? SpectrumRenderer)
-            #expect(!metal.isPaused)
-            #expect(!renderer.ripples.waves.isEmpty)
-            try await Task.sleep(for: .seconds(2))
-            #expect(metal.isPaused)
-            #expect(renderer.ripples.waves.isEmpty)
         }
     }
 }

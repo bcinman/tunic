@@ -76,22 +76,10 @@ struct SpectrumDebugPanel: View {
                            && !(style.shading == .halftone && style.whiteHalftone))
                 if style.usesHalftone {
                     Divider()
-                    Toggle("Bass ripples", isOn: $style.rippleEnabled)
-                    if style.rippleEnabled {
-                        slider("Strength", value: $style.rippleStrength, range: 0...30, unit: "pt", enabled: true)
-                            .help("Vertical wave displacement of the halftone image, not dot size")
-                        slider("Speed", value: $style.rippleSpeed, range: 50...600, unit: "pt/s", enabled: true)
-                        slider("Width", value: $style.rippleWidth, range: 5...100, unit: "pt", enabled: true)
-                        slider("Decay", value: $style.rippleDecay, range: 100...2000, unit: "ms", enabled: true)
-                        Button("Preview ripple") { style.ripplePreview += 1 }
-                            .help("Launch a ripple without waiting for a bass hit; works with Demo input")
-                    }
-                    if style.rippleEnabled || style.chromaticEnabled {
-                        slider("Trigger", value: $style.bassThreshold, range: -60 ... -6, unit: "dB", enabled: true)
-                            .help("Shared 20–180 Hz bass threshold for ripples and chromatic aberration")
-                    }
                     Toggle("Bass chromatic aberration", isOn: $style.chromaticEnabled)
                     if style.chromaticEnabled {
+                        slider("Trigger", value: $style.bassThreshold, range: -60 ... -6, unit: "dB", enabled: true)
+                            .help("20–180 Hz bass threshold for chromatic aberration")
                         slider("Split", value: $style.chromaticStrength, range: 0...16, unit: "pt", enabled: true)
                             .help("Maximum channel offset across the whole visualizer")
                         slider("Decay", value: $style.chromaticDecay, range: 50...1000, unit: "ms", enabled: true)
@@ -127,7 +115,7 @@ struct SpectrumDebugPanel: View {
             Text(label).frame(width: 58, alignment: .leading)
             Slider(value: value, in: range)
                 .accessibilityLabel(label)
-            Text("\(value.wrappedValue, specifier: unit == "ms" || unit == "pt/s" ? "%.0f" : unit.isEmpty ? "%.2f" : "%.1f")\(unit)")
+            Text("\(value.wrappedValue, specifier: unit == "ms" ? "%.0f" : unit.isEmpty ? "%.2f" : "%.1f")\(unit)")
                 .monospacedDigit()
                 .lineLimit(1)
                 .frame(width: 56, alignment: .trailing)

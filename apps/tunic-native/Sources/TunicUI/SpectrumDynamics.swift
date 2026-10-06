@@ -30,38 +30,6 @@ struct BassPulse {
     }
 }
 
-/// Up to four bass fronts travel from left to right; held notes do not retrigger.
-struct SpectrumRipples {
-    private(set) var waves: [SIMD2<Double>] = [] // distance in points, remaining energy
-    private var previousDrive: Double = 0
-    private var lastTime: Double?
-    private var lastHit: Double = -.infinity
-
-    mutating func advance(to time: Double, speed: Double, decay: Double) {
-        let elapsed = max(0, time - (lastTime ?? time))
-        lastTime = time
-        let attenuation = exp(-elapsed * 1000 / decay)
-        for index in waves.indices {
-            waves[index].x += elapsed * speed
-            waves[index].y *= attenuation
-        }
-        waves.removeAll { $0.y < 0.001 }
-    }
-
-    mutating func retire(beyond distance: Double) {
-        waves.removeAll { $0.x > distance }
-    }
-
-    mutating func observe(_ drive: Double, at time: Double, preview: Bool = false) {
-        let rise = max(0, drive - previousDrive)
-        previousDrive = drive
-        guard preview || (rise > 0.08 && time - lastHit >= 0.12) else { return }
-        lastHit = time
-        if waves.count == 4 { waves.removeFirst() }
-        waves.append(SIMD2(0, preview ? 1 : rise))
-    }
-}
-
 /// Clip-space coordinates: bins span 20 Hz–20 kHz logarithmically; height is −90…0 dBFS.
 func spectrumPoints(_ amplitudes: [Float], maximumFrequency: Double) -> [SIMD2<Float>] {
     var points: [SIMD2<Float>] = []

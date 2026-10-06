@@ -12,8 +12,8 @@ public struct ContentView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
                 Image(systemName: "headphones")
                     .foregroundStyle(.secondary)
                 Text(model.snapshot?.deviceName ?? "Connecting…")

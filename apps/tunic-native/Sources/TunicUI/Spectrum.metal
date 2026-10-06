@@ -27,8 +27,6 @@ struct FieldParameters {
     float4 mapping;  // stroke width, spread, hue, shading mode
     float4 halftone; // maximum diameter, center spacing, amplitude response, grid/hex
     float4 variation; // signed vertical response, bass-driven channel shift in points, white color flag, unused
-    float4 ripple; // vertical displacement in points, wave half-width in points, unused, unused
-    float4 waves[4]; // front x in points, remaining energy, unused, unused
 };
 
 float2 logicalPoint(float2 clip, float2 size) {
@@ -174,29 +172,13 @@ float4 shadeHalftone(float2 p, const device float2 *points,
     return float4(color * alpha, alpha);
 }
 
-float2 rippleCoordinates(float2 p, constant FieldParameters &parameters) {
-    // Warp the completed halftone's sampling coordinates: dots and silhouette
-    // bend together, rather than resizing dots or clipping against an unwarped fill.
-    float displacement = 0;
-    if (parameters.ripple.x > 0) {
-        for (uint wave = 0; wave < 4; ++wave) {
-            float phase = (p.x - parameters.waves[wave].x) / parameters.ripple.y;
-            float envelope = 1 - smoothstep(0.0f, 1.0f, abs(phase));
-            displacement += parameters.waves[wave].y * sin(M_PI_F * phase) * envelope;
-        }
-    }
-    p.y -= parameters.ripple.x * displacement;
-    return p;
-}
-
 float4 sampleHalftone(float2 p, const device float2 *points,
                       constant FieldParameters &parameters) {
-    p = rippleCoordinates(p, parameters);
     if (any(p < 0) || any(p >= parameters.viewport.xy)) return float4(0);
     return shadeHalftone(p, points, parameters);
 }
 
-// Composition order: channel offsets → wave coordinates → halftone coverage/color.
+// Composition order: channel offsets → halftone coverage/color.
 float4 chromaticHalftone(float2 p, const device float2 *points,
                          constant FieldParameters &parameters) {
     float4 base = sampleHalftone(p, points, parameters);
