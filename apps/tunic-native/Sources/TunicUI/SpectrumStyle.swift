@@ -49,6 +49,9 @@ struct SpectrumStyle: Equatable {
     var rippleDecay: Double = 700
     var ripplePreview = 0
     var shapeSmoothing: Double = 0.5
+    var deepGlowEnabled = false
+    var deepGlowStrength: Double = 2
+    var deepGlowRadius: Double = 32
 
     var usesHalftone: Bool { mode == .sdf && shading == .halftone }
     var chromaticActive: Bool { usesHalftone && chromaticEnabled && chromaticStrength > 0 }

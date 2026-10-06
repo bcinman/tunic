@@ -6,6 +6,7 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
     let queue: MTLCommandQueue
     private let pointPipeline: MTLRenderPipelineState
     private let fieldPipeline: MTLRenderPipelineState
+    private let bloom: SpectrumBloom
     var envelope = SpectrumEnvelope()
     var points: [SIMD2<Float>] {
         get { envelope.points }
@@ -77,6 +78,7 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
         attachment.destinationRGBBlendFactor = .oneMinusSourceAlpha
         attachment.destinationAlphaBlendFactor = .oneMinusSourceAlpha
         fieldPipeline = try device.makeRenderPipelineState(descriptor: descriptor)
+        bloom = try SpectrumBloom(device: device, library: library)
         super.init()
     }
 
@@ -106,6 +108,20 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
     }
 
     func encode(pass: MTLRenderPassDescriptor, command: MTLCommandBuffer, scale: Float) {
+        if style.deepGlowEnabled && style.deepGlowStrength > 0,
+           let output = pass.colorAttachments[0].texture,
+           bloom.prepare(width: output.width, height: output.height,
+                         radiusPixels: Float(style.deepGlowRadius) * scale), let scene = bloom.scene {
+            encodeSpectrum(pass: SpectrumBloom.pass(for: scene), command: command, scale: scale)
+            bloom.encode(to: pass, command: command, scale: scale,
+                         radius: Float(style.deepGlowRadius), strength: Float(style.deepGlowStrength))
+        } else {
+            bloom.releaseTextures()
+            encodeSpectrum(pass: pass, command: command, scale: scale)
+        }
+    }
+
+    private func encodeSpectrum(pass: MTLRenderPassDescriptor, command: MTLCommandBuffer, scale: Float) {
         guard let encoder = command.makeRenderCommandEncoder(descriptor: pass) else { return }
         if points.count > 1 {
             // The engine supplies 256 bins (2 KiB), within Metal's 4 KiB inline limit.

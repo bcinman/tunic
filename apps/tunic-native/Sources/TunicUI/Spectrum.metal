@@ -227,3 +227,55 @@ fragment float4 fieldFragment(float4 position [[position]],
     }
     return color;
 }
+
+float3 glowLinear(float3 color) {
+    return select(color / 12.92f, pow((color + 0.055f) / 1.055f, float3(2.4f)), color > 0.04045f);
+}
+
+float3 glowSRGB(float3 color) {
+    return select(color * 12.92f, 1.055f * pow(max(color, 0.0f), float3(1.0f / 2.4f)) - 0.055f, color > 0.0031308f);
+}
+
+float4 glowDecode(float4 color) {
+    return float4(glowLinear(color.rgb / max(color.a, 0.000001f)) * color.a, color.a);
+}
+
+// Post-process the already shaded/chromatically split image in linear light.
+fragment float4 bloomBlur(float4 position [[position]],
+                          texture2d<float> source [[texture(0)]],
+                          constant float4 &parameters [[buffer(0)]],
+                          constant uint &decode [[buffer(1)]]) {
+    constexpr sampler linearSampler(coord::normalized, address::clamp_to_zero, filter::linear);
+    float2 uv = position.xy / parameters.xy;
+    float4 sum = float4(0);
+    float total = 0;
+    for (int tap = -6; tap <= 6; ++tap) {
+        float weight = exp(-float(tap * tap) / 8.0f);
+        float4 sample = source.sample(linearSampler, uv + float(tap) * parameters.zw);
+        sum += (decode ? glowDecode(sample) : sample) * weight;
+        total += weight;
+    }
+    return sum / total;
+}
+
+fragment float4 bloomComposite(float4 position [[position]],
+                               texture2d<float> scene [[texture(0)]],
+                               array<texture2d<float>, 5> levels [[texture(1)]],
+                               constant float4 &parameters [[buffer(0)]]) {
+    constexpr sampler linearSampler(coord::normalized, address::clamp_to_zero, filter::linear);
+    float2 uv = position.xy / parameters.xy;
+    float4 base = scene.read(uint2(position.xy));
+    // Equal-energy normalized Gaussians at octave-spaced radii approximate 1/r²:
+    // integral G_sigma(r) d(log sigma) is proportional to 1/r². Finite scales
+    // soften the singular core and truncate the tail; this is not the plugin's kernel.
+    float4 glow = float4(0);
+    for (uint level = 0; level < 5; ++level) glow += levels[level].sample(linearSampler, uv) / 5.0f;
+    glow *= parameters.z;
+    // Fade only the halo at the viewport edge to avoid a rectangular glow crop.
+    float2 edge = min(position.xy, parameters.xy - position.xy) / parameters.w;
+    glow *= smoothstep(0.0f, 8.0f, min(edge.x, edge.y));
+    // Smooth exposure rolloff, then composite behind the crisp source in linear light.
+    glow = 1 - exp(-glow);
+    float4 result = glowDecode(base) + glow * (1 - base.a);
+    return float4(glowSRGB(result.rgb / max(result.a, 0.000001f)) * result.a, result.a);
+}

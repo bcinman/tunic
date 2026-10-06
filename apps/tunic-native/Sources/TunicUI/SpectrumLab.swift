@@ -97,6 +97,14 @@ struct SpectrumDebugPanel: View {
                         slider("Decay", value: $style.chromaticDecay, range: 50...1000, unit: "ms", enabled: true)
                     }
                 }
+                Divider()
+                Toggle("Deep glow · after chromatic", isOn: $style.deepGlowEnabled)
+                if style.deepGlowEnabled {
+                    slider("Exposure", value: $style.deepGlowStrength, range: 0...6, unit: "", enabled: true)
+                        .help("Glow intensity, blended in linear light behind the sharp image")
+                    slider("Radius", value: $style.deepGlowRadius, range: 8...80, unit: "pt", enabled: true)
+                        .help("Five blur scales approximate inverse-square falloff from a tight core to a broad halo")
+                }
             }
             .padding(.top, 8)
         } label: {

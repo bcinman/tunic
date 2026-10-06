@@ -93,6 +93,12 @@ This file is the source of truth for implemented product capabilities.
   Visualization settings, pure envelope/pulse/ripple dynamics, SwiftUI lifecycle,
   and Metal resource ownership are separate components. Shader composition applies
   chromatic offsets, ripple coordinates, then halftone coverage/color in one pass.
+  Optional Deep glow follows chromatic aberration for all visualization styles,
+  combining five octave-spaced Gaussian scales to approximate inverse-square
+  falloff (not the proprietary plugin's exact kernel). It uses linear-light
+  blending, half-float downsampled intermediates, and exposure/radius controls.
+  The crisp source and transparent background are preserved; reusable render
+  targets are resized on demand and released when bypassed. Disabled by default.
   Spectrum target storage is reused, envelope coefficients are computed once per
   frame, and GPU uniforms use a fixed-size value rather than a temporary array.
   Halftone clearance scans only nearby spectrum segments within the dot radius;

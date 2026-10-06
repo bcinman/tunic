@@ -152,6 +152,43 @@ private func fieldPixels(_ renderer: SpectrumRenderer, scale: Int = 1) async thr
 }
 
 @Test @MainActor
+func deepGlowPreservesSharpSourceColorAndTransparencyAcrossResize() async throws {
+    let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
+    renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)]
+    renderer.style = SpectrumStyle(shading: .line, width: 4, hue: 0)
+    let base = try await fieldPixels(renderer)
+    renderer.style.deepGlowEnabled = true
+    renderer.style.deepGlowStrength = 4
+    renderer.style.deepGlowRadius = 32
+    let glow = try await fieldPixels(renderer)
+    #expect(base[60, 25].w == 0)
+    #expect(glow[60, 25].w > 5)
+    #expect(glow[60, 29] == base[60, 29]) // Opaque core remains sharp.
+    #expect(glow[60, 25].z == glow[60, 25].w) // Red, not white or black bloom.
+    #expect(glow[60, 25].x == 0 && glow[60, 25].y == 0)
+    #expect(glow[60, 25].w > glow[60, 10].w)
+    renderer.style.deepGlowRadius = 8
+    let narrow = try await fieldPixels(renderer)
+    #expect(narrow[60, 20].w < glow[60, 20].w)
+    renderer.style.deepGlowRadius = 32
+    let retina = try await fieldPixels(renderer, scale: 2)
+    #expect(retina[120, 50].w > 5)
+    let resized = try await fieldPixels(renderer)
+    #expect(resized.bytes == glow.bytes)
+    renderer.style.deepGlowStrength = 0
+    let bypass = try await fieldPixels(renderer)
+    #expect(bypass.bytes == base.bytes)
+    renderer.style.deepGlowStrength = 4
+    renderer.style.deepGlowEnabled = false
+    let disabled = try await fieldPixels(renderer)
+    #expect(disabled.bytes == base.bytes)
+    renderer.style.deepGlowEnabled = true
+    renderer.points = []
+    let empty = try await fieldPixels(renderer)
+    #expect(empty.bytes.allSatisfy { $0 == 0 }) // No retained glow from previous frames.
+}
+
+@Test @MainActor
 func distanceMappingsUseSignedEuclideanDistanceAndLiveParameters() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)] // Horizontal at logical y = 30.
@@ -526,6 +563,10 @@ func renderVisualizerLab() async throws {
                                                   chromaticStrength: 3, chromaticDecay: 1000,
                                                   whiteHalftone: true), true, .dark),
         ("Defaults", SpectrumStyle(), true, .dark),
+        ("Deep-Glow", SpectrumStyle(deepGlowEnabled: true, deepGlowStrength: 4), true, .dark),
+        ("Deep-Glow-Hue", SpectrumStyle(hue: 0.58, whiteHalftone: false,
+                                        deepGlowEnabled: true, deepGlowStrength: 4), true, .dark),
+        ("Deep-Glow-Light", SpectrumStyle(deepGlowEnabled: true, deepGlowStrength: 4), true, .light),
         ("Shape-Before", SpectrumStyle(chromaticEnabled: false, rippleEnabled: false, shapeSmoothing: 0), true, .dark),
         ("Shape-After", SpectrumStyle(chromaticEnabled: false, rippleEnabled: false, shapeSmoothing: 0.5), true, .dark),
         ("Points", SpectrumStyle(mode: .points), true, .dark),
