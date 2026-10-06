@@ -4,6 +4,46 @@ import Testing
 @testable import TunicUI
 
 @Test
+func shapeSmoothingMatchesGaussianAndPreservesGeometry() {
+    let original: [SIMD2<Float>] = (0..<256).map { index in
+        SIMD2(Float(index) / 127.5 - 1, index == 32 || index == 224 ? 1 : -1)
+    }
+    var shape = SpectrumShapeSmoothing()
+    var points = original
+    shape.apply(to: &points, amount: 0)
+    #expect(points == original)
+    shape.apply(to: &points, amount: 0.5)
+    #expect(points.map(\.x) == original.map(\.x))
+    #expect(points[32].y < points[224].y) // Bass impulse spreads much wider.
+    #expect(points[29].y > -1)
+    #expect(points[221].y == -1)
+    for index in [0, 29, 32, 34, 221, 224, 255] {
+        let sigma = 0.5 * (0.5 + 7.5 * pow(1 - Double(index) / 255, 2))
+        let radius = Int(ceil(3 * sigma))
+        var sum = 0.0
+        var total = 0.0
+        for offset in -radius...radius {
+            let weight = exp(-Double(offset * offset) / (2 * sigma * sigma))
+            sum += weight * Double(original[min(255, max(0, index + offset))].y)
+            total += weight
+        }
+        #expect(abs(Double(points[index].y) - sum / total) < 0.00001)
+    }
+    var cropped = original.map { SIMD2(($0.x + 1) * 1.7 - 1, $0.y) }
+    shape.apply(to: &cropped, amount: 0.5)
+    #expect(cropped.map(\.y) == points.map(\.y))
+    for level: Float in [-1, 0.25, 1] {
+        var flat = original.map { SIMD2($0.x, level) }
+        shape.apply(to: &flat, amount: 1)
+        #expect(flat.allSatisfy { abs($0.y - level) < 0.000001 })
+    }
+    var envelope = SpectrumEnvelope()
+    let bins = original.map { Float(pow(10, Double($0.y - 1) * 45 / 20)) }
+    envelope.observe(bins, maximumFrequency: 20_000, at: 0, attack: 0, decay: 0, smoothing: 0.5)
+    #expect(zip(envelope.points, points).allSatisfy { abs($0.y - $1.y) < 0.00001 })
+}
+
+@Test
 func spectrumUniformsMatchMetalLayout() {
     #expect(MemoryLayout<SpectrumUniforms>.stride == 9 * 16)
     #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.ripple) == 4 * 16)

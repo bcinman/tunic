@@ -15,6 +15,8 @@ struct SpectrumDebugPanel: View {
                 .pickerStyle(.segmented)
                 Text("1 · Spectrum distance")
                     .foregroundStyle(.secondary)
+                slider("Shape", value: $style.shapeSmoothing, range: 0...1, unit: "", enabled: true)
+                    .help("Shape smoothing: rounds spectrum steps, strongest in the bass. 0: original shape; does not blur dots or delay bass hits")
                 slider("Attack", value: $style.attack, range: 0...500, unit: "ms", enabled: true)
                     .help("Rise smoothing for all visualizer styles. 0: instant; time to cover 63% of the remaining distance")
                 slider("Decay", value: $style.decay, range: 0...1500, unit: "ms", enabled: true)

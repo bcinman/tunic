@@ -81,6 +81,10 @@ This file is the source of truth for implemented product capabilities.
   pass, not a general layer compositor. Rendering follows ~30 Hz telemetry updates,
   with adjustable spectrum attack (0–500 ms) and decay (0–1500 ms) smoothing of
   displayed dB heights across all styles, independent of bass-hit detection.
+  A Shape smoothing control (0–1, default 0.5) applies a Gaussian blur to dB
+  heights before temporal smoothing, strongest at bass frequencies and tapering
+  toward treble. It reuses scratch storage and runs on input updates, not per pixel;
+  dots stay crisp and raw bass-hit detection is unchanged. Zero restores raw geometry.
   Startup and Reset default to 0 ms attack, 100 ms decay, white grid halftone with
   3 pt dots, 4 pt spacing, 0.5 amplitude response, and both chromatic aberration
   and ripples enabled. Continuous redraws run only during spectrum settling or

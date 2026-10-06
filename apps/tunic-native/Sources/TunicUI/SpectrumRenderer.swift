@@ -17,7 +17,7 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
     private var ripplePreview = 0
     func receiveSpectrum(_ spectrum: [Float], maximumFrequency: Double, at time: Double) {
         envelope.observe(spectrum, maximumFrequency: maximumFrequency, at: time,
-                         attack: style.attack, decay: style.decay)
+                         attack: style.attack, decay: style.decay, smoothing: style.shapeSmoothing)
     }
 
     /// Smooth displayed dB height, with milliseconds as exponential time constants.

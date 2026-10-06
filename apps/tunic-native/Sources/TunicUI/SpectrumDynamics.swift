@@ -94,14 +94,16 @@ private func updateSpectrumPoints(_ amplitudes: [Float], maximumFrequency: Doubl
 struct SpectrumEnvelope {
     var points: [SIMD2<Float>] = []
     private var target: [SIMD2<Float>] = []
+    private var shape = SpectrumShapeSmoothing()
     private var lastTime: Double?
 
     var isAnimating: Bool { !target.isEmpty && points != target }
 
     mutating func observe(_ spectrum: [Float], maximumFrequency: Double, at time: Double,
-                          attack: Double, decay: Double) {
+                          attack: Double, decay: Double, smoothing: Double = 0) {
         advance(to: time, attack: attack, decay: decay)
         updateSpectrumPoints(spectrum, maximumFrequency: maximumFrequency, into: &target)
+        shape.apply(to: &target, amount: smoothing)
         if points.count != target.count {
             points = target.map { SIMD2($0.x, -1) }
         }
@@ -126,5 +128,39 @@ struct SpectrumEnvelope {
     mutating func settle() {
         if !target.isEmpty { points = target }
         lastTime = nil
+    }
+}
+
+/// Gaussian blur of displayed dB height, wider toward bass. Reuses scratch storage
+/// and runs only on input updates, before temporal smoothing and GPU upload.
+struct SpectrumShapeSmoothing {
+    private var heights: [Float] = []
+
+    mutating func apply(to points: inout [SIMD2<Float>], amount: Double) {
+        guard amount > 0, points.count > 1 else { return }
+        if heights.count != points.count { heights = Array(repeating: 0, count: points.count) }
+        for index in points.indices { heights[index] = points[index].y }
+        let last = points.count - 1
+        for index in points.indices {
+            // Use original bin position, not cropped clip x: tuning the maximum
+            // displayed frequency must not change smoothing at a given frequency.
+            let bass = 1 - Float(index) / Float(last)
+            let sigma = Float(amount) * (0.5 + 7.5 * bass * bass) * Float(last) / 255
+            let radius = Int(ceil(3 * sigma))
+            // Gaussian weights via a recurrence: one exponential per bin, rather
+            // than per tap. Clamp edges so constant levels and silence stay flat.
+            var ratio = exp(-0.5 / (sigma * sigma))
+            let ratioStep = ratio * ratio
+            var weight: Float = 1
+            var total: Float = 1
+            var sum = heights[index]
+            for offset in 1...radius {
+                weight *= ratio
+                ratio *= ratioStep
+                sum += weight * (heights[max(0, index - offset)] + heights[min(last, index + offset)])
+                total += 2 * weight
+            }
+            points[index].y = sum / total
+        }
     }
 }

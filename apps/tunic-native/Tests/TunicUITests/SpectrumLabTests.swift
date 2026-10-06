@@ -417,6 +417,7 @@ func whiteHalftonePreservesCoverageAndSplitsAllThreeChannels() async throws {
 private final class LabState {
     var style = SpectrumStyle()
     var demo = true
+    var spectrum = demoSpectrum
     var scheme = ColorScheme.dark
 }
 
@@ -425,7 +426,7 @@ private struct LabPreview: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            SpectrumView(spectrum: state.demo ? demoSpectrum : [], maximumFrequency: 20_000,
+            SpectrumView(spectrum: state.demo ? state.spectrum : [], maximumFrequency: 20_000,
                          style: state.style)
                 .frame(height: 160)
             SpectrumDebugPanel(style: $state.style, demo: $state.demo)
@@ -525,6 +526,8 @@ func renderVisualizerLab() async throws {
                                                   chromaticStrength: 3, chromaticDecay: 1000,
                                                   whiteHalftone: true), true, .dark),
         ("Defaults", SpectrumStyle(), true, .dark),
+        ("Shape-Before", SpectrumStyle(chromaticEnabled: false, rippleEnabled: false, shapeSmoothing: 0), true, .dark),
+        ("Shape-After", SpectrumStyle(chromaticEnabled: false, rippleEnabled: false, shapeSmoothing: 0.5), true, .dark),
         ("Points", SpectrumStyle(mode: .points), true, .dark),
         ("Ripples", SpectrumStyle(shading: .halftone, dotSize: 2, dotSpacing: 7,
                                    amplitudeResponse: 0, whiteHalftone: true,
@@ -543,7 +546,13 @@ func renderVisualizerLab() async throws {
         try await Task.sleep(for: .milliseconds(50))
         state.style = style
         state.demo = demo
+        state.spectrum = name.hasPrefix("Shape-") ? (0..<256).map { index in
+            if index >= 85 { return demoSpectrum[index] }
+            let db = index < 20 ? -45.0 : index < 43 ? -15 : index < 65 ? -30 : -55
+            return Float(pow(10, db / 20))
+        } : demoSpectrum
         state.scheme = scheme
+        if name.hasPrefix("Shape-") { try await Task.sleep(for: .seconds(1)) }
         try await Task.sleep(for: .milliseconds(250))
         window.setContentSize(host.fittingSize)
         try await Task.sleep(for: .milliseconds(100))
