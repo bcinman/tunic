@@ -257,6 +257,57 @@ func halftoneMasksDotsAndControlsTheirLatticeAndAmplitude() async throws {
 }
 
 @Test @MainActor
+func overlappingAndInvertedHalftoneMatchCircleUnion() async throws {
+    let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
+    renderer.points = [SIMD2(-1, 0.6), SIMD2(1, 0.6)] // Flat top at y=12; 48pt filled.
+    for pattern in HalftonePattern.allCases {
+        for spacing in [3.0, 8.0] {
+            renderer.style = SpectrumStyle(dotSize: 12, dotSpacing: spacing,
+                                           amplitudeResponse: 0, dotPattern: pattern,
+                                           chromaticEnabled: false)
+            // Independent reference: enumerate the entire lattice, rather than
+            // copying the shader's per-pixel neighbor search.
+            var circles: [(Double, Double, Double)] = []
+            let rowStep = spacing * (pattern == .hex ? sqrt(3) / 2 : 1)
+            for row in 0...Int(48 / rowStep) {
+                let y = spacing / 2 + Double(row) * rowStep
+                for column in 0...Int(120 / spacing) {
+                    let x = (Double(column) + 0.5) * spacing
+                        + (pattern == .hex && row % 2 != 0 ? spacing / 2 : 0)
+                    let radius = min(6, min(x, 120 - x, y, 48 - y) - 0.75)
+                    if radius > 0 { circles.append((x, y, radius)) }
+                }
+            }
+            let dots = try await fieldPixels(renderer)
+            renderer.style.invertedHalftone = true
+            let holes = try await fieldPixels(renderer)
+            for y in stride(from: 0, to: 60, by: 3) {
+                for x in stride(from: 0, to: 120, by: 5) {
+                    var coverage = 0.0
+                    if y >= 12 {
+                        for (cx, cy, radius) in circles {
+                            let distance = hypot(Double(x) + 0.5 - cx, 59.5 - Double(y) - cy)
+                            let t = min(1, max(0, (distance - radius + 0.75) / 1.5))
+                            coverage = max(coverage, 1 - t * t * (3 - 2 * t))
+                        }
+                    }
+                    #expect(abs(Int(dots[x, y].w) - Int((255 * coverage).rounded())) <= 1)
+                    if y < 12 {
+                        #expect(holes[x, y].w == 0) // Inversion must not fill above the graph.
+                    } else if y >= 15 {
+                        #expect(abs(Int(dots[x, y].w) + Int(holes[x, y].w) - 255) <= 1)
+                        #expect(holes[x, y].x == holes[x, y].w) // Premultiplied white, not black holes.
+                    }
+                }
+            }
+        }
+    }
+    renderer.points = [SIMD2(-1, -1), SIMD2(1, -1)]
+    let silent = try await fieldPixels(renderer)
+    #expect(silent.bytes.allSatisfy { $0 == 0 })
+}
+
+@Test @MainActor
 func halftoneVerticalResponseTapersWithinTheLocalSpectrumArea() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)] // 30pt filled area in a 60pt view.
@@ -482,6 +533,12 @@ func renderVisualizerLab() async throws {
         ($0.label, SpectrumStyle(shading: $0), true, .dark)
     } + [
         ("Halftone-Hex", SpectrumStyle(shading: .halftone, dotPattern: .hex), true, .dark),
+        ("Halftone-Overlap", SpectrumStyle(dotSize: 12, dotSpacing: 6,
+                                            chromaticEnabled: false), true, .dark),
+        ("Halftone-Inverted", SpectrumStyle(dotSize: 5, dotSpacing: 7,
+                                             chromaticEnabled: false, invertedHalftone: true), true, .dark),
+        ("Halftone-Inverted-Hex", SpectrumStyle(dotSize: 9, dotSpacing: 6, dotPattern: .hex,
+                                                 chromaticEnabled: false, invertedHalftone: true), true, .dark),
         ("Halftone-Top", SpectrumStyle(shading: .halftone, dotSize: 5, amplitudeResponse: 0,
                                       verticalResponse: 1), true, .dark),
         ("Halftone-Bottom", SpectrumStyle(shading: .halftone, dotSize: 5, amplitudeResponse: 0,

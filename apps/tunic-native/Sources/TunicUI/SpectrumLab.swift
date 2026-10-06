@@ -43,8 +43,10 @@ struct SpectrumDebugPanel: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    Toggle("Invert · dots become holes", isOn: $style.invertedHalftone)
+                        .help("Fill the spectrum around transparent dots; larger holes remove more fill")
                     slider("Dot size", value: $style.dotSize, range: 0.5...12, unit: "pt", enabled: true)
-                        .help("Maximum dot diameter, capped at the spacing to keep dots distinct")
+                        .help("Maximum diameter; sizes above the spacing overlap into connected areas")
                     slider("Spacing", value: $style.dotSpacing, range: 3...18, unit: "pt", enabled: true)
                         .help("Distance between neighboring dot centers")
                     slider("Amplitude", value: $style.amplitudeResponse, range: 0...1, unit: "", enabled: true)

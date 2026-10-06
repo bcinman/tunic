@@ -26,7 +26,7 @@ struct FieldParameters {
     float4 viewport; // logical width, height, backing scale, bin count
     float4 mapping;  // stroke width, spread, hue, shading mode
     float4 halftone; // maximum diameter, center spacing, amplitude response, grid/hex
-    float4 variation; // signed vertical response, bass-driven channel shift in points, white color flag, unused
+    float4 variation; // signed vertical response, bass-driven channel shift in points, white color flag, inverted flag
 };
 
 float2 logicalPoint(float2 clip, float2 size) {
@@ -123,23 +123,25 @@ float spectrumClearance(float2 p, float limit, const device float2 *points, uint
 
 float4 shadeHalftone(float2 p, const device float2 *points,
                      constant FieldParameters &parameters) {
-    if (p.y <= parameters.viewport.y * (1 - spectrumHeight(p.x, points, uint(parameters.viewport.w), parameters.viewport.x))) {
-        return float4(0);
-    }
+    float inside = p.y - parameters.viewport.y * (1 - spectrumHeight(p.x, points, uint(parameters.viewport.w), parameters.viewport.x));
+    if (inside <= 0) return float4(0);
     float spacing = parameters.halftone.y;
     bool hex = parameters.halftone.w > 0.5;
     float rowStep = spacing * (hex ? sqrt(3.0f) * 0.5 : 1.0f);
     float aa = 0.75 / parameters.viewport.z;
+    float reach = 0.5 * parameters.halftone.x + aa;
     // Anchor to the bottom so the lattice stays fixed as the spectrum moves.
     float2 q = float2(p.x, parameters.viewport.y - p.y);
-    int row = int(round((q.y - spacing * 0.5) / rowStep));
     float coverage = 0;
-    // Neighboring cells matter with hex rows and amplitude-dependent radii.
-    for (int r = row - 1; r <= row + 1; ++r) {
-        if (r < 0) continue;
+    // Visit every center whose maximum radius could reach this pixel. Overlapping
+    // dots can extend beyond immediate neighbors; small dots keep a small search.
+    int firstRow = max(0, int(ceil((q.y - reach - spacing * 0.5) / rowStep)));
+    int lastRow = int(floor((q.y + reach - spacing * 0.5) / rowStep));
+    for (int r = firstRow; r <= lastRow; ++r) {
         float offset = hex && (r % 2 != 0) ? spacing * 0.5 : 0;
-        int column = int(round((q.x - spacing * 0.5 - offset) / spacing));
-        for (int c = column - 1; c <= column + 1; ++c) {
+        int firstColumn = int(ceil((q.x - reach - spacing * 0.5 - offset) / spacing));
+        int lastColumn = int(floor((q.x + reach - spacing * 0.5 - offset) / spacing));
+        for (int c = firstColumn; c <= lastColumn; ++c) {
             float2 center = float2((c + 0.5) * spacing + offset, spacing * 0.5 + r * rowStep);
             float height = spectrumHeight(center.x, points, uint(parameters.viewport.w), parameters.viewport.x);
             if (height <= 0) continue;
@@ -148,7 +150,7 @@ float4 shadeHalftone(float2 p, const device float2 *points,
             float vertical = parameters.variation.x;
             float position = clamp(center.y / (height * parameters.viewport.y), 0.0f, 1.0f);
             float taper = mix(1.0f, vertical >= 0 ? position : 1 - position, abs(vertical));
-            float radius = 0.5 * min(parameters.halftone.x, spacing)
+            float radius = 0.5 * parameters.halftone.x
                 * mix(1.0f, height, parameters.halftone.z) * taper;
             float fromCenter = distance(q, center);
             if (radius <= 0 || fromCenter >= radius + aa) continue;
@@ -167,7 +169,8 @@ float4 shadeHalftone(float2 p, const device float2 *points,
             coverage = max(coverage, dot);
         }
     }
-    float alpha = coverage;
+    float alpha = parameters.variation.w > 0.5
+        ? (1 - coverage) * smoothstep(0.0f, 2 * aa, inside) : coverage;
     float3 color = parameters.variation.z > 0.5 ? float3(1) : hueColor(parameters.mapping.z);
     return float4(color * alpha, alpha);
 }

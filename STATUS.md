@@ -64,7 +64,9 @@ This file is the source of truth for implemented product capabilities.
   and distance-debug mappings; width, spread, and hue update live. Halftone shading
   fills beneath the curve with white or hue-colored grid/hexagonal dots, adjustable diameter and
   spacing, and a response control that scales diameter by displayed spectrum
-  height at each dot's frequency. Boundary dots shrink to fit their full circles
+  height at each dot's frequency. Diameters above the spacing overlap into connected
+  areas; an Invert option fills the graph around transparent dot-shaped holes.
+  Boundary dots shrink to fit their full circles
   inside the spectrum and viewport, including their antialiased edges, rather than
   being sliced by the fill mask. An independent signed vertical response tapers
   dots toward the top or bottom of each frequency's filled area. Optional bass-hit
