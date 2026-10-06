@@ -20,7 +20,8 @@ let package = Package(
         ),
         .target(
             name: "TunicUI",
-            dependencies: [.product(name: "TunicEngine", package: "TunicEngine")]
+            dependencies: [.product(name: "TunicEngine", package: "TunicEngine")],
+            resources: [.copy("Spectrum.metal")]
         ),
         .testTarget(name: "TunicUITests", dependencies: ["TunicUI"]),
     ]

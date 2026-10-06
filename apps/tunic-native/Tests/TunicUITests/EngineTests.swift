@@ -1,4 +1,5 @@
 import AppKit
+import MetalKit
 import SwiftUI
 import Testing
 import TunicEngine
@@ -17,49 +18,98 @@ private struct Timeout: Error { let condition: String }
 
 @Test
 func spectrumUsesDecibelsAndLogarithmicFrequencyCoordinates() {
-    let rect = CGRect(x: 10, y: 20, width: 300, height: 90)
-    let shape = SpectrumShape(amplitudes: [0, 0.001, 0.1, 2], maximumFrequency: 20_000)
-    var points: [CGPoint] = []
-    shape.path(in: rect).forEach { element in
-        if case .line(let point) = element { points.append(point) }
-    }
-    #expect(points.count == 5)
+    let points = spectrumPoints([0, 0.001, 0.1, 2], maximumFrequency: 20_000)
+    #expect(points.count == 4)
     for (actual, expected) in zip(points, [
-        CGPoint(x: 10, y: 110), CGPoint(x: 110, y: 80),
-        CGPoint(x: 210, y: 40), CGPoint(x: 310, y: 20),
-        CGPoint(x: 310, y: 110),
+        SIMD2<Float>(-1, -1), SIMD2<Float>(-1 / 3, -1 / 3),
+        SIMD2<Float>(1 / 3, 5 / 9), SIMD2<Float>(1, 1),
     ]) {
         #expect(abs(actual.x - expected.x) < 0.001)
         #expect(abs(actual.y - expected.y) < 0.001)
     }
-    // A narrower frequency range expands the bins before the Canvas clips them.
-    let cropped = SpectrumShape(amplitudes: [0, 1, 0, 0], maximumFrequency: 200)
-    #expect(abs(cropped.path(in: rect).boundingRect.width - 900) < 0.001)
-    #expect(SpectrumShape(amplitudes: [], maximumFrequency: 20_000).path(in: rect).isEmpty)
-    let silent = SpectrumShape(amplitudes: [0, 0, 0], maximumFrequency: 20_000)
-    #expect(silent.path(in: rect).boundingRect.height == 0)
+    // A narrower frequency range expands the bins before Metal clips them.
+    let cropped = spectrumPoints([0, 1, 0, 0], maximumFrequency: 200)
+    #expect(abs(cropped[3].x - 5) < 0.001)
+    #expect(spectrumPoints([], maximumFrequency: 20_000).isEmpty)
+    #expect(spectrumPoints([1], maximumFrequency: 20_000).isEmpty)
 }
 
-@Test(.enabled(if: ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] != nil)) @MainActor
-func renderSpectrumStates() throws {
-    guard let directory = ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] else { return }
+@Test @MainActor
+func renderSpectrumStates() async throws {
+    let device = try #require(MTLCreateSystemDefaultDevice())
+    let renderer = try SpectrumRenderer(device: device)
+    renderer.style.mode = .points
+    let width = 592
+    let height = 150
+    let descriptor = MTLTextureDescriptor.texture2DDescriptor(
+        pixelFormat: .bgra8Unorm, width: width, height: height, mipmapped: false)
+    descriptor.storageMode = .shared
+    descriptor.usage = .renderTarget
+    let texture = try #require(device.makeTexture(descriptor: descriptor))
     let spectrum: [Float] = (0..<256).map { index in
         let x = Double(index) / 255
         let db = -80 + 60 * exp(-pow((x - 0.32) / 0.12, 2))
             + 35 * exp(-pow((x - 0.73) / 0.05, 2))
         return Float(pow(10, db / 20))
     }
-    for scheme in [ColorScheme.dark, .light] {
-        let renderer = ImageRenderer(content: VStack(spacing: 16) {
-            ResponseGraph(response: [-3, 6, -2, 0], spectrum: spectrum, maximumFrequency: 20_000)
-            ResponseGraph(response: [0, 0], spectrum: [], maximumFrequency: 20_000)
+    for (name, amplitudes) in [("active", spectrum), ("empty", []), ("silent", [Float](repeating: 0, count: 256))] {
+        renderer.points = spectrumPoints(amplitudes, maximumFrequency: 20_000)
+        let pass = MTLRenderPassDescriptor()
+        pass.colorAttachments[0].texture = texture
+        pass.colorAttachments[0].loadAction = .clear
+        pass.colorAttachments[0].storeAction = .store
+        pass.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0)
+        let command = try #require(renderer.queue.makeCommandBuffer())
+        renderer.encode(pass: pass, command: command, scale: 2)
+        await withCheckedContinuation { continuation in
+            command.addCompletedHandler { _ in continuation.resume() }
+            command.commit()
         }
-        .frame(width: 296, height: 166).padding(12)
-        .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, scheme))
-        renderer.scale = 2
-        let image = try #require(renderer.cgImage)
-        let png = try #require(NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]))
-        try png.write(to: URL(fileURLWithPath: directory).appendingPathComponent("spectrum-\(scheme).png"))
+        #expect(command.status == .completed)
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        pixels.withUnsafeMutableBytes {
+            texture.getBytes($0.baseAddress!, bytesPerRow: width * 4,
+                             from: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
+        }
+        let opaque = stride(from: 3, to: pixels.count, by: 4).filter { pixels[$0] != 0 }
+        #expect(opaque.count < width * height / 5)
+        if name == "empty" {
+            #expect(opaque.isEmpty)
+        } else {
+            #expect(!opaque.isEmpty)
+            #expect(opaque.allSatisfy { pixels[$0 - 3...$0].allSatisfy { $0 == 255 } })
+        }
+        if name == "active" {
+            // Bin 82 is near the taller peak (~−20 dBFS), not vertically inverted.
+            let offset = (33 * width + 190) * 4
+            #expect(pixels[offset + 3] == 255)
+            #expect(pixels[(116 * width + 190) * 4 + 3] == 0)
+        }
+    }
+    if let directory = ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] {
+        _ = NSApplication.shared
+        let host = NSHostingView(rootView: VStack(spacing: 16) {
+            SpectrumView(spectrum: spectrum, maximumFrequency: 20_000, style: SpectrumStyle(mode: .points))
+            SpectrumView(spectrum: [], maximumFrequency: 20_000, style: SpectrumStyle(mode: .points))
+            SpectrumView(spectrum: [Float](repeating: 0, count: 256), maximumFrequency: 20_000,
+                         style: SpectrumStyle(mode: .points))
+        }
+        .frame(width: 296, height: 257).padding(12)
+        .background(Color(red: 0.094, green: 0.125, blue: 0.188)))
+        let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 281),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFrontRegardless()
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(500))
+        let capture = Process()
+        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
+                             directory + "/metal-hosted.png"]
+        try capture.run()
+        capture.waitUntilExit()
+        #expect(capture.terminationStatus == 0)
     }
 }
 

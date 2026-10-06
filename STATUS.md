@@ -57,9 +57,35 @@ This file is the source of truth for implemented product capabilities.
   native resources, retries route failures, and tears down on explicit shutdown
   or handle drop. No audio buffers or real-time callbacks cross into Swift.
 - A SwiftUI menu-bar app linked to generated BoltFFI bindings, with real device
-  status, preset selection, named gain controls, save/reset, response graph, and
-  live RMS readings. A minimal Canvas spectrum renders behind the response at
-  the ~30 Hz telemetry polling rate, with numeric RMS readings limited to 5 Hz.
+  status, preset selection, named gain controls, save/reset, and live RMS readings.
+  A transparent Metal `MTKView` visualizer replaces the Canvas spectrum and EQ
+  response curve. A collapsible native debug panel switches between white points
+  and a signed distance field of the spectrum curve, with line, glow, contour-band,
+  and distance-debug mappings; width, spread, and hue update live. Halftone shading
+  fills beneath the curve with white or hue-colored grid/hexagonal dots, adjustable diameter and
+  spacing, and a response control that scales diameter by displayed spectrum
+  height at each dot's frequency. Boundary dots shrink to fit their full circles
+  inside the spectrum and viewport, including their antialiased edges, rather than
+  being sliced by the fill mask. An independent signed vertical response tapers
+  dots toward the top or bottom of each frequency's filled area. Optional bass-hit
+  chromatic aberration splits color channels across the entire halftone image,
+  with adjustable strength, 20–180 Hz trigger threshold, and time-based decay.
+  Optional bass ripples distort the halftone image and silhouette with traveling
+  vertical wave displacement rather than dot growth, with strength in points,
+  speed, width, and decay controls plus a manual preview button for static demo input.
+  Up to four waves overlap; held bass does not retrigger. Ripples share the bass
+  threshold with chromatic aberration and stop redrawing when faded or offscreen.
+  Extra redraws stop when the pulse settles or the view is hidden. A static demo
+  input supports tuning without audio. Visual settings are ephemeral and separate
+  from audio settings. Distance and color are separate shader functions in one
+  pass, not a general layer compositor. Rendering follows ~30 Hz telemetry updates,
+  with adjustable spectrum attack (0–500 ms) and decay (0–1500 ms) smoothing of
+  displayed dB heights across all styles, independent of bass-hit detection.
+  Startup and Reset default to 0 ms attack, 100 ms decay, white grid halftone with
+  3 pt dots, 4 pt spacing, 0.5 amplitude response, and both chromatic aberration
+  and ripples enabled. Continuous redraws run only during spectrum settling or
+  chromatic pulses or ripples; numeric RMS readings are
+  limited to 5 Hz.
   Telemetry observation is isolated from profile controls. Closing the popup
   stops telemetry demand, not processing.
   Run it with `mise run run-native`.
@@ -73,8 +99,8 @@ This file is the source of truth for implemented product capabilities.
 - Product-complete UI, explicit permission UX, recovery beyond retrying the
   current default output, bypass, and full equalizer controls; GPUI builds and
   platform integrations for Linux and Windows.
-- Production-ready native menu-bar UI, editable graph gestures, and smoothed
-  spectrum ballistics in SwiftUI. Non-Swift bindings and non-macOS audio
+- Production-ready native menu-bar UI and editable graph gestures.
+  Non-Swift bindings and non-macOS audio
   adapters are not yet integrated or verified.
 - Durable storage. A future crate such as `tunic-sqlite` can implement the
   core's `Persistence` contract; the app currently uses `MemoryPersistence`.
