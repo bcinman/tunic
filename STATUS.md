@@ -86,6 +86,14 @@ This file is the source of truth for implemented product capabilities.
   and ripples enabled. Continuous redraws run only during spectrum settling or
   chromatic pulses or ripples; numeric RMS readings are
   limited to 5 Hz.
+  Visualization settings, pure envelope/pulse/ripple dynamics, SwiftUI lifecycle,
+  and Metal resource ownership are separate components. Shader composition applies
+  chromatic offsets, ripple coordinates, then halftone coverage/color in one pass.
+  Spectrum target storage is reused, envelope coefficients are computed once per
+  frame, and GPU uniforms use a fixed-size value rather than a temporary array.
+  Halftone clearance scans only nearby spectrum segments within the dot radius;
+  full-distance SDF styles retain the complete scan. GPU differential tests compare
+  bounded clearance against the original full scan on steep and cropped spectra.
   Telemetry observation is isolated from profile controls. Closing the popup
   stops telemetry demand, not processing.
   Run it with `mise run run-native`.

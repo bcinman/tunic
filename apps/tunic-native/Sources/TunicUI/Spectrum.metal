@@ -101,9 +101,33 @@ float spectrumHeight(float x, const device float2 *points, uint count, float wid
     return clamp(0.5 * (mix(points[index].y, points[index + 1].y, bin - index) + 1), 0.0f, 1.0f);
 }
 
-float4 shadeHalftone(float2 p, float d, const device float2 *points,
+// Halftone only needs clearance up to a dot's radius + AA, not the full SDF.
+// With monotonic, uniformly spaced x bins, segments outside this x interval
+// cannot be nearer. Include both segments straddling the interval endpoints.
+float spectrumClearance(float2 p, float limit, const device float2 *points, uint count, float2 size) {
+    if (p.y <= size.y * (1 - spectrumHeight(p.x, points, count, size.x))) return 0;
+    float firstX = logicalPoint(points[0], size).x;
+    float step = (points[1].x - points[0].x) * 0.5 * size.x;
+    uint first = uint(clamp(floor((p.x - limit - firstX) / step), 0.0f, float(count - 2)));
+    uint last = uint(clamp(floor((p.x + limit - firstX) / step), 0.0f, float(count - 2)));
+    float nearestSquared = limit * limit;
+    float2 a = logicalPoint(points[first], size);
+    for (uint i = first; i <= last; ++i) {
+        float2 b = logicalPoint(points[i + 1], size);
+        float2 edge = b - a;
+        float t = clamp(dot(p - a, edge) / dot(edge, edge), 0.0f, 1.0f);
+        float2 delta = p - (a + t * edge);
+        nearestSquared = min(nearestSquared, dot(delta, delta));
+        a = b;
+    }
+    return sqrt(nearestSquared);
+}
+
+float4 shadeHalftone(float2 p, const device float2 *points,
                      constant FieldParameters &parameters) {
-    if (d >= 0) return float4(0);
+    if (p.y <= parameters.viewport.y * (1 - spectrumHeight(p.x, points, uint(parameters.viewport.w), parameters.viewport.x))) {
+        return float4(0);
+    }
     float spacing = parameters.halftone.y;
     bool hex = parameters.halftone.w > 0.5;
     float rowStep = spacing * (hex ? sqrt(3.0f) * 0.5 : 1.0f);
@@ -134,9 +158,11 @@ float4 shadeHalftone(float2 p, float d, const device float2 *points,
             // graph. Perpendicular distance also handles steep slopes and valleys;
             // vertical clearance alone would still slice the sides of a dot.
             float2 screenCenter = float2(center.x, parameters.viewport.y - center.y);
-            float clearance = -spectrumDistance(screenCenter, points, uint(parameters.viewport.w), parameters.viewport.xy);
             float2 edge = min(screenCenter, parameters.viewport.xy - screenCenter);
-            clearance = min(clearance, min(edge.x, edge.y));
+            float limit = min(radius + aa, min(edge.x, edge.y));
+            if (limit <= aa) continue;
+            float clearance = spectrumClearance(screenCenter, limit, points,
+                                                uint(parameters.viewport.w), parameters.viewport.xy);
             radius = min(radius, clearance - aa);
             if (radius <= 0) continue;
             float dot = 1 - smoothstep(radius - aa, radius + aa, fromCenter);
@@ -148,8 +174,7 @@ float4 shadeHalftone(float2 p, float d, const device float2 *points,
     return float4(color * alpha, alpha);
 }
 
-float4 sampleHalftone(float2 p, const device float2 *points,
-                      constant FieldParameters &parameters) {
+float2 rippleCoordinates(float2 p, constant FieldParameters &parameters) {
     // Warp the completed halftone's sampling coordinates: dots and silhouette
     // bend together, rather than resizing dots or clipping against an unwarped fill.
     float displacement = 0;
@@ -161,9 +186,29 @@ float4 sampleHalftone(float2 p, const device float2 *points,
         }
     }
     p.y -= parameters.ripple.x * displacement;
+    return p;
+}
+
+float4 sampleHalftone(float2 p, const device float2 *points,
+                      constant FieldParameters &parameters) {
+    p = rippleCoordinates(p, parameters);
     if (any(p < 0) || any(p >= parameters.viewport.xy)) return float4(0);
-    float d = spectrumDistance(p, points, uint(parameters.viewport.w), parameters.viewport.xy);
-    return shadeHalftone(p, d, points, parameters);
+    return shadeHalftone(p, points, parameters);
+}
+
+// Composition order: channel offsets → wave coordinates → halftone coverage/color.
+float4 chromaticHalftone(float2 p, const device float2 *points,
+                         constant FieldParameters &parameters) {
+    float4 base = sampleHalftone(p, points, parameters);
+    float shift = parameters.variation.y;
+    if (shift <= 0) return base;
+    // A single bass envelope displaces channels across the whole image, including
+    // its spectrum boundary. It does not change the dots only in the bass region.
+    float4 red = sampleHalftone(p - float2(shift, 0), points, parameters);
+    float4 blue = sampleHalftone(p + float2(shift, 0), points, parameters);
+    float3 rgb = float3(red.r, base.g, blue.b);
+    // Preserve transparent gaps without dark fringes from an absent color channel.
+    return float4(rgb, max(rgb.r, max(rgb.g, rgb.b)));
 }
 
 fragment float4 fieldFragment(float4 position [[position]],
@@ -172,18 +217,7 @@ fragment float4 fieldFragment(float4 position [[position]],
     float scale = parameters.viewport.z;
     float2 p = position.xy / scale;
     uint mode = uint(parameters.mapping.w);
-    if (mode == 4) {
-        float4 base = sampleHalftone(p, points, parameters);
-        float shift = parameters.variation.y;
-        if (shift <= 0) return base;
-        // A single bass envelope displaces channels across the whole image, including
-        // its spectrum boundary. It does not change the dots only in the bass region.
-        float4 red = sampleHalftone(p - float2(shift, 0), points, parameters);
-        float4 blue = sampleHalftone(p + float2(shift, 0), points, parameters);
-        float3 rgb = float3(red.r, base.g, blue.b);
-        // Preserve transparent gaps without dark fringes from an absent color channel.
-        return float4(rgb, max(rgb.r, max(rgb.g, rgb.b)));
-    }
+    if (mode == 4) return chromaticHalftone(p, points, parameters);
     float d = spectrumDistance(p, points, uint(parameters.viewport.w), parameters.viewport.xy);
     float4 color = shadeDistance(d, parameters.mapping, scale);
     if (mode == 1 || mode == 2) {

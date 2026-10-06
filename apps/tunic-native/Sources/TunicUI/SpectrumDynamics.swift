@@ -1,0 +1,130 @@
+import Foundation
+
+/// Peak magnitude in 20–180 Hz; bins retain their original 20 Hz–20 kHz spacing.
+func bassDrive(_ spectrum: [Float], threshold: Double) -> Double {
+    guard spectrum.count > 1 else { return 0 }
+    let last = Int(floor(log(180.0 / 20) / log(1000.0) * Double(spectrum.count - 1)))
+    let peak = Double(spectrum[0...last].max() ?? 0)
+    let db = 20 * log10(max(peak, 0.000_001))
+    return min(1, max(0, (db - threshold) / 18))
+}
+
+/// Positive bass changes excite a pulse; elapsed time, not frame count, controls release.
+struct BassPulse {
+    private(set) var level: Double = 0
+    private var previousDrive: Double = 0
+    private var lastTime: Double?
+
+    mutating func advance(to time: Double, decay: Double) {
+        if let lastTime {
+            level *= exp(-max(0, time - lastTime) / (decay / 1000))
+            if level < 0.001 { level = 0 }
+        }
+        lastTime = time
+    }
+
+    mutating func observe(_ drive: Double, at time: Double, decay: Double) {
+        advance(to: time, decay: decay)
+        level = max(level, max(0, drive - previousDrive))
+        previousDrive = drive
+    }
+}
+
+/// Up to four bass fronts travel from left to right; held notes do not retrigger.
+struct SpectrumRipples {
+    private(set) var waves: [SIMD2<Double>] = [] // distance in points, remaining energy
+    private var previousDrive: Double = 0
+    private var lastTime: Double?
+    private var lastHit: Double = -.infinity
+
+    mutating func advance(to time: Double, speed: Double, decay: Double) {
+        let elapsed = max(0, time - (lastTime ?? time))
+        lastTime = time
+        let attenuation = exp(-elapsed * 1000 / decay)
+        for index in waves.indices {
+            waves[index].x += elapsed * speed
+            waves[index].y *= attenuation
+        }
+        waves.removeAll { $0.y < 0.001 }
+    }
+
+    mutating func retire(beyond distance: Double) {
+        waves.removeAll { $0.x > distance }
+    }
+
+    mutating func observe(_ drive: Double, at time: Double, preview: Bool = false) {
+        let rise = max(0, drive - previousDrive)
+        previousDrive = drive
+        guard preview || (rise > 0.08 && time - lastHit >= 0.12) else { return }
+        lastHit = time
+        if waves.count == 4 { waves.removeFirst() }
+        waves.append(SIMD2(0, preview ? 1 : rise))
+    }
+}
+
+/// Clip-space coordinates: bins span 20 Hz–20 kHz logarithmically; height is −90…0 dBFS.
+func spectrumPoints(_ amplitudes: [Float], maximumFrequency: Double) -> [SIMD2<Float>] {
+    var points: [SIMD2<Float>] = []
+    updateSpectrumPoints(amplitudes, maximumFrequency: maximumFrequency, into: &points)
+    return points
+}
+
+/// Reuse the telemetry-sized allocation between updates.
+private func updateSpectrumPoints(_ amplitudes: [Float], maximumFrequency: Double,
+                                  into points: inout [SIMD2<Float>]) {
+    guard amplitudes.count > 1 else {
+        points.removeAll(keepingCapacity: true)
+        return
+    }
+    if points.count != amplitudes.count {
+        points = Array(repeating: .zero, count: amplitudes.count)
+    }
+    let frequencyScale = log(1_000.0) / log(maximumFrequency / 20)
+    for (index, amplitude) in amplitudes.enumerated() {
+        let db = 20 * log10(max(Double(amplitude), 0.000_001))
+        let height = min(1, max(0, (db + 90) / 90))
+        points[index] = SIMD2(
+            Float(2 * Double(index) / Double(amplitudes.count - 1) * frequencyScale - 1),
+            Float(2 * height - 1)
+        )
+    }
+}
+
+/// Displayed spectrum geometry, independent of the rendering backend and bass effects.
+struct SpectrumEnvelope {
+    var points: [SIMD2<Float>] = []
+    private var target: [SIMD2<Float>] = []
+    private var lastTime: Double?
+
+    var isAnimating: Bool { !target.isEmpty && points != target }
+
+    mutating func observe(_ spectrum: [Float], maximumFrequency: Double, at time: Double,
+                          attack: Double, decay: Double) {
+        advance(to: time, attack: attack, decay: decay)
+        updateSpectrumPoints(spectrum, maximumFrequency: maximumFrequency, into: &target)
+        if points.count != target.count {
+            points = target.map { SIMD2($0.x, -1) }
+        }
+        advance(to: time, attack: attack, decay: decay)
+    }
+
+    /// Milliseconds are exponential time constants applied to displayed dB height.
+    mutating func advance(to time: Double, attack: Double, decay: Double) {
+        let elapsed = max(0, time - (lastTime ?? time))
+        lastTime = time
+        // Only two coefficients per frame, not one transcendental call per bin.
+        let rise = Float(attack == 0 ? 1 : -expm1(-elapsed * 1000 / attack))
+        let fall = Float(decay == 0 ? 1 : -expm1(-elapsed * 1000 / decay))
+        for index in target.indices {
+            let difference = target[index].y - points[index].y
+            points[index].x = target[index].x
+            points[index].y += difference * (difference > 0 ? rise : fall)
+            if abs(target[index].y - points[index].y) < 0.0001 { points[index].y = target[index].y }
+        }
+    }
+
+    mutating func settle() {
+        if !target.isEmpty { points = target }
+        lastTime = nil
+    }
+}
