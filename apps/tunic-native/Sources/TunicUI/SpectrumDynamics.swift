@@ -92,11 +92,6 @@ struct SpectrumEnvelope {
             if abs(target[index].y - points[index].y) < 0.0001 { points[index].y = target[index].y }
         }
     }
-
-    mutating func settle() {
-        if !target.isEmpty { points = target }
-        lastTime = nil
-    }
 }
 
 /// Gaussian blur of displayed dB height, wider toward bass. Reuses scratch storage

@@ -14,6 +14,15 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
     }
     var style = SpectrumStyle()
     private(set) var bassPulse = BassPulse()
+    private var presentationGeneration = 0
+
+    func resetPresentation(_ view: MTKView) {
+        presentationGeneration += 1
+        envelope = SpectrumEnvelope()
+        bassPulse = BassPulse()
+        view.layer?.isHidden = true
+        updateAnimation(view)
+    }
 
     func receiveSpectrum(_ spectrum: [Float], maximumFrequency: Double, at time: Double) {
         envelope.observe(spectrum, maximumFrequency: maximumFrequency, at: time,
@@ -69,9 +78,7 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
 
     func draw(in view: MTKView) {
         guard view.window?.isVisible == true else {
-            bassPulse = BassPulse()
-            envelope.settle()
-            updateAnimation(view)
+            resetPresentation(view)
             return
         }
         let time = CACurrentMediaTime()
@@ -84,6 +91,17 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
         let scale = Float(view.drawableSize.width / max(view.bounds.width, 1))
         encode(pass: pass, command: command, scale: scale)
         command.present(drawable)
+        if view.layer?.isHidden == true && !points.isEmpty {
+            let generation = presentationGeneration
+            command.addCompletedHandler { [weak self, weak view] command in
+                guard command.status == .completed else { return }
+                Task { @MainActor in
+                    guard let self, let view, view.window?.isVisible == true,
+                          self.presentationGeneration == generation else { return }
+                    view.layer?.isHidden = false
+                }
+            }
+        }
         command.commit()
     }
 

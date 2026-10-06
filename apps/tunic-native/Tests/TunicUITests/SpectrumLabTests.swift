@@ -40,6 +40,9 @@ func spectrumAttackAndDecayUseElapsedTimeAndSettle() throws {
     renderer.receiveSpectrum([1, 1], maximumFrequency: 20_000, at: 11)
     renderer.draw(in: view) // Hidden views stop even with an unfinished envelope.
     #expect(view.isPaused)
+    #expect(renderer.points.isEmpty)
+    renderer.advanceSpectrum(to: 100)
+    #expect(renderer.points.isEmpty) // Old targets must not reappear on reopening.
     renderer.receiveSpectrum([], maximumFrequency: 20_000, at: 12)
     #expect(renderer.points.isEmpty)
 }
@@ -544,4 +547,35 @@ func renderVisualizerLab() async throws {
             #expect(renderer.bassPulse.level == 0)
         }
     }
+
+    // Reuse the same window and renderer, as MenuBarExtra does. No new input is
+    // delivered between closing and reopening: the retained drawable must stay hidden.
+    let metal = try #require(findMetalView(host))
+    let renderer = try #require(metal.delegate as? SpectrumRenderer)
+    #expect(!renderer.points.isEmpty)
+    #expect(metal.layer?.isHidden == false)
+    window.orderOut(nil)
+    try await Task.sleep(for: .milliseconds(100))
+    #expect(renderer.points.isEmpty)
+    #expect(metal.isPaused)
+    #expect(metal.layer?.isHidden == true)
+    window.orderFrontRegardless()
+    try await Task.sleep(for: .milliseconds(100))
+    #expect(metal.layer?.isHidden == true)
+    renderer.receiveSpectrum(Array(repeating: 0, count: 256), maximumFrequency: 20_000,
+                             at: CACurrentMediaTime())
+    metal.draw()
+    try await Task.sleep(for: .milliseconds(100))
+    #expect(renderer.points.allSatisfy { $0.y == -1 })
+    #expect(metal.layer?.isHidden == false)
+    let capture = Process()
+    capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+    capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
+                         directory + "/lab-Reopened-Silent.png"]
+    try capture.run()
+    capture.waitUntilExit()
+    #expect(capture.terminationStatus == 0)
+    renderer.receiveSpectrum(demoSpectrum, maximumFrequency: 20_000, at: CACurrentMediaTime())
+    metal.draw()
+    #expect(renderer.points.contains { $0.y > -1 })
 }
