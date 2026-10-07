@@ -1,3 +1,5 @@
+import SwiftUI
+
 enum SpectrumMode: String, CaseIterable {
     case points = "Points"
     case sdf = "SDF"
@@ -47,6 +49,10 @@ struct SpectrumStyle: Equatable {
     var deepGlowEnabled = false
     var deepGlowStrength: Double = 2
     var deepGlowRadius: Double = 32
+    var gradientStart = Color(red: 0.27, green: 0.91, blue: 1)
+    var gradientSecond = Color(red: 0.61, green: 1, blue: 0.94)
+    var gradientThird = Color(red: 0.82, green: 0.81, blue: 1)
+    var gradientEnd = Color(red: 1, green: 0.68, blue: 0.97)
 
     var usesHalftone: Bool { mode == .sdf && shading == .halftone }
     var chromaticActive: Bool { usesHalftone && chromaticEnabled && chromaticStrength > 0 }

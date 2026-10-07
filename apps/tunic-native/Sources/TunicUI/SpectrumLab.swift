@@ -1,12 +1,44 @@
 import SwiftUI
 
+struct SpectrumLabButton: View {
+    @Binding var style: SpectrumStyle
+    @Binding var demo: Bool
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        Button {
+            isPresented.toggle()
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .frame(width: 28, height: 28)
+        }
+        .buttonStyle(.plain)
+        .focusEffectDisabled()
+        .glassEffect(.regular.interactive(), in: .circle)
+        .accessibilityLabel("Visualizer lab")
+        .help("Visualizer lab")
+        .popover(isPresented: $isPresented, arrowEdge: .trailing) {
+            ScrollView {
+                SpectrumDebugPanel(style: $style, demo: $demo)
+                    .padding(12)
+            }
+            .frame(width: 340, height: 540)
+        }
+    }
+}
+
 struct SpectrumDebugPanel: View {
     @Binding var style: SpectrumStyle
     @Binding var demo: Bool
-    @State private var expanded = true
 
     var body: some View {
-        DisclosureGroup(isExpanded: $expanded) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Visualizer lab").fontWeight(.medium)
+                Spacer()
+                Button("Reset") { style = SpectrumStyle() }
+                    .help("Reset visual settings; audio settings are unchanged")
+            }
             VStack(alignment: .leading, spacing: 8) {
                 Picker("Input", selection: $demo) {
                     Text("Live audio").tag(false)
@@ -68,14 +100,23 @@ struct SpectrumDebugPanel: View {
                 }
                 if style.usesHalftone {
                     Picker("Color", selection: $style.whiteHalftone) {
-                        Text("Hue").tag(false)
+                        Text("Gradient").tag(false)
                         Text("White").tag(true)
                     }
                     .pickerStyle(.segmented)
+                    if !style.whiteHalftone {
+                        HStack {
+                            ColorPicker("0%", selection: $style.gradientStart, supportsOpacity: false)
+                            ColorPicker("33%", selection: $style.gradientSecond, supportsOpacity: false)
+                            ColorPicker("67%", selection: $style.gradientThird, supportsOpacity: false)
+                            ColorPicker("100%", selection: $style.gradientEnd, supportsOpacity: false)
+                        }
+                        .help("Colors blend left to right across the frequency axis")
+                    }
+                } else {
+                    slider("Hue", value: $style.hue, range: 0...1, unit: "",
+                           enabled: style.mode == .sdf && style.shading != .distance)
                 }
-                slider("Hue", value: $style.hue, range: 0...1, unit: "",
-                       enabled: style.mode == .sdf && style.shading != .distance
-                           && !(style.shading == .halftone && style.whiteHalftone))
                 if style.usesHalftone {
                     Divider()
                     Toggle("Bass chromatic aberration", isOn: $style.chromaticEnabled)
@@ -97,13 +138,6 @@ struct SpectrumDebugPanel: View {
                 }
             }
             .padding(.top, 8)
-        } label: {
-            HStack {
-                Text("Visualizer lab").fontWeight(.medium)
-                Spacer()
-                Button("Reset") { style = SpectrumStyle() }
-                    .help("Reset visual settings; audio settings are unchanged")
-            }
         }
         .font(.caption)
         .controlSize(.mini)

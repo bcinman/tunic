@@ -59,11 +59,18 @@ This file is the source of truth for implemented product capabilities.
 - A SwiftUI menu-bar app linked to generated BoltFFI bindings, with real device
   status, preset selection, named gain controls, save/reset, and live RMS readings.
   A transparent Metal `MTKView` visualizer replaces the Canvas spectrum and EQ
-  response curve. A collapsible native debug panel switches between white points
+  response curve. An icon-only tuning button over the visualizer's top-right opens
+  a scrollable lab popover; its settings remain live and survive dismissal.
+  The button is hidden until hovering the spectrum, fades over 200 ms, and remains
+  visible while the popover is open; Reduce Motion disables the fade.
+  The FPS readout sits at the top-left. The lab switches between white points
   and a signed distance field of the spectrum curve, with line, glow, contour-band,
   and distance-debug mappings; width, spread, and hue update live. Halftone shading
-  fills beneath the curve with white or hue-colored grid/hexagonal dots, adjustable diameter and
-  spacing, and a response control that scales diameter by displayed spectrum
+  fills beneath the curve with white or horizontal-gradient grid/hexagonal dots, with
+  four editable color stops at 0%, 33%, 67%, and 100% of the frequency axis.
+  Gradient defaults use bright cyan, mint, lavender, and pink, interpolated between stops.
+  Halftone's gradient replaces its hue control. Dot diameter and spacing are adjustable,
+  with a response control that scales diameter by displayed spectrum
   height at each dot's frequency. Diameters above the spacing overlap into connected
   areas; an Invert option fills the graph around transparent dot-shaped holes.
   Boundary dots shrink to fit their full circles
@@ -87,6 +94,9 @@ This file is the source of truth for implemented product capabilities.
   enabled. Continuous redraws run only during spectrum settling or
   chromatic pulses; numeric RMS readings are
   limited to 5 Hz.
+  A visualizer FPS overlay reports GPU-completed frames over elapsed wall time,
+  updated once per second without driving additional Metal frames. Idle reads zero;
+  hiding the window stops the counter timer and resets the reading.
   Visualization settings, pure envelope/pulse dynamics, SwiftUI lifecycle,
   and Metal resource ownership are separate components. Shader composition applies
   chromatic offsets, then halftone coverage/color in one pass.

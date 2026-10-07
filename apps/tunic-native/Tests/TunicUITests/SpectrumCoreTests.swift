@@ -4,6 +4,17 @@ import Testing
 @testable import TunicUI
 
 @Test
+func frameRateUsesElapsedTimeAndDropsToZeroWhenIdle() {
+    var rate = SpectrumFrameRate(start: 10)
+    for _ in 0..<45 { rate.recordFrame() }
+    #expect(rate.sample(at: 11.5) == 30)
+    #expect(rate.sample(at: 12.5) == 0)
+    for _ in 0..<12 { rate.recordFrame() }
+    #expect(rate.sample(at: 12.5) == 0)
+    #expect(rate.sample(at: 13) == 24)
+}
+
+@Test
 func shapeSmoothingMatchesGaussianAndPreservesGeometry() {
     let original: [SIMD2<Float>] = (0..<256).map { index in
         SIMD2(Float(index) / 127.5 - 1, index == 32 || index == 224 ? 1 : -1)
@@ -45,8 +56,10 @@ func shapeSmoothingMatchesGaussianAndPreservesGeometry() {
 
 @Test
 func spectrumUniformsMatchMetalLayout() {
-    #expect(MemoryLayout<SpectrumUniforms>.stride == 4 * 16)
+    #expect(MemoryLayout<SpectrumUniforms>.stride == 8 * 16)
     #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.variation) == 3 * 16)
+    #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.gradientStart) == 4 * 16)
+    #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.gradientEnd) == 7 * 16)
 }
 
 @Test

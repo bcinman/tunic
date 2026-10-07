@@ -91,15 +91,15 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
         let scale = Float(view.drawableSize.width / max(view.bounds.width, 1))
         encode(pass: pass, command: command, scale: scale)
         command.present(drawable)
-        if view.layer?.isHidden == true && !points.isEmpty {
-            let generation = presentationGeneration
-            command.addCompletedHandler { [weak self, weak view] command in
-                guard command.status == .completed else { return }
-                Task { @MainActor in
-                    guard let self, let view, view.window?.isVisible == true,
-                          self.presentationGeneration == generation else { return }
-                    view.layer?.isHidden = false
-                }
+        let generation = presentationGeneration
+        let hasPoints = !points.isEmpty
+        command.addCompletedHandler { [weak self, weak view] command in
+            guard command.status == .completed else { return }
+            Task { @MainActor in
+                guard let self, let view, view.window?.isVisible == true,
+                      self.presentationGeneration == generation else { return }
+                (view as? SpectrumMetalView)?.recordCompletedFrame()
+                if hasPoints { view.layer?.isHidden = false }
             }
         }
         command.commit()

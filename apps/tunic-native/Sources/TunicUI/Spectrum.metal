@@ -27,6 +27,10 @@ struct FieldParameters {
     float4 mapping;  // stroke width, spread, hue, shading mode
     float4 halftone; // maximum diameter, center spacing, amplitude response, grid/hex
     float4 variation; // signed vertical response, bass-driven channel shift in points, white color flag, inverted flag
+    float4 gradientStart;
+    float4 gradientSecond;
+    float4 gradientThird;
+    float4 gradientEnd;
 };
 
 float2 logicalPoint(float2 clip, float2 size) {
@@ -171,7 +175,12 @@ float4 shadeHalftone(float2 p, const device float2 *points,
     }
     float alpha = parameters.variation.w > 0.5
         ? (1 - coverage) * smoothstep(0.0f, 2 * aa, inside) : coverage;
-    float3 color = parameters.variation.z > 0.5 ? float3(1) : hueColor(parameters.mapping.z);
+    float x = clamp(p.x / parameters.viewport.x, 0.0f, 1.0f) * 3;
+    float3 color = x < 1
+        ? mix(parameters.gradientStart.rgb, parameters.gradientSecond.rgb, x)
+        : x < 2 ? mix(parameters.gradientSecond.rgb, parameters.gradientThird.rgb, x - 1)
+                : mix(parameters.gradientThird.rgb, parameters.gradientEnd.rgb, x - 2);
+    if (parameters.variation.z > 0.5) color = float3(1);
     return float4(color * alpha, alpha);
 }
 

@@ -374,9 +374,9 @@ func bassPulseRejectsTrebleAndReleasesWithoutRetriggeringHeldNotes() {
 func bassChromaticSplitAffectsBothEndsAndStopsWhenDisabledOrHidden() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)]
-    renderer.style = SpectrumStyle(shading: .halftone, hue: 5 / 6, dotSize: 2, dotSpacing: 10,
+    renderer.style = SpectrumStyle(shading: .halftone, dotSize: 2, dotSpacing: 10,
                                    amplitudeResponse: 0, chromaticEnabled: true, chromaticStrength: 3,
-                                   whiteHalftone: false)
+                                   whiteHalftone: false, gradientStart: .white)
     let baseline = try await fieldPixels(renderer)
     var bins = [Float](repeating: 0, count: 256)
     bins[30] = 1
@@ -412,7 +412,7 @@ func bassChromaticSplitAffectsBothEndsAndStopsWhenDisabledOrHidden() async throw
 func whiteHalftonePreservesCoverageAndSplitsAllThreeChannels() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)]
-    renderer.style = SpectrumStyle(shading: .halftone, hue: 0, dotSize: 2, dotSpacing: 10,
+    renderer.style = SpectrumStyle(shading: .halftone, dotSize: 2, dotSpacing: 10,
                                    amplitudeResponse: 0, whiteHalftone: true)
     let white = try await fieldPixels(renderer)
     #expect(white[105, 55].w > 150)
@@ -421,11 +421,11 @@ func whiteHalftonePreservesCoverageAndSplitsAllThreeChannels() async throws {
         #expect(pixel.allSatisfy { $0 == pixel[3] }) // White premultiplied by coverage.
     }
     renderer.style.whiteHalftone = false
-    let hue = try await fieldPixels(renderer)
-    #expect(hue[105, 55].x == 0 && hue[105, 55].y == 0) // Original red hue retained.
-    #expect(hue[105, 55].z == white[105, 55].w)
+    let gradient = try await fieldPixels(renderer)
+    #expect(gradient[105, 55].x > gradient[105, 55].y)
+    #expect(gradient[105, 55].z > gradient[105, 55].y)
     for i in stride(from: 3, to: white.bytes.count, by: 4) {
-        #expect(hue.bytes[i] == white.bytes[i])
+        #expect(gradient.bytes[i] == white.bytes[i])
     }
     renderer.style.whiteHalftone = true
     renderer.style.chromaticEnabled = true
@@ -435,6 +435,43 @@ func whiteHalftonePreservesCoverageAndSplitsAllThreeChannels() async throws {
     #expect(split[108, 55].z > 150 && split[108, 55].x == 0)
     #expect(split[105, 55].y > 150 && split[105, 55].z == 0)
     #expect(split[102, 55].x > 150 && split[102, 55].y == 0)
+}
+
+@Test @MainActor
+func halftoneGradientInterpolatesAcrossXAtBothScales() async throws {
+    let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
+    renderer.points = [SIMD2(-1, 1), SIMD2(1, 1)]
+    renderer.style = SpectrumStyle(chromaticEnabled: false, whiteHalftone: false,
+                                   invertedHalftone: true,
+                                   gradientStart: Color(red: 1, green: 0, blue: 0),
+                                   gradientSecond: Color(red: 0, green: 1, blue: 0),
+                                   gradientThird: Color(red: 0, green: 0, blue: 1),
+                                   gradientEnd: Color(red: 1, green: 1, blue: 1))
+    for scale in [1, 2] {
+        let image = try await fieldPixels(renderer, scale: scale)
+        // Sample gaps between dots (opaque when inverted), at both sides of each stop.
+        for x in [0, 20, 36, 40, 44, 60, 76, 80, 84, 100, 116] {
+            let position = (Double(x * scale) + 0.5) / Double(scale)
+            let expected: SIMD3<Double>
+            if position < 40 {
+                expected = SIMD3(0, position / 40, 1 - position / 40) // BGRA
+            } else if position < 80 {
+                expected = SIMD3((position - 40) / 40, (80 - position) / 40, 0)
+            } else {
+                expected = SIMD3(1, (position - 80) / 40, (position - 80) / 40)
+            }
+            for y in [20, 44] {
+                let pixel = image[x * scale, y * scale]
+                #expect(pixel.w > 0)
+                for channel in 0..<3 {
+                    #expect(abs(Double(pixel[channel]) - expected[channel] * Double(pixel.w)) < 2)
+                }
+            }
+        }
+    }
+    renderer.style.gradientEnd = Color(red: 0, green: 0, blue: 0)
+    let edited = try await fieldPixels(renderer)
+    #expect(edited[116, 44].x < 30 && edited[116, 44].y == 0 && edited[116, 44].z == 0)
 }
 
 @MainActor @Observable
@@ -467,6 +504,51 @@ private struct LabPreview: View {
 private func findMetalView(_ view: NSView) -> MTKView? {
     if let metal = view as? MTKView { return metal }
     return view.subviews.lazy.compactMap(findMetalView).first
+}
+
+@Test(.enabled(if: ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] != nil)) @MainActor
+func renderFrameRateActiveAndIdle() async throws {
+    let directory = try #require(ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"])
+    _ = NSApplication.shared
+    let state = LabState()
+    state.style.whiteHalftone = false
+    state.style.chromaticEnabled = false
+    state.style.attack = 500
+    state.demo = false
+    let host = NSHostingView(rootView: LabPreview(state: state))
+    let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 600),
+                          styleMask: [.borderless], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    window.contentView = host
+    window.setContentSize(host.fittingSize)
+    window.orderFrontRegardless()
+    defer { window.close() }
+    try await Task.sleep(for: .milliseconds(100))
+    state.demo = true
+    let metal = try #require(findMetalView(host))
+    let label = try #require(metal.subviews.compactMap { $0 as? NSTextField }.first)
+    for name in ["active", "idle"] {
+        if name == "idle" { state.style.attack = 0 }
+        try await Task.sleep(for: .milliseconds(2400))
+        #expect(label.stringValue.hasSuffix(" FPS"))
+        if name == "active" {
+            #expect(label.stringValue != "0 FPS")
+            #expect(!metal.isPaused)
+        } else {
+            #expect(label.stringValue == "0 FPS")
+            #expect(metal.isPaused)
+        }
+        let capture = Process()
+        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
+                             directory + "/fps-\(name).png"]
+        try capture.run()
+        capture.waitUntilExit()
+        #expect(capture.terminationStatus == 0)
+    }
+    window.orderOut(nil)
+    #expect(label.stringValue == "0 FPS")
+    #expect(metal.isPaused)
 }
 
 @Test @MainActor
@@ -512,6 +594,46 @@ func spectrumSpansContentWidth() async throws {
         try capture.run()
         capture.waitUntilExit()
         #expect(capture.terminationStatus == 0)
+
+        // Hover in the center, away from the button: the entire spectrum reveals it.
+        let center = metal.convert(NSPoint(x: metal.bounds.midX, y: metal.bounds.midY), to: nil)
+        let entered = try #require(NSEvent.enterExitEvent(with: .mouseEntered, location: center,
+            modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+            windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+            trackingNumber: 0, userData: nil))
+        metal.mouseEntered(with: entered)
+        try await Task.sleep(for: .milliseconds(400))
+        let hoverCapture = Process()
+        hoverCapture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        hoverCapture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
+                                  directory + "/visualizer-hover.png"]
+        try hoverCapture.run()
+        hoverCapture.waitUntilExit()
+        #expect(hoverCapture.terminationStatus == 0)
+
+        // Exercise the real icon button, not a test-only presentation binding.
+        let visibleWindows = Set(NSApplication.shared.windows.filter(\.isVisible).map(\.windowNumber))
+        let location = metal.convert(NSPoint(x: metal.bounds.width - 26,
+                                             y: metal.isFlipped ? 20 : metal.bounds.height - 20), to: nil)
+        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            let event = try #require(NSEvent.mouseEvent(with: type, location: location,
+                modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+                clickCount: 1, pressure: 1))
+            window.sendEvent(event)
+        }
+        try await Task.sleep(for: .milliseconds(500))
+        let popover = try #require(NSApplication.shared.windows.first {
+            $0.isVisible && !visibleWindows.contains($0.windowNumber)
+        })
+        #expect(host.fittingSize.height < 500) // The lab no longer expands the main UI.
+        let popupCapture = Process()
+        popupCapture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        popupCapture.arguments = ["-x", "-o", "-l", String(popover.windowNumber),
+                                  directory + "/visualizer-lab-popover.png"]
+        try popupCapture.run()
+        popupCapture.waitUntilExit()
+        #expect(popupCapture.terminationStatus == 0)
     }
 }
 
@@ -547,9 +669,13 @@ func renderVisualizerLab() async throws {
         ("Halftone-Round-Boundary", SpectrumStyle(shading: .halftone, dotSize: 8, dotSpacing: 10,
                                                   amplitudeResponse: 0, whiteHalftone: true), true, .dark),
         ("Halftone-Light", SpectrumStyle(shading: .halftone), true, .light),
-        ("Halftone-Chromatic", SpectrumStyle(shading: .halftone, hue: 0.85, dotSize: 4, dotSpacing: 9,
+        ("Halftone-Gradient", SpectrumStyle(chromaticEnabled: false, whiteHalftone: false), true, .dark),
+        ("Halftone-Gradient-Light", SpectrumStyle(chromaticEnabled: false, whiteHalftone: false), true, .light),
+        ("Halftone-Gradient-Inverted", SpectrumStyle(chromaticEnabled: false, whiteHalftone: false,
+                                                     invertedHalftone: true), true, .dark),
+        ("Halftone-Chromatic", SpectrumStyle(shading: .halftone, dotSize: 4, dotSpacing: 9,
                                             amplitudeResponse: 0, chromaticEnabled: true,
-                                            chromaticStrength: 8, chromaticDecay: 1000), true, .dark),
+                                            chromaticStrength: 8, chromaticDecay: 1000, whiteHalftone: false), true, .dark),
         ("Halftone-White", SpectrumStyle(shading: .halftone, whiteHalftone: true), true, .dark),
         ("Halftone-White-Chromatic", SpectrumStyle(shading: .halftone, dotSize: 4, dotSpacing: 9,
                                                   amplitudeResponse: 0, chromaticEnabled: true,
@@ -557,7 +683,7 @@ func renderVisualizerLab() async throws {
                                                   whiteHalftone: true), true, .dark),
         ("Defaults", SpectrumStyle(), true, .dark),
         ("Deep-Glow", SpectrumStyle(deepGlowEnabled: true, deepGlowStrength: 4), true, .dark),
-        ("Deep-Glow-Hue", SpectrumStyle(hue: 0.58, whiteHalftone: false,
+        ("Deep-Glow-Gradient", SpectrumStyle(whiteHalftone: false,
                                         deepGlowEnabled: true, deepGlowStrength: 4), true, .dark),
         ("Deep-Glow-Light", SpectrumStyle(deepGlowEnabled: true, deepGlowStrength: 4), true, .light),
         ("Shape-Before", SpectrumStyle(chromaticEnabled: false, shapeSmoothing: 0), true, .dark),

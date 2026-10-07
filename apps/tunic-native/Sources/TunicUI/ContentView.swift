@@ -5,6 +5,9 @@ public struct ContentView: View {
     private let quit: () -> Void
     @State private var spectrumStyle = SpectrumStyle()
     @State private var demoSpectrumEnabled = false
+    @State private var visualizerLabPresented = false
+    @State private var visualizerHovered = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(model: TunicModel, quit: @escaping () -> Void = {}) {
         self.model = model
@@ -12,7 +15,7 @@ public struct ContentView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "headphones")
                     .foregroundStyle(.secondary)
@@ -29,12 +32,21 @@ public struct ContentView: View {
 
             if let state = model.snapshot {
                 LiveSpectrum(model: model, maximumFrequency: min(20_000, state.sampleRate * 0.499),
-                             style: spectrumStyle, demo: demoSpectrumEnabled)
-                    .frame(height: 160)
+                             style: spectrumStyle, demo: demoSpectrumEnabled,
+                             hoverChanged: { visualizerHovered = $0 })
+                    .frame(height: 140)
                     .accessibilityLabel(demoSpectrumEnabled ? "Demo spectrum" : "Live output spectrum")
-
-                SpectrumDebugPanel(style: $spectrumStyle, demo: $demoSpectrumEnabled)
-                    .padding(.horizontal, 12)
+                    .overlay(alignment: .topTrailing) {
+                        SpectrumLabButton(style: $spectrumStyle, demo: $demoSpectrumEnabled,
+                                          isPresented: $visualizerLabPresented)
+                            .padding(.trailing, 12)
+                            .padding(.top, 6)
+                            .opacity(visualizerHovered || visualizerLabPresented ? 1 : 0)
+                            .allowsHitTesting(visualizerHovered || visualizerLabPresented)
+                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2),
+                                       value: visualizerHovered || visualizerLabPresented)
+                    }
+                    .onDisappear { visualizerHovered = false }
 
                 Menu {
                     Button("Flat") { model.enqueue(.useFlat) }
@@ -46,12 +58,22 @@ public struct ContentView: View {
                     Divider()
                     Button("Clear selection") { model.enqueue(.clearSelection) }
                 } label: {
-                    HStack {
+                    HStack(spacing: 8) {
                         Text(state.profileName ?? "Choose a profile")
-                        Spacer()
+                            .lineLimit(1)
+                        Image(systemName: "chevron.down")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
                     }
                 }
+                .menuIndicator(.hidden)
+                .buttonStyle(.plain)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .glassEffect(.regular.interactive())
                 .accessibilityLabel("Profile")
+                .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.horizontal, 12)
 
                 ForEach(state.controls, id: \.filter) { control in
@@ -116,12 +138,14 @@ private struct LiveSpectrum: View {
     let maximumFrequency: Double
     let style: SpectrumStyle
     let demo: Bool
+    let hoverChanged: (Bool) -> Void
 
     var body: some View {
         SpectrumView(
             spectrum: demo ? demoSpectrum : model.telemetry?.spectrum ?? [],
             maximumFrequency: maximumFrequency,
-            style: style
+            style: style,
+            hoverChanged: hoverChanged
         )
     }
 }
