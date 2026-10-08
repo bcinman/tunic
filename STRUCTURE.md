@@ -109,6 +109,13 @@ the update task. Popup visibility controls telemetry demand, not engine lifetime
 The application delegate shuts the engine down before quitting. Save remains
 in-memory in both applications; neither implements durable storage yet.
 
+The native `TunicUI` target groups views by feature under `Features/`:
+audio status, visualizer, profile editor, and levels. `ContentView` composes the
+popup and owns its visibility-driven telemetry task. The visualizer owns local
+style, demo, hover, and lab presentation state. Editor views receive snapshots
+and command closures; they do not duplicate Rust's draft state. Live spectrum
+and level views observe measurements separately from the editing controls.
+
 The desktop host and platform integrations implement native side effects:
 
 - UI and application lifecycle;

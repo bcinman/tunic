@@ -66,7 +66,8 @@ final class SpectrumBloom {
     func encode(to pass: MTLRenderPassDescriptor, command: MTLCommandBuffer,
                 scale: Float, radius: Float, strength: Float) {
         guard let scene, levels.count == 5 else { return }
-        func blur(_ source: MTLTexture, into target: MTLTexture, radius: Float, horizontal: Bool, decode: Bool = false) {
+        func blur(_ source: MTLTexture, into target: MTLTexture,
+                  radius: Float, horizontal: Bool, decode: Bool = false) {
             guard let encoder = command.makeRenderCommandEncoder(descriptor: Self.pass(for: target)) else { return }
             encoder.setRenderPipelineState(blurPipeline)
             encoder.setFragmentTexture(source, index: 0)

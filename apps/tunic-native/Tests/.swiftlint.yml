@@ -1,0 +1,6 @@
+# Render fixtures and differential tests keep setup, cases, and assertions together.
+disabled_rules:
+  - file_length
+  - function_body_length
+  - cyclomatic_complexity
+  - large_tuple

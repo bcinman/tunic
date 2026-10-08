@@ -116,8 +116,9 @@ This file is the source of truth for implemented product capabilities.
   Run it with `mise run run-native`.
 - Reproducible macOS arm64 XCFramework/Swift package generation under `target/`
   through `mise run build-ffi`, with matching pinned BoltFFI CLI/library versions.
-- Automated formatting, Clippy, Rust tests, binding generation, and Swift
-  integration tests through `mise run check`.
+- Automated formatting, Clippy, Rust tests, binding generation, SwiftLint, and
+  Swift integration tests through `mise run check`. `mise run lint-native` runs
+  strict SwiftLint checks on the native sources, tests, and package manifest.
 
 ## Not In Yet
 

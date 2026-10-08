@@ -22,3 +22,14 @@ It uses `tunic-ffi` for Rust-owned state and audio processing. Run it with
 | [`tunic-presets`](crates/tunic-presets) | Embedded headphone presets, validated JSON, and indexed brand/model queries. |
 
 Run the GPUI application on macOS with `mise run run-app`.
+
+## Development checks
+
+Install the pinned tools with `mise install`, then run `mise run check` for
+Rust formatting, Clippy, tests, and the native Swift checks.
+
+Run `mise run lint-native` for SwiftLint alone. It checks the native package
+manifest, sources, and tests in strict mode (warnings fail the check), excluding
+generated bindings and build output. Rules live in `.swiftlint.yml`, with
+test-only size and complexity exceptions under `apps/tunic-native/Tests/`.
+Use `mise exec -- swiftlint lint --fix` to apply supported automatic corrections.

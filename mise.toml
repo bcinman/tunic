@@ -1,6 +1,7 @@
 [tools]
 rust = "nightly-2026-09-20"
 "cargo:boltffi_cli" = "0.30.1"
+swiftlint = "0.65.1"
 
 [tasks.fmt]
 description = "Check Rust formatting"
@@ -9,6 +10,10 @@ run = "cargo fmt --all --check"
 [tasks.lint]
 description = "Lint all Rust targets"
 run = "cargo clippy --workspace --all-targets --all-features -- -D warnings"
+
+[tasks.lint-native]
+description = "Lint native Swift sources, tests, and package manifest"
+run = "swiftlint lint --strict"
 
 [tasks.test]
 description = "Test the Rust workspace"
@@ -20,7 +25,7 @@ depends = ["fmt", "lint", "test", "check-native"]
 
 [tasks.check-native]
 description = "Build and test the native Swift menu-bar app"
-depends = ["build-ffi"]
+depends = ["build-ffi", "lint-native"]
 run = "swift test --package-path apps/tunic-native"
 
 [tasks.build-ffi]

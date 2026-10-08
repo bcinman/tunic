@@ -1,0 +1,17 @@
+included:
+  - apps/tunic-native/Package.swift
+  - apps/tunic-native/Sources
+  - apps/tunic-native/Tests
+
+# Keep collection literals consistent with the package manifest and Rust code.
+trailing_comma:
+  mandatory_comma: true
+
+# Conventional coordinates, loop indices, and decibels in DSP/rendering code.
+identifier_name:
+  excluded: [x, y, cx, cy, i, t, db]
+
+line_length:
+  ignores_comments: true
+  ignores_urls: true
+  ignores_interpolated_strings: true

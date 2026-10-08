@@ -83,7 +83,7 @@ func boundedHalftoneClearanceMatchesFullDistance() async throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let sourceURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         .deletingLastPathComponent().deletingLastPathComponent()
-        .appendingPathComponent("Sources/TunicUI/Spectrum.metal")
+        .appendingPathComponent("Sources/TunicUI/Features/Visualizer/Spectrum.metal")
     let source = try String(contentsOf: sourceURL, encoding: .utf8)
     let kernel = """
     kernel void compareClearance(const device float2 *points [[buffer(0)]],
@@ -96,10 +96,12 @@ func boundedHalftoneClearanceMatchesFullDistance() async throws {
     }
     """
     let library = try await device.makeLibrary(source: source + kernel, options: nil)
-    let pipeline = try await device.makeComputePipelineState(function: #require(library.makeFunction(name: "compareClearance")))
+    let pipeline = try await device.makeComputePipelineState(
+        function: #require(library.makeFunction(name: "compareClearance")))
     let queue = try #require(device.makeCommandQueue())
     let count = 320 * 160
-    let output = try #require(device.makeBuffer(length: count * MemoryLayout<SIMD2<Float>>.stride, options: .storageModeShared))
+    let output = try #require(device.makeBuffer(
+        length: count * MemoryLayout<SIMD2<Float>>.stride, options: .storageModeShared))
     for frequencyScale: Float in [1, 1.7] {
         let points: [SIMD2<Float>] = (0..<256).map { index in
             SIMD2(2 * Float(index) / 255 * frequencyScale - 1,
@@ -111,7 +113,8 @@ func boundedHalftoneClearanceMatchesFullDistance() async throws {
         points.withUnsafeBytes { encoder.setBytes($0.baseAddress!, length: $0.count, index: 0) }
         encoder.setBuffer(output, offset: 0, index: 1)
         encoder.dispatchThreads(MTLSize(width: count, height: 1, depth: 1),
-                                threadsPerThreadgroup: MTLSize(width: pipeline.threadExecutionWidth, height: 1, depth: 1))
+                                threadsPerThreadgroup: MTLSize(
+                                    width: pipeline.threadExecutionWidth, height: 1, depth: 1))
         encoder.endEncoding()
         await withCheckedContinuation { continuation in
             command.addCompletedHandler { _ in continuation.resume() }

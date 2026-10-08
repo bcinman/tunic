@@ -48,9 +48,11 @@ struct SpectrumDebugPanel: View {
                 Text("1 · Spectrum distance")
                     .foregroundStyle(.secondary)
                 slider("Shape", value: $style.shapeSmoothing, range: 0...1, unit: "", enabled: true)
-                    .help("Shape smoothing: rounds spectrum steps, strongest in the bass. 0: original shape; does not blur dots or delay bass hits")
+                    .help("Shape smoothing: rounds spectrum steps, strongest in the bass. "
+                          + "0: original shape; does not blur dots or delay bass hits")
                 slider("Attack", value: $style.attack, range: 0...500, unit: "ms", enabled: true)
-                    .help("Rise smoothing for all visualizer styles. 0: instant; time to cover 63% of the remaining distance")
+                    .help("Rise smoothing for all visualizer styles. "
+                          + "0: instant; time to cover 63% of the remaining distance")
                 slider("Decay", value: $style.decay, range: 0...1500, unit: "ms", enabled: true)
                     .help("Fall smoothing for all visualizer styles. 0: instant; independent of chromatic decay")
                 Picker("Geometry", selection: $style.mode) {
@@ -82,9 +84,11 @@ struct SpectrumDebugPanel: View {
                     slider("Spacing", value: $style.dotSpacing, range: 3...18, unit: "pt", enabled: true)
                         .help("Distance between neighboring dot centers")
                     slider("Amplitude", value: $style.amplitudeResponse, range: 0...1, unit: "", enabled: true)
-                        .help("0: uniform dots. 1: diameter follows spectrum height (−90…0 dBFS) at each dot's frequency")
+                        .help("0: uniform dots. "
+                              + "1: diameter follows spectrum height (−90…0 dBFS) at each dot's frequency")
                     slider("Vertical", value: $style.verticalResponse, range: -1...1, unit: "", enabled: true)
-                        .help("−1: larger at the bottom. 0: no vertical change. +1: larger at the top of the local spectrum area")
+                        .help("−1: larger at the bottom. 0: no vertical change. "
+                              + "+1: larger at the top of the local spectrum area")
                     HStack {
                         Text("−1: bottom larger")
                         Spacer()

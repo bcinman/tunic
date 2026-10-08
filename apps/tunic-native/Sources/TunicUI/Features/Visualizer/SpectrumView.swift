@@ -59,7 +59,8 @@ final class SpectrumMetalView: MTKView {
         super.init(frame: frame, device: device)
         fpsLabel.font = .monospacedDigitSystemFont(ofSize: 10, weight: .medium)
         fpsLabel.textColor = .secondaryLabelColor
-        fpsLabel.toolTip = "GPU-completed frames per second. Idle visuals stop drawing; this is not a maximum-performance benchmark."
+        fpsLabel.toolTip = "GPU-completed frames per second. Idle visuals stop drawing; "
+            + "this is not a maximum-performance benchmark."
         fpsLabel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(fpsLabel)
         NSLayoutConstraint.activate([

@@ -106,7 +106,7 @@ func renderSpectrumStates() async throws {
         let capture = Process()
         capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
         capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
-                             directory + "/metal-hosted.png"]
+                             directory + "/metal-hosted.png", ]
         try capture.run()
         capture.waitUntilExit()
         #expect(capture.terminationStatus == 0)
@@ -186,7 +186,7 @@ func foreignResponseAndTelemetryTypesRoundTrip() throws {
     #expect(batch.frames.isEmpty)
     let chain = Chain(preamp: -9, filters: [Filter(
         id: 9, kind: .peaking, frequency: 1234, gain: 6, qualityFactor: 0.8
-    )])
+    ), ])
     let points = try frequencyResponse(chain: chain, sampleRate: 48000, frequencies: [100, 1234, 10000])
     #expect(abs(points[1] - 6) < 0.001)
     #expect(points[0] < 0.2 && points[2] < 0.2)
@@ -202,17 +202,17 @@ func renderNativeStates() async throws {
     let model = TunicModel(connectAudio: false)
     defer { model.shutdown() }
     try await waitUntil { model.snapshot != nil }
-    try render(model, to: directory, name: "empty")
+    try await render(model, to: directory, name: "empty")
     let preset = try #require(model.snapshot?.presets.first { $0.model == "HD650" })
     model.enqueue(.usePreset(id: preset.id))
     try await waitUntil { model.snapshot?.presetId == preset.id }
     let control = try #require(model.snapshot?.controls.first)
     model.enqueue(.setControlGain(filter: control.filter, gain: 3))
     try await waitUntil { model.snapshot?.hasDraft == true }
-    try render(model, to: directory, name: "edited")
+    try await render(model, to: directory, name: "edited")
     model.enqueue(.usePreset(id: "missing"))
     try await waitUntil { model.snapshot?.actionError != nil }
-    try render(model, to: directory, name: "error")
+    try await render(model, to: directory, name: "error")
 }
 
 /// Requires this terminal's System Audio Recording permission. Not run by CI.
@@ -242,7 +242,13 @@ func liveAudioThroughSwiftBindings() async throws {
     #expect(model.telemetry?.spectrum.count == 256)
     try await waitUntil("numeric level readout") { model.levelText.hasPrefix("L ") }
     if let directory = ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] {
-        try render(model, to: directory, name: "live")
+        // This test already owns telemetry demand; don't mount another popup task.
+        let renderer = ImageRenderer(content: ContentView(model: model)
+            .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, .dark))
+        renderer.scale = 2
+        let image = try #require(renderer.cgImage)
+        let png = try #require(NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]))
+        try png.write(to: URL(fileURLWithPath: directory).appendingPathComponent("native-live.png"))
     }
     measurements.cancel()
     await measurements.value
@@ -260,11 +266,23 @@ func liveAudioThroughSwiftBindings() async throws {
 }
 
 @MainActor
-private func render(_ model: TunicModel, to directory: String, name: String) throws {
-    let renderer = ImageRenderer(content: ContentView(model: model)
+private func render(_ model: TunicModel, to directory: String, name: String) async throws {
+    _ = NSApplication.shared
+    let host = NSHostingView(rootView: ContentView(model: model)
         .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, .dark))
-    renderer.scale = 2
-    let image = try #require(renderer.cgImage)
-    let png = try #require(NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]))
-    try png.write(to: URL(fileURLWithPath: directory).appendingPathComponent("native-\(name).png"))
+    let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 360),
+                          styleMask: [.borderless], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    window.contentView = host
+    window.setContentSize(host.fittingSize)
+    window.orderFrontRegardless()
+    defer { window.close() }
+    try await Task.sleep(for: .milliseconds(350))
+    let capture = Process()
+    capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+    capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
+                         directory + "/native-\(name).png", ]
+    try capture.run()
+    capture.waitUntilExit()
+    #expect(capture.terminationStatus == 0)
 }
