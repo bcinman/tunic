@@ -75,8 +75,9 @@ This file is the source of truth for implemented product capabilities.
   areas; an Invert option fills the graph around transparent dot-shaped holes.
   Boundary dots shrink to fit their full circles
   inside the spectrum and viewport, including their antialiased edges, rather than
-  being sliced by the fill mask. An independent signed vertical response tapers
-  dots toward the top or bottom of each frequency's filled area. Optional bass-hit
+  being sliced by the fill mask. Dots always taper from smaller at the bottom to
+  larger toward the top of each frequency's filled area (fixed vertical response 1).
+  Optional bass-hit
   chromatic aberration splits color channels across the entire halftone image,
   with adjustable strength, 20–180 Hz trigger threshold, and time-based decay.
   Extra redraws stop when the pulse settles or the view is hidden. A static demo

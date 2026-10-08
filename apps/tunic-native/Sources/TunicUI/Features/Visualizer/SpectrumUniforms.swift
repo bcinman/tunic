@@ -18,7 +18,7 @@ struct SpectrumUniforms {
         mapping = SIMD4(Float(style.width), Float(style.spread), Float(style.hue), Float(style.shading.rawValue))
         halftone = SIMD4(Float(style.dotSize), Float(style.dotSpacing), Float(style.amplitudeResponse),
                         Float(style.dotPattern.rawValue))
-        variation = SIMD4(Float(style.verticalResponse), chromaticShift, style.whiteHalftone ? 1 : 0,
+        variation = SIMD4(0, chromaticShift, style.whiteHalftone ? 1 : 0,
                          style.invertedHalftone ? 1 : 0)
         func rgb(_ color: Color) -> SIMD4<Float> {
             let resolved = color.resolve(in: EnvironmentValues())

@@ -26,7 +26,7 @@ struct FieldParameters {
     float4 viewport; // logical width, height, backing scale, bin count
     float4 mapping;  // stroke width, spread, hue, shading mode
     float4 halftone; // maximum diameter, center spacing, amplitude response, grid/hex
-    float4 variation; // signed vertical response, bass-driven channel shift in points, white color flag, inverted flag
+    float4 variation; // padding, bass-driven channel shift in points, white color flag, inverted flag
     float4 gradientStart;
     float4 gradientSecond;
     float4 gradientThird;
@@ -151,11 +151,9 @@ float4 shadeHalftone(float2 p, const device float2 *points,
             if (height <= 0) continue;
             // Evaluate at the dot center to keep circles round. Normalize within this
             // frequency's filled area, not the whole viewport: 0 at bottom, 1 at curve.
-            float vertical = parameters.variation.x;
             float position = clamp(center.y / (height * parameters.viewport.y), 0.0f, 1.0f);
-            float taper = mix(1.0f, vertical >= 0 ? position : 1 - position, abs(vertical));
             float radius = 0.5 * parameters.halftone.x
-                * mix(1.0f, height, parameters.halftone.z) * taper;
+                * mix(1.0f, height, parameters.halftone.z) * position;
             float fromCenter = distance(q, center);
             if (radius <= 0 || fromCenter >= radius + aa) continue;
             // Fit the entire circle (including its antialias fringe) inside the

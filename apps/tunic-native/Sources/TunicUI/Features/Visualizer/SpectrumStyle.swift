@@ -36,7 +36,6 @@ struct SpectrumStyle: Equatable {
     var dotSpacing: Double = 4
     var amplitudeResponse: Double = 0.5
     var dotPattern: HalftonePattern = .grid
-    var verticalResponse: Double = 0
     var chromaticEnabled = true
     var chromaticStrength: Double = 8
     var bassThreshold: Double = -42

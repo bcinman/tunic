@@ -191,7 +191,7 @@ func halftoneBoundaryShrinksWholeCirclesInsteadOfClipping() async throws {
     #expect(flat[54, 35].w == flat[55, 35].w)
     #expect(flat[57, 35].w == 0) // Shrunk sides, not just a masked top.
     #expect(flat[55, 32].w == 0)
-    #expect(flat[57, 45].w == 255) // Interior dots retain their size.
+    #expect(flat[55, 45].w == 255) // Interior dot centers remain filled despite the taper.
     // y=60−0.5x: center (55,35) has perpendicular clearance 2.5/√1.25.
     renderer.points = [SIMD2(-1, -1), SIMD2(1, 1)]
     let slope = try await fieldPixels(renderer)
@@ -208,27 +208,27 @@ func halftoneMasksDotsAndControlsTheirLatticeAndAmplitude() async throws {
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)] // Filled area is the lower half.
     renderer.style = SpectrumStyle(shading: .halftone, dotSize: 4, dotSpacing: 10, amplitudeResponse: 0)
     let grid = try await fieldPixels(renderer)
-    #expect(grid[5, 55].w == 255) // Centers are (5 + 10c, 55 − 10r).
+    #expect(grid[5, 35].w == 255) // Centers are (5 + 10c, 55 − 10r).
     #expect(grid[5, 25].w == 0) // Same lattice, above the spectrum.
     #expect(grid[10, 55].w == 0) // Gap, not a solid fill.
-    #expect(grid[8, 55].w == 0)
+    #expect(grid[7, 35].w == 0)
     renderer.style.dotSize = 8
     let larger = try await fieldPixels(renderer)
-    #expect(larger[8, 55].w > 200)
+    #expect(larger[7, 35].w > 200)
     renderer.style.dotSize = 4
     renderer.style.dotSpacing = 12
     let spaced = try await fieldPixels(renderer)
-    #expect(spaced[18, 54].w == 255)
+    #expect(spaced[18, 42].w > 200)
     #expect(spaced[15, 55].w == 0)
 
     renderer.style.dotSpacing = 10
     renderer.style.dotPattern = .hex
     let hex = try await fieldPixels(renderer)
     // Odd rows shift by half the spacing; row separation is 10√3/2, not 10.
-    #expect(hex[10, 46].w == 255)
+    #expect(hex[10, 46].w > 200)
     #expect(grid[10, 46].w == 0)
     #expect(hex[5, 45].w == 0)
-    #expect(grid[5, 45].w == 255)
+    #expect(grid[5, 45].w > 190)
     #expect(hex[5, 37].w > 200)
     #expect(grid[5, 37].w < 50)
     let retina = try await fieldPixels(renderer, scale: 2)
@@ -240,13 +240,15 @@ func halftoneMasksDotsAndControlsTheirLatticeAndAmplitude() async throws {
     let reactive = try await fieldPixels(renderer)
     // Dot diameter follows height at the dot center, not the fragment's x or y.
     #expect(reactive[17, 55].w == 0)
-    // Center x=105 gives radius 2.75; this pixel is √6.5 away, ~69.6% coverage.
-    #expect(abs(Int(reactive[107, 55].w) - 177) <= 1)
-    #expect(reactive[107, 55].w == reactive[107, 45].w)
+    // At y=35 the center is 25pt above the bottom: amplitude × taper gives
+    // radius 4 × 25/60. Pixel (106,35) is √2.5 away, ~58.5% AA coverage.
+    #expect(abs(Int(reactive[106, 35].w) - 149) <= 1)
+    #expect(reactive[106, 55].w == 0)
     renderer.style.amplitudeResponse = 0
     let uniform = try await fieldPixels(renderer)
-    #expect(uniform[17, 55].w == 255)
-    #expect(uniform[107, 55].w == 255)
+    #expect(uniform[16, 45].w == 255)
+    #expect(reactive[16, 45].w < uniform[16, 45].w)
+    #expect(uniform[106, 35].w == 255)
     for i in stride(from: 0, to: reactive.bytes.count, by: 4) {
         let premultiplied = reactive.bytes[i...i + 2].allSatisfy { $0 <= reactive.bytes[i + 3] }
         #expect(premultiplied)
@@ -274,7 +276,7 @@ func overlappingAndInvertedHalftoneMatchCircleUnion() async throws {
                 for column in 0...Int(120 / spacing) {
                     let x = (Double(column) + 0.5) * spacing
                         + (pattern == .hex && row % 2 != 0 ? spacing / 2 : 0)
-                    let radius = min(6, min(x, 120 - x, y, 48 - y) - 0.75)
+                    let radius = min(6 * y / 48, min(x, 120 - x, y, 48 - y) - 0.75)
                     if radius > 0 { circles.append((x, y, radius)) }
                 }
             }
@@ -308,39 +310,23 @@ func overlappingAndInvertedHalftoneMatchCircleUnion() async throws {
 }
 
 @Test @MainActor
-func halftoneVerticalResponseTapersWithinTheLocalSpectrumArea() async throws {
+func halftoneAlwaysTapersTowardTheBottomOfTheLocalSpectrumArea() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)] // 30pt filled area in a 60pt view.
     for pattern in HalftonePattern.allCases {
         renderer.style = SpectrumStyle(shading: .halftone, dotSize: 8, dotSpacing: 10,
-                                       amplitudeResponse: 0, dotPattern: pattern, verticalResponse: 1)
+                                       amplitudeResponse: 0, dotPattern: pattern)
         let topRow = pattern == .grid ? 35 : 37
         let top = try await fieldPixels(renderer)
         #expect(top[7, topRow].w > 200)
         #expect(top[7, 55].w == 0)
-        renderer.style.verticalResponse = -1
-        let bottom = try await fieldPixels(renderer)
-        #expect(bottom[7, topRow].w == 0)
-        #expect(bottom[7, 55].w > 200)
-        renderer.style.verticalResponse = 0
-        let uniform = try await fieldPixels(renderer)
-        #expect(uniform[7, topRow].w == 255)
-        #expect(uniform[7, 55].w == 255)
-        renderer.style.verticalResponse = 0.5
-        let partial = try await fieldPixels(renderer)
-        #expect(partial[7, 55].w > 0)
-        #expect(partial[7, 55].w < 200)
-        renderer.style.verticalResponse = 1
         renderer.style.amplitudeResponse = 1
         let combined = try await fieldPixels(renderer)
         #expect(combined[7, topRow].w == 0) // Amplitude still independently scales diameter.
     }
     renderer.points = [SIMD2(-1, -1), SIMD2(1, -1)]
-    for vertical in [-1.0, 1.0] {
-        renderer.style.verticalResponse = vertical
-        let silent = try await fieldPixels(renderer)
-        #expect(silent.bytes.allSatisfy { $0 == 0 })
-    }
+    let silent = try await fieldPixels(renderer)
+    #expect(silent.bytes.allSatisfy { $0 == 0 })
 }
 
 @Test
@@ -374,7 +360,7 @@ func bassPulseRejectsTrebleAndReleasesWithoutRetriggeringHeldNotes() {
 func bassChromaticSplitAffectsBothEndsAndStopsWhenDisabledOrHidden() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)]
-    renderer.style = SpectrumStyle(shading: .halftone, dotSize: 2, dotSpacing: 10,
+    renderer.style = SpectrumStyle(shading: .halftone, dotSize: 3, dotSpacing: 10,
                                    amplitudeResponse: 0, chromaticEnabled: true, chromaticStrength: 3,
                                    whiteHalftone: false, gradientStart: .white)
     let baseline = try await fieldPixels(renderer)
@@ -383,11 +369,11 @@ func bassChromaticSplitAffectsBothEndsAndStopsWhenDisabledOrHidden() async throw
     renderer.receiveBass(bins, at: 0)
     let split = try await fieldPixels(renderer)
     for center in [5, 105] { // Bass triggers displacement even at the treble end.
-        #expect(baseline[center + 3, 55].w == 0)
-        #expect(split[center + 3, 55].z > 150) // Red shifted right.
-        #expect(split[center + 3, 55].x == 0)
-        #expect(split[center - 3, 55].x > 150) // Blue shifted left.
-        #expect(split[center - 3, 55].z == 0)
+        #expect(baseline[center + 3, 35].w == 0)
+        #expect(split[center + 3, 35].z > 150) // Red shifted right.
+        #expect(split[center + 3, 35].x == 0)
+        #expect(split[center - 3, 35].x > 150) // Blue shifted left.
+        #expect(split[center - 3, 35].z == 0)
     }
     for i in stride(from: 0, to: split.bytes.count, by: 4) {
         let premultiplied = split.bytes[i...i + 2].allSatisfy { $0 <= split.bytes[i + 3] }
@@ -415,15 +401,15 @@ func whiteHalftonePreservesCoverageAndSplitsAllThreeChannels() async throws {
     renderer.style = SpectrumStyle(shading: .halftone, dotSize: 2, dotSpacing: 10,
                                    amplitudeResponse: 0, whiteHalftone: true)
     let white = try await fieldPixels(renderer)
-    #expect(white[105, 55].w > 150)
+    #expect(white[105, 35].w > 150)
     for i in stride(from: 0, to: white.bytes.count, by: 4) {
         let pixel = Array(white.bytes[i...i + 3])
         #expect(pixel.allSatisfy { $0 == pixel[3] }) // White premultiplied by coverage.
     }
     renderer.style.whiteHalftone = false
     let gradient = try await fieldPixels(renderer)
-    #expect(gradient[105, 55].x > gradient[105, 55].y)
-    #expect(gradient[105, 55].z > gradient[105, 55].y)
+    #expect(gradient[105, 35].x > gradient[105, 35].y)
+    #expect(gradient[105, 35].z > gradient[105, 35].y)
     for i in stride(from: 3, to: white.bytes.count, by: 4) {
         #expect(gradient.bytes[i] == white.bytes[i])
     }
@@ -432,9 +418,9 @@ func whiteHalftonePreservesCoverageAndSplitsAllThreeChannels() async throws {
     renderer.style.chromaticStrength = 3
     renderer.receiveBass([1, 0], at: 0)
     let split = try await fieldPixels(renderer)
-    #expect(split[108, 55].z > 150 && split[108, 55].x == 0)
-    #expect(split[105, 55].y > 150 && split[105, 55].z == 0)
-    #expect(split[102, 55].x > 150 && split[102, 55].y == 0)
+    #expect(split[108, 35].z > 150 && split[108, 35].x == 0)
+    #expect(split[105, 35].y > 150 && split[105, 35].z == 0)
+    #expect(split[102, 35].x > 150 && split[102, 35].y == 0)
 }
 
 @Test @MainActor
@@ -656,11 +642,10 @@ func renderVisualizerLab() async throws {
                                              chromaticEnabled: false, invertedHalftone: true), true, .dark),
         ("Halftone-Inverted-Hex", SpectrumStyle(dotSize: 9, dotSpacing: 6, dotPattern: .hex,
                                                  chromaticEnabled: false, invertedHalftone: true), true, .dark),
-        ("Halftone-Top", SpectrumStyle(shading: .halftone, dotSize: 5, amplitudeResponse: 0,
-                                      verticalResponse: 1), true, .dark),
-        ("Halftone-Bottom", SpectrumStyle(shading: .halftone, dotSize: 5, amplitudeResponse: 0,
-                                         dotPattern: .hex, verticalResponse: -1), true, .dark),
-        ("Halftone-Uniform", SpectrumStyle(shading: .halftone, amplitudeResponse: 0), true, .dark),
+        ("Halftone-Taper-Grid", SpectrumStyle(shading: .halftone, dotSize: 5,
+                                             amplitudeResponse: 0), true, .dark),
+        ("Halftone-Taper-Hex", SpectrumStyle(shading: .halftone, dotSize: 5, amplitudeResponse: 0,
+                                            dotPattern: .hex), true, .dark),
         ("Halftone-Round-Boundary", SpectrumStyle(shading: .halftone, dotSize: 8, dotSpacing: 10,
                                                   amplitudeResponse: 0, whiteHalftone: true), true, .dark),
         ("Halftone-Light", SpectrumStyle(shading: .halftone), true, .light),

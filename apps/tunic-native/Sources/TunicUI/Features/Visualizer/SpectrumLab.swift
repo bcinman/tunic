@@ -84,18 +84,8 @@ struct SpectrumDebugPanel: View {
                     slider("Spacing", value: $style.dotSpacing, range: 3...18, unit: "pt", enabled: true)
                         .help("Distance between neighboring dot centers")
                     slider("Amplitude", value: $style.amplitudeResponse, range: 0...1, unit: "", enabled: true)
-                        .help("0: uniform dots. "
-                              + "1: diameter follows spectrum height (−90…0 dBFS) at each dot's frequency")
-                    slider("Vertical", value: $style.verticalResponse, range: -1...1, unit: "", enabled: true)
-                        .help("−1: larger at the bottom. 0: no vertical change. "
-                              + "+1: larger at the top of the local spectrum area")
-                    HStack {
-                        Text("−1: bottom larger")
-                        Spacer()
-                        Text("+1: top larger")
-                    }
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                        .help("0: no amplitude scaling. 1: diameter follows spectrum height (−90…0 dBFS). "
+                              + "Dots always taper from smaller at the bottom to larger near the curve.")
                 } else {
                     slider("Width", value: $style.width, range: 0.5...8, unit: "pt",
                            enabled: style.mode == .points || style.shading != .distance)
