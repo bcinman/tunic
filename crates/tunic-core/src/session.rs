@@ -46,6 +46,12 @@ const SYSTEM_OUTPUT: &str = "system-output";
 const UNAVAILABLE_DEVICE: &str = "System Output (audio unavailable)";
 const FLAT_PROFILE: &str = "flat";
 
+struct GainPreview {
+    filter: FilterId,
+    gain: GainDb,
+    profile: Profile,
+}
+
 /// UI-independent application boundary for Tunic.
 ///
 /// # Integrating a frontend
@@ -71,7 +77,7 @@ const FLAT_PROFILE: &str = "flat";
 /// # Reading and editing
 ///
 /// - [`Self::state`] and [`Self::selected_profile`] expose saved state, not edits.
-/// - [`Self::editing_profile`] overlays the current draft on the saved profile;
+/// - [`Self::editing_profile`] overlays gain previews and base drafts on the saved profile;
 ///   use it for editable controls. [`Self::draft`] indicates an unsaved edit
 ///   session, not necessarily a value different from the saved profile.
 /// - [`Self::base_chain`] is the editable EQ base. [`Self::active_chain`] is the
@@ -81,8 +87,12 @@ const FLAT_PROFILE: &str = "flat";
 ///
 /// Submit intent through [`Command`], not a cloned/replaced [`Profile`]. Session
 /// owns the only draft, so there are no profile revision counters or external
-/// snapshot-save API. Base EQ edits preview without saving. Named adjustments
-/// persist immediately, updating any base EQ draft without saving its base.
+/// snapshot-save API. Base EQ edits preview without saving. Named adjustments use
+/// PreviewControlGain during interaction and FinishControlGain to persist once;
+/// SetControlGain performs a discrete saved adjustment. Gain previews are separate
+/// from base drafts. Finishing updates any base draft without saving its base.
+/// Selection and base-edit commands finish pending gains first; CancelControlGain
+/// restores the committed adjustment without saving.
 /// Save persists the base EQ draft without republishing audio; Reset restores
 /// the saved base with current named adjustments. Successful selection
 /// persistence discards the previous draft.
@@ -90,9 +100,10 @@ const FLAT_PROFILE: &str = "flat";
 /// # Failures and audio lifecycle
 ///
 /// Failed persistence preserves saved state and the draft. A rejected edit or
-/// reset preserves the previous draft. Selection and named adjustments persist
-/// *before* audio publication, so DSP rejection can leave new settings saved while the
-/// previous chain remains applied. Display both [`Self::action_error`] and
+/// reset preserves the previous draft. Failed gain saves discard the gain preview
+/// and attempt to restore audio to the committed adjustment. Selection and discrete
+/// named adjustments persist before audio publication, so DSP rejection can leave
+/// new settings saved while the previous chain remains applied. Display both [`Self::action_error`] and
 /// [`Self::audio_error`]: a successful no-op may clear the last action error but
 /// does not resolve an outstanding audio failure.
 ///
@@ -115,6 +126,7 @@ pub struct Session {
     device_name: String,
     controller: Option<Controller>,
     draft: Option<Profile>,
+    gain_preview: Option<GainPreview>,
     presets: Vec<PresetSummary>,
     // Present only after successful watcher installation.
     platform: Option<Box<dyn Platform>>,
@@ -146,6 +158,7 @@ impl Session {
             device_name: UNAVAILABLE_DEVICE.into(),
             controller: None,
             draft: None,
+            gain_preview: None,
             presets,
             platform: None,
             audio_error: None,
@@ -204,7 +217,16 @@ impl Session {
 
     #[must_use]
     pub fn editing_profile(&self) -> Option<&Profile> {
-        self.draft.as_ref().or_else(|| self.selected_profile())
+        self.gain_preview
+            .as_ref()
+            .map(|preview| &preview.profile)
+            .or(self.draft.as_ref())
+            .or_else(|| self.selected_profile())
+    }
+
+    #[must_use]
+    pub fn is_previewing_gain(&self) -> bool {
+        self.gain_preview.is_some()
     }
 
     #[must_use]
@@ -280,8 +302,35 @@ impl Session {
 
     /// Selection is persisted before audio publication; an audio error does not roll it back.
     pub fn execute(&mut self, command: Command) -> Result<(), SessionError> {
-        let result = match command {
-            Command::RefreshAudio => return self.refresh_audio(),
+        if matches!(
+            command,
+            Command::FinishControlGain | Command::CancelControlGain
+        ) && self.gain_preview.is_none()
+        {
+            return Ok(());
+        }
+        let refresh = matches!(command, Command::RefreshAudio);
+        let result = self.execute_command(command);
+        if !refresh {
+            self.action_error = result.as_ref().err().cloned();
+        }
+        result
+    }
+
+    fn execute_command(&mut self, command: Command) -> Result<(), SessionError> {
+        if matches!(
+            command,
+            Command::UseFlat
+                | Command::UsePreset(_)
+                | Command::ClearSelection
+                | Command::EditFilter { .. }
+                | Command::SaveDraft
+                | Command::ResetDraft
+        ) {
+            self.finish_control_gain()?;
+        }
+        match command {
+            Command::RefreshAudio => self.refresh_audio(),
             Command::UseFlat => self.use_profile(None),
             Command::UsePreset(id) => self.use_profile(Some(id)),
             Command::EditFilter {
@@ -290,12 +339,13 @@ impl Session {
                 gain,
             } => self.edit_filter(filter, frequency, gain),
             Command::SetControlGain { filter, gain } => self.set_control_gain(filter, gain),
+            Command::PreviewControlGain { filter, gain } => self.preview_control_gain(filter, gain),
+            Command::FinishControlGain => self.finish_control_gain(),
+            Command::CancelControlGain => self.cancel_control_gain(),
             Command::SaveDraft => self.save_draft(),
             Command::ResetDraft => self.reset_draft(),
             Command::ClearSelection => self.clear_selection(),
-        };
-        self.action_error = result.as_ref().err().cloned();
-        result
+        }
     }
 
     fn commit(&mut self, next: State) -> Result<(), SessionError> {
@@ -416,7 +466,56 @@ impl Session {
         Ok(())
     }
 
+    fn preview_control_gain(&mut self, filter: FilterId, gain: GainDb) -> Result<(), SessionError> {
+        if self
+            .gain_preview
+            .as_ref()
+            .is_some_and(|preview| preview.filter != filter)
+        {
+            self.finish_control_gain()?;
+        }
+        let mut profile = self
+            .editing_profile()
+            .cloned()
+            .ok_or(SessionError::NoSelectedProfile)?;
+        profile
+            .adjust_filter_gain(filter, gain)
+            .map_err(SessionError::InvalidProfile)?;
+        self.publish(profile.effective_chain())?;
+        self.gain_preview = Some(GainPreview {
+            filter,
+            gain,
+            profile,
+        });
+        self.publication_error = None;
+        Ok(())
+    }
+
+    fn finish_control_gain(&mut self) -> Result<(), SessionError> {
+        let Some(preview) = &self.gain_preview else {
+            return Ok(());
+        };
+        self.set_control_gain(preview.filter, preview.gain)
+    }
+
+    fn cancel_control_gain(&mut self) -> Result<(), SessionError> {
+        if self.gain_preview.take().is_some() {
+            self.publish_active_chain()?;
+        }
+        Ok(())
+    }
+
     fn set_control_gain(&mut self, filter: FilterId, gain: GainDb) -> Result<(), SessionError> {
+        self.gain_preview = None;
+        let result = self.save_control_gain(filter, gain);
+        if result.is_err() {
+            // A failed save rolls audio back to the committed adjustment, keeping base edits.
+            let _ = self.publish_active_chain();
+        }
+        result
+    }
+
+    fn save_control_gain(&mut self, filter: FilterId, gain: GainDb) -> Result<(), SessionError> {
         let id = self
             .selected_profile()
             .ok_or(SessionError::NoSelectedProfile)?

@@ -20,6 +20,12 @@ pub enum Command {
         filter: FilterId,
         gain: GainDb,
     },
+    PreviewControlGain {
+        filter: FilterId,
+        gain: GainDb,
+    },
+    FinishControlGain,
+    CancelControlGain,
     SaveDraft,
     ResetDraft,
     ClearSelection,

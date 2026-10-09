@@ -45,12 +45,13 @@ fn commands_preserve_drafts_and_publish_failures() {
     assert_eq!(edited.base_chain.filters[0].gain, -3.25);
     assert!(edited.accepted_chain.is_none());
 
-    engine
+    let failed_receipt = engine
         .enqueue(EngineCommand::UsePreset {
             id: "missing".into(),
         })
         .unwrap();
-    let failed = wait_for(&engine, |s| s.action_error.is_some());
+    let failed = wait_for(&engine, |s| s.processed_command >= failed_receipt);
+    assert!(failed.action_error.is_some());
     assert!(failed.has_draft);
     assert_eq!(failed.base_chain.filters[0].gain, -3.25);
     engine.enqueue(EngineCommand::ResetDraft).unwrap();
@@ -144,6 +145,7 @@ fn concurrent_callers_share_one_owner_and_drop_stops_it() {
         worker.join().unwrap();
     }
     let snapshot = wait_for(&engine, |s| s.revision == 101);
+    assert_eq!(snapshot.processed_command, 100);
     assert!(snapshot.profile_name.is_some());
     assert!(snapshot.action_error.is_none());
     drop(engine);
@@ -244,6 +246,7 @@ fn route_loss_retries_replaces_telemetry_and_tears_down_on_owner() {
     let owner = worker.thread().id();
     let engine = Engine {
         sender,
+        command_sequence: Mutex::new(0),
         shared,
         worker: Mutex::new(Some(worker)),
     };

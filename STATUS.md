@@ -27,9 +27,14 @@ This file is the source of truth for implemented product capabilities.
   `~/Library/Application Support/Tunic/session.sqlite3`; tests and previews retain
   memory storage. Startup storage errors surface rather than falling back to memory.
   Saved profiles, adjustments, attribution, and selections survive relaunch;
-  named gain adjustments persist immediately without saving pending base EQ edits.
+  named gain adjustments preview in audio without disk writes during a drag and
+  persist once when the interaction ends, without saving pending base EQ edits.
+  Cancellation or a failed gain save restores the committed adjustment. Profile
+  changes finish pending gain previews before switching; native panel dismissal
+  and orderly engine shutdown also finish previews. Unfinished drags are not crash-durable.
   Only base EQ edits require Save/Reset; unsaved base drafts and runtime/visualizer
-  state do not survive relaunch. Failed adjustment saves preserve prior state and audio.
+  state do not survive relaunch. Failed adjustment saves preserve prior saved state
+  and base drafts and restore audio to the committed adjustment.
 - An offline `tunic-presets` catalog with build-validated JSON, static brand/model
   indexes, and on-demand payload decoding. Initial oratory1990 presets cover
   Sennheiser HD650 and Sony MDR-7506.

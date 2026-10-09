@@ -33,6 +33,12 @@ pub enum EngineCommand {
         filter: u32,
         gain: f64,
     },
+    PreviewControlGain {
+        filter: u32,
+        gain: f64,
+    },
+    FinishControlGain,
+    CancelControlGain,
     SaveDraft,
     ResetDraft,
     ClearSelection,
@@ -60,6 +66,12 @@ impl TryFrom<EngineCommand> for core::Command {
                 filter: core::FilterId::try_new(filter).map_err(EngineError::invalid)?,
                 gain: core::GainDb::try_new(gain).map_err(EngineError::invalid)?,
             },
+            EngineCommand::PreviewControlGain { filter, gain } => Self::PreviewControlGain {
+                filter: core::FilterId::try_new(filter).map_err(EngineError::invalid)?,
+                gain: core::GainDb::try_new(gain).map_err(EngineError::invalid)?,
+            },
+            EngineCommand::FinishControlGain => Self::FinishControlGain,
+            EngineCommand::CancelControlGain => Self::CancelControlGain,
             EngineCommand::SaveDraft => Self::SaveDraft,
             EngineCommand::ResetDraft => Self::ResetDraft,
             EngineCommand::ClearSelection => Self::ClearSelection,
@@ -172,10 +184,13 @@ pub struct Preset {
 pub struct StateSnapshot {
     /// Notification sequence, not a profile revision or audio acknowledgement.
     pub revision: u64,
+    /// All enqueue receipts through this value have executed, successfully or otherwise.
+    pub processed_command: u64,
     pub device_name: String,
     pub profile_name: Option<String>,
     pub preset_id: Option<String>,
     pub has_draft: bool,
+    pub is_previewing_gain: bool,
     pub base_chain: Chain,
     pub desired_chain: Chain,
     /// Last controller-accepted chain; not an acknowledgement from the callback.
@@ -189,14 +204,16 @@ pub struct StateSnapshot {
 }
 
 impl StateSnapshot {
-    pub(crate) fn read(session: &core::Session, revision: u64) -> Self {
+    pub(crate) fn read(session: &core::Session, revision: u64, processed_command: u64) -> Self {
         let profile = session.editing_profile();
         Self {
             revision,
+            processed_command,
             device_name: session.device_name().to_owned(),
             profile_name: profile.map(|p| p.name().to_string()),
             preset_id: profile.and_then(|p| p.origin()).map(|o| o.id.to_string()),
             has_draft: session.draft().is_some(),
+            is_previewing_gain: session.is_previewing_gain(),
             base_chain: session.base_chain().into(),
             desired_chain: session.active_chain().into(),
             accepted_chain: session.applied_chain().cloned().map(Into::into),

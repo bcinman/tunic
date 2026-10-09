@@ -286,7 +286,7 @@ fn gain_control(
                         };
                         this.dragging_control = Some(target);
                         this.execute(
-                            Command::SetControlGain {
+                            Command::PreviewControlGain {
                                 filter: target,
                                 gain: GainDb::try_new(gain_at_slider_position(
                                     bounds,
@@ -306,7 +306,7 @@ fn gain_control(
                         return;
                     };
                     this.execute(
-                        Command::SetControlGain {
+                        Command::PreviewControlGain {
                             filter: target,
                             gain: GainDb::try_new(gain_at_slider_position(bounds, event.position))
                                 .expect("slider gain is finite"),
@@ -316,11 +316,19 @@ fn gain_control(
                 }))
                 .on_mouse_up(
                     MouseButton::Left,
-                    cx.listener(|this, _, _, _| this.dragging_control = None),
+                    cx.listener(|this, _, _, cx| {
+                        if this.dragging_control.take().is_some() {
+                            this.execute(Command::FinishControlGain, cx);
+                        }
+                    }),
                 )
                 .on_mouse_up_out(
                     MouseButton::Left,
-                    cx.listener(|this, _, _, _| this.dragging_control = None),
+                    cx.listener(|this, _, _, cx| {
+                        if this.dragging_control.take().is_some() {
+                            this.execute(Command::FinishControlGain, cx);
+                        }
+                    }),
                 ),
         )
         .child(div().w(px(64.0)).text_sm().child(format!("{gain:+.1} dB")))

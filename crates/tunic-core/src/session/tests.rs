@@ -280,6 +280,112 @@ fn failed_adjustment_save_preserves_saved_draft_and_audio_state() {
 }
 
 #[test]
+fn gain_drag_previews_without_saving_and_commits_only_the_adjustment() {
+    let store = TestPersistence::default();
+    let mut session = Session::new(store.clone(), vec![preset()])
+        .unwrap()
+        .with_audio(platform([Ok(Some(48_000.0))]), Arc::new(|| {}));
+    session.execute(use_preset()).unwrap();
+    session.execute(edit(800.0, 5.0)).unwrap();
+    let saved = session.state().clone();
+    for step in 0..120 {
+        session
+            .execute(Command::PreviewControlGain {
+                filter: FilterId::try_new(3).unwrap(),
+                gain: GainDb::try_new(f64::from(step) / 10.0 - 6.0).unwrap(),
+            })
+            .unwrap();
+        assert_eq!(session.state(), &saved);
+        assert_eq!(session.applied_chain(), Some(&session.active_chain()));
+        assert!(session.is_previewing_gain());
+    }
+    assert_eq!(store.saves.load(Ordering::Relaxed), 1);
+    let preview = session.active_chain();
+    session.execute(Command::FinishControlGain).unwrap();
+    assert!(!session.is_previewing_gain());
+    assert_eq!(store.saves.load(Ordering::Relaxed), 2);
+    assert_eq!(session.active_chain(), preview);
+    assert_eq!(session.applied_chain(), Some(&preview));
+    assert_eq!(
+        session.selected_profile().unwrap().base(),
+        saved.profiles[0].base()
+    );
+    assert!(session.draft().is_some());
+    let restored = Session::new(store.clone(), vec![preset()]).unwrap();
+    assert_eq!(restored.selected_profile(), session.selected_profile());
+    assert!(restored.draft().is_none());
+    session.execute(Command::ResetDraft).unwrap();
+    assert_eq!(session.active_chain(), restored.active_chain());
+    session.execute(Command::FinishControlGain).unwrap();
+    assert_eq!(store.saves.load(Ordering::Relaxed), 2);
+}
+
+#[test]
+fn cancelling_or_failing_a_gain_commit_restores_audio_and_preserves_base_draft() {
+    for fail in [false, true] {
+        let store = TestPersistence::default();
+        let mut session = Session::new(store.clone(), vec![preset()])
+            .unwrap()
+            .with_audio(platform([Ok(Some(48_000.0))]), Arc::new(|| {}));
+        session.execute(use_preset()).unwrap();
+        session.execute(adjust(1.5)).unwrap();
+        session.execute(edit(800.0, -4.0)).unwrap();
+        let saved = session.state().clone();
+        let draft = session.draft().cloned();
+        let applied = session.applied_chain().cloned();
+        session
+            .execute(Command::PreviewControlGain {
+                filter: FilterId::try_new(3).unwrap(),
+                gain: GainDb::try_new(-5.0).unwrap(),
+            })
+            .unwrap();
+        assert_ne!(session.applied_chain(), applied.as_ref());
+        store.fail.store(fail, Ordering::Relaxed);
+        let result = session.execute(if fail {
+            Command::FinishControlGain
+        } else {
+            Command::CancelControlGain
+        });
+        assert_eq!(result.is_err(), fail);
+        assert!(!session.is_previewing_gain());
+        assert_eq!(session.state(), &saved);
+        assert_eq!(session.draft(), draft.as_ref());
+        assert_eq!(session.applied_chain(), applied.as_ref());
+        assert_eq!(store.saves.load(Ordering::Relaxed), 2);
+        assert_eq!(session.action_error().is_some(), fail);
+        // Dismissal can finish again after a release; it must not hide a failed save.
+        session.execute(Command::FinishControlGain).unwrap();
+        assert_eq!(session.action_error().is_some(), fail);
+    }
+}
+
+#[test]
+fn selection_finishes_gain_preview_and_failed_finish_prevents_switching() {
+    for fail in [false, true] {
+        let store = TestPersistence::default();
+        let mut session = Session::new(store.clone(), vec![preset()]).unwrap();
+        session.execute(use_preset()).unwrap();
+        session
+            .execute(Command::PreviewControlGain {
+                filter: FilterId::try_new(3).unwrap(),
+                gain: GainDb::try_new(4.0).unwrap(),
+            })
+            .unwrap();
+        store.fail.store(fail, Ordering::Relaxed);
+        assert_eq!(session.execute(Command::UseFlat).is_err(), fail);
+        assert!(!session.is_previewing_gain());
+        store.fail.store(false, Ordering::Relaxed);
+        session.execute(use_preset()).unwrap();
+        assert_eq!(
+            session.editing_profile().unwrap().controls()[0]
+                .gain_adjustment()
+                .into_inner(),
+            if fail { 0.0 } else { 4.0 }
+        );
+    }
+}
+
+#[test]
 fn failed_selection_preserves_draft_and_saved_state() {
     for command in [Command::ClearSelection, Command::UseFlat] {
         let store = TestPersistence::default();

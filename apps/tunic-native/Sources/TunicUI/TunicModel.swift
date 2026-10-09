@@ -41,13 +41,16 @@ public final class TunicModel {
 
     isolated deinit { updates?.cancel() }
 
-    public func enqueue(_ command: EngineCommand) {
-        guard let engine else { return }
+    @discardableResult
+    public func enqueue(_ command: EngineCommand) -> UInt64? {
+        guard let engine else { return nil }
         do {
-            try engine.enqueue(command: command)
+            let receipt = try engine.enqueue(command: command)
             error = nil
+            return receipt
         } catch {
             self.error = String(describing: error)
+            return nil
         }
     }
 

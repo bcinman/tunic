@@ -188,11 +188,22 @@ func swiftModelUsesRustDraftsAndReceivesFailedCommands() async throws {
     try await waitUntil { model.snapshot?.presetId == preset.id }
     let control = try #require(model.snapshot?.controls.first)
     let originalResponse = model.response
-    model.enqueue(.setControlGain(filter: control.filter, gain: -3.5))
+    model.enqueue(.previewControlGain(filter: control.filter, gain: -3.5))
     try await waitUntil { model.snapshot?.controls.first?.gain == -3.5 }
+    #expect(model.snapshot?.isPreviewingGain == true)
     #expect(model.snapshot?.hasDraft == false)
     #expect(model.response != originalResponse)
     #expect(model.response.count == 128)
+    let receipt = try #require(model.enqueue(.finishControlGain))
+    try await waitUntil { (model.snapshot?.processedCommand ?? 0) >= receipt }
+    #expect(model.snapshot?.isPreviewingGain == false)
+    #expect(model.snapshot?.controls.first?.gain == -3.5)
+    model.enqueue(.previewControlGain(filter: control.filter, gain: 6))
+    try await waitUntil { model.snapshot?.controls.first?.gain == 6 }
+    let cancelled = try #require(model.enqueue(.cancelControlGain))
+    try await waitUntil { (model.snapshot?.processedCommand ?? 0) >= cancelled }
+    #expect(model.snapshot?.controls.first?.gain == -3.5)
+    #expect(model.snapshot?.isPreviewingGain == false)
 
     model.enqueue(.usePreset(id: "missing"))
     try await waitUntil { model.snapshot?.actionError != nil }
@@ -232,7 +243,7 @@ func updateStreamsHaveIndependentLifetimesAndFinishAtShutdown() async throws {
     first.cancel()
     await first.value
     let stoppedCount = firstCount
-    for _ in 0..<100 { try engine.enqueue(command: .useFlat) }
+    for _ in 0..<100 { _ = try engine.enqueue(command: .useFlat) }
     try await waitUntil { secondRevision >= 101 }
     #expect(firstCount == stoppedCount)
     #expect(engine.snapshot()?.profileName != nil)
@@ -251,15 +262,22 @@ func diskStorageSurvivesEngineRecreationAndReportsCorruption() async throws {
     let database = directory.appendingPathComponent("session.sqlite3")
     let engine = try Engine(connectAudio: false, databasePath: database.path)
     defer { engine.shutdown() }
-    try engine.enqueue(command: .useFlat)
+    try await waitUntil { engine.snapshot() != nil }
+    let preset = try #require(engine.snapshot()?.presets.first)
+    _ = try engine.enqueue(command: .usePreset(id: preset.id))
     try await waitUntil { engine.snapshot()?.profileName != nil }
     let savedName = engine.snapshot()?.profileName
+    let control = try #require(engine.snapshot()?.controls.first)
+    _ = try engine.enqueue(command: .previewControlGain(filter: control.filter, gain: 3.75))
+    try await waitUntil { engine.snapshot()?.isPreviewingGain == true }
     engine.shutdown()
 
     let reopened = try Engine(connectAudio: false, databasePath: database.path)
     defer { reopened.shutdown() }
     try await waitUntil { reopened.snapshot() != nil }
     #expect(reopened.snapshot()?.profileName == savedName)
+    #expect(reopened.snapshot()?.controls.first?.gain == 3.75)
+    #expect(reopened.snapshot()?.isPreviewingGain == false)
     reopened.shutdown()
     try Data("corrupt database".utf8).write(to: database)
     #expect(throws: EngineError.self) {

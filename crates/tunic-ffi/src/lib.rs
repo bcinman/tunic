@@ -14,7 +14,7 @@ use tunic_presets::BundledCatalog;
 use tunic_sqlite::SqlitePersistence;
 
 enum Message {
-    Execute(Command),
+    Execute(Command, u64),
     Refresh,
     Telemetry(bool),
     Shutdown,
@@ -40,8 +40,9 @@ struct Shared {
 }
 
 impl Shared {
-    fn publish(&self, session: &Session, revision: u64) {
-        *self.snapshot.lock().unwrap() = Some(StateSnapshot::read(session, revision));
+    fn publish(&self, session: &Session, revision: u64, processed_command: u64) {
+        *self.snapshot.lock().unwrap() =
+            Some(StateSnapshot::read(session, revision, processed_command));
         let listeners = {
             let mut updates = self.updates.lock().unwrap();
             updates
@@ -77,6 +78,7 @@ impl Shared {
 /// its owner thread. Dropping the handle or calling shutdown joins that thread.
 pub struct Engine {
     sender: mpsc::Sender<Message>,
+    command_sequence: Mutex<u64>,
     shared: Arc<Shared>,
     worker: Mutex<Option<JoinHandle<()>>>,
 }
@@ -145,6 +147,7 @@ impl Engine {
         }
         Ok(Self {
             sender,
+            command_sequence: Mutex::new(0),
             shared,
             worker: Mutex::new(Some(worker)),
         })
@@ -152,11 +155,18 @@ impl Engine {
 
     /// Success means queued, not executed. Input validation errors throw immediately.
     /// Execution errors appear in the latest snapshot and may be superseded by a
-    /// subsequent successful command before observation. Revisions are not acknowledgements.
-    pub fn enqueue(&self, command: EngineCommand) -> Result<(), EngineError> {
+    /// subsequent successful command before observation. The returned receipt is complete
+    /// once snapshot.processed_command reaches it, including commands that failed.
+    pub fn enqueue(&self, command: EngineCommand) -> Result<u64, EngineError> {
+        let command = command.try_into()?;
+        // Allocation and send share a lock so receipts follow queue order across callers.
+        let mut sequence = self.command_sequence.lock().unwrap();
+        let receipt = *sequence + 1;
         self.sender
-            .send(Message::Execute(command.try_into()?))
-            .map_err(|_| EngineError::Closed)
+            .send(Message::Execute(command, receipt))
+            .map_err(|_| EngineError::Closed)?;
+        *sequence = receipt;
+        Ok(receipt)
     }
 
     /// None while initializing or after shutdown. Owned values cannot mutate Session.
@@ -221,12 +231,13 @@ impl Drop for Engine {
 
 fn run(mut session: Session, receiver: mpsc::Receiver<Message>, shared: &Shared) {
     let mut revision = 1;
+    let mut processed_command = 0;
     let mut telemetry_enabled = false;
     let mut retry_at = session
         .audio_retry_needed()
         .then(|| Instant::now() + Duration::from_secs(1));
     shared.measurements.lock().unwrap().generation = session.audio_generation();
-    shared.publish(&session, revision);
+    shared.publish(&session, revision, processed_command);
     loop {
         let message = match retry_at {
             Some(deadline) => {
@@ -242,9 +253,13 @@ fn run(mut session: Session, receiver: mpsc::Receiver<Message>, shared: &Shared)
             },
         };
         match message {
-            Message::Shutdown => break,
-            Message::Execute(command) => {
+            Message::Shutdown => {
+                let _ = session.execute(Command::FinishControlGain);
+                break;
+            }
+            Message::Execute(command, receipt) => {
                 let _ = session.execute(command);
+                processed_command = receipt;
             }
             Message::Refresh => {
                 let _ = session.execute(Command::RefreshAudio);
@@ -274,7 +289,7 @@ fn run(mut session: Session, receiver: mpsc::Receiver<Message>, shared: &Shared)
             }
         }
         revision += 1;
-        shared.publish(&session, revision);
+        shared.publish(&session, revision, processed_command);
     }
     drop(session);
     shared.close();
