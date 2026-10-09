@@ -296,9 +296,11 @@ func renderNativeStates() async throws {
     model.enqueue(.usePreset(id: preset.id))
     try await waitUntil { model.snapshot?.presetId == preset.id }
     let control = try #require(model.snapshot?.controls.first)
-    model.enqueue(.setControlGain(filter: control.filter, gain: 3))
-    try await waitUntil { model.snapshot?.hasDraft == true }
-    try await render(model, to: directory, name: "edited")
+    for gain in [0.0, -6, 3, -12, 12] {
+        model.enqueue(.setControlGain(filter: control.filter, gain: gain))
+        try await waitUntil { model.snapshot?.controls.first?.gain == gain }
+        try await render(model, to: directory, name: "gain-\(Int(gain))")
+    }
     model.enqueue(.usePreset(id: "missing"))
     try await waitUntil { model.snapshot?.actionError != nil }
     try await render(model, to: directory, name: "error")

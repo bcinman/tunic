@@ -6,18 +6,21 @@ struct GainControlRow: View {
     let onGainChange: (Double) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(control.name).lineLimit(1)
                 Spacer()
-                Text(control.gain, format: .number.precision(.fractionLength(1)))
+                Text("\(control.gain > 0 ? "+" : "")\(control.gain.formatted(.number.precision(.fractionLength(0...1)))) dB")
                     .monospacedDigit()
-                Text("dB").foregroundStyle(.secondary)
+                    .foregroundStyle(.secondary)
             }
-            .font(.caption)
-            Slider(value: Binding(get: { control.gain }, set: { onGainChange($0) }), in: -12...12)
-                .accessibilityLabel(control.name)
-        }
-        .padding(.horizontal, 12)
+            .font(.system(size: 12))
+            Slider(value: Binding(get: { control.gain }, set: { onGainChange($0) }),
+                    in: -12...12, neutralValue: 0) {
+                Text(control.name)
+            }
+            .labelsHidden()
+            .accessibilityValue("\(control.gain.formatted()) decibels")
+        }.padding(.horizontal, 16)
     }
 }
