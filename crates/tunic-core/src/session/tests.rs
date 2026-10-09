@@ -188,8 +188,9 @@ fn drafts_compose_base_and_adjustment_and_save_only_changes() {
     let store = TestPersistence::default();
     let mut session = Session::new(store.clone(), vec![preset()]).unwrap();
     session.execute(use_preset()).unwrap();
-    let saved = session.selected_profile().unwrap().clone();
     session.execute(adjust(4.0)).unwrap();
+    assert!(session.draft().is_none());
+    let saved = session.selected_profile().unwrap().clone();
     session.execute(edit(800.0, 5.0)).unwrap();
     assert_eq!(
         session.active_chain().equalizer.filters[0]
@@ -215,14 +216,67 @@ fn drafts_compose_base_and_adjustment_and_save_only_changes() {
     session.execute(Command::SaveDraft).unwrap();
     assert_eq!(session.selected_profile(), Some(&draft));
     assert!(session.draft().is_none());
-    assert_eq!(store.saves.load(Ordering::Relaxed), 2);
+    assert_eq!(store.saves.load(Ordering::Relaxed), 3);
     session.execute(adjust(4.0)).unwrap();
     session.execute(Command::SaveDraft).unwrap();
-    assert_eq!(store.saves.load(Ordering::Relaxed), 2);
+    assert_eq!(store.saves.load(Ordering::Relaxed), 3);
+    session.execute(edit(900.0, 1.0)).unwrap();
     session.execute(adjust(-2.0)).unwrap();
+    let saved = session.selected_profile().unwrap().clone();
+    assert_eq!(saved.base(), draft.base());
+    assert_eq!(saved.controls()[0].gain_adjustment().into_inner(), -2.0);
+    assert_eq!(
+        session.active_chain().equalizer.filters[0]
+            .parameters
+            .gain
+            .into_inner(),
+        -1.0
+    );
+    let restored = Session::new(store, Vec::<Preset>::new()).unwrap();
+    assert_eq!(restored.selected_profile(), Some(&saved));
     session.execute(Command::ResetDraft).unwrap();
-    assert_eq!(session.selected_profile(), Some(&draft));
-    assert_eq!(session.active_chain(), draft.effective_chain());
+    assert_eq!(session.selected_profile(), Some(&saved));
+    assert_eq!(session.active_chain(), saved.effective_chain());
+    assert!(session.draft().is_none());
+}
+
+#[test]
+fn failed_adjustment_save_preserves_saved_draft_and_audio_state() {
+    let store = TestPersistence::default();
+    let mut session = Session::new(store.clone(), vec![preset()])
+        .unwrap()
+        .with_audio(platform([Ok(Some(48_000.0))]), Arc::new(|| {}));
+    session.execute(use_preset()).unwrap();
+    session.execute(edit(800.0, 5.0)).unwrap();
+    let saved = session.state().clone();
+    let draft = session.draft().cloned();
+    let applied = session.applied_chain().cloned();
+    store.fail.store(true, Ordering::Relaxed);
+    assert!(matches!(
+        session.execute(adjust(-2.0)),
+        Err(SessionError::PersistenceFailed(_))
+    ));
+    assert_eq!(session.state(), &saved);
+    assert_eq!(session.draft(), draft.as_ref());
+    assert_eq!(session.applied_chain(), applied.as_ref());
+    assert_eq!(store.state.lock().unwrap().as_ref(), Some(&saved));
+    store.fail.store(false, Ordering::Relaxed);
+    session.execute(adjust(-2.0)).unwrap();
+    session.execute(Command::SaveDraft).unwrap();
+    assert_eq!(
+        session.selected_profile().unwrap().controls()[0]
+            .gain_adjustment()
+            .into_inner(),
+        -2.0
+    );
+    assert_eq!(
+        session.active_chain().equalizer.filters[0]
+            .parameters
+            .gain
+            .into_inner(),
+        3.0
+    );
+    assert_eq!(session.applied_chain(), Some(&session.active_chain()));
 }
 
 #[test]
@@ -231,7 +285,7 @@ fn failed_selection_preserves_draft_and_saved_state() {
         let store = TestPersistence::default();
         let mut session = Session::new(store.clone(), vec![preset()]).unwrap();
         session.execute(use_preset()).unwrap();
-        session.execute(adjust(4.0)).unwrap();
+        session.execute(edit(800.0, 4.0)).unwrap();
         let draft = session.draft().cloned();
         let saved = session.state().clone();
         store.fail.store(true, Ordering::Relaxed);
@@ -323,7 +377,7 @@ fn invalid_preset_requests_do_not_save_or_discard_drafts() {
     duplicate.summary.id = PresetId::try_new("duplicate-name").unwrap();
     let mut session = Session::new(store.clone(), vec![preset(), duplicate]).unwrap();
     session.execute(use_preset()).unwrap();
-    session.execute(adjust(4.0)).unwrap();
+    session.execute(edit(800.0, 4.0)).unwrap();
     let draft = session.draft().cloned();
     assert!(matches!(
         session.execute(Command::UsePreset(PresetId::try_new("missing").unwrap())),
@@ -356,6 +410,19 @@ fn rejected_publication_stays_visible_through_noops_and_unchanged_refresh() {
         assert!(error.contains("PreampOutOfRange"));
         assert_eq!(session.applied_chain(), Some(&Chain::default()));
         assert_eq!(session.active_chain(), source.chain);
+        // Named adjustments remain saved even when the audio route rejects the chain.
+        assert!(matches!(
+            session.execute(adjust(4.0)),
+            Err(SessionError::Audio(_))
+        ));
+        assert_eq!(
+            session.selected_profile().unwrap().controls()[0]
+                .gain_adjustment()
+                .into_inner(),
+            4.0
+        );
+        assert!(session.draft().is_none());
+        assert_eq!(session.applied_chain(), Some(&Chain::default()));
         assert_eq!(store.state.lock().unwrap().as_ref(), Some(session.state()));
         session.execute(noop).unwrap();
         assert!(session.action_error().is_none());
@@ -466,7 +533,7 @@ fn lost_route_reconnects_with_draft_and_preserves_action_errors() {
         .unwrap()
         .with_audio(output, Arc::new(|| {}));
     session.execute(use_preset()).unwrap();
-    session.execute(adjust(4.0)).unwrap();
+    session.execute(edit(800.0, 4.0)).unwrap();
     assert!(
         session
             .execute(Command::UsePreset(PresetId::try_new("missing").unwrap()))

@@ -524,7 +524,7 @@ mod tests {
     }
 
     #[test]
-    fn gain_controls_are_live_drafts_until_saved_or_reset() {
+    fn gain_controls_persist_immediately_without_changing_base() {
         let mut session = session_with_preset(0);
         let saved = session.selected_profile().unwrap().clone();
         let filter_id = saved.controls()[0].target();
@@ -532,18 +532,14 @@ mod tests {
             filter: filter_id,
             gain: GainDb::try_new(4.0).unwrap(),
         };
-        session.execute(edit.clone()).unwrap();
-        let draft = session.active_chain();
-        assert_eq!(draft.equalizer.filters[2].parameters.gain.into_inner(), 9.5);
-        assert_ne!(draft, saved.effective_chain());
-        assert_eq!(session.selected_profile().unwrap(), &saved);
-        session.execute(Command::ResetDraft).unwrap();
-        assert_eq!(session.active_chain(), saved.effective_chain());
         session.execute(edit).unwrap();
-        let draft = session.active_chain();
-        session.execute(Command::SaveDraft).unwrap();
+        let active = session.active_chain();
+        assert_eq!(
+            active.equalizer.filters[2].parameters.gain.into_inner(),
+            9.5
+        );
         let persisted = session.selected_profile().unwrap();
-        assert_eq!(persisted.effective_chain(), draft);
+        assert_eq!(persisted.effective_chain(), active);
         assert_eq!(persisted.base(), saved.base());
         assert_eq!(
             persisted

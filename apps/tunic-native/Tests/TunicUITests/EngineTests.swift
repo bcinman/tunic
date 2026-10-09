@@ -190,23 +190,23 @@ func swiftModelUsesRustDraftsAndReceivesFailedCommands() async throws {
     let originalResponse = model.response
     model.enqueue(.setControlGain(filter: control.filter, gain: -3.5))
     try await waitUntil { model.snapshot?.controls.first?.gain == -3.5 }
-    #expect(model.snapshot?.hasDraft == true)
+    #expect(model.snapshot?.hasDraft == false)
     #expect(model.response != originalResponse)
     #expect(model.response.count == 128)
 
     model.enqueue(.usePreset(id: "missing"))
     try await waitUntil { model.snapshot?.actionError != nil }
     #expect(model.snapshot?.controls.first?.gain == -3.5)
+    model.enqueue(.editFilter(filter: control.filter, frequency: 1234, gain: 2))
+    try await waitUntil { model.snapshot?.hasDraft == true }
     model.enqueue(.resetDraft)
     try await waitUntil { model.snapshot?.hasDraft == false }
-    #expect(model.snapshot?.controls.first?.gain == 0)
+    #expect(model.snapshot?.controls.first?.gain == -3.5)
     #expect(model.snapshot?.actionError == nil)
 
     model.enqueue(.setControlGain(filter: control.filter, gain: 2.25))
-    try await waitUntil { model.snapshot?.hasDraft == true }
-    model.enqueue(.saveDraft)
-    try await waitUntil { model.snapshot?.hasDraft == false }
-    #expect(model.snapshot?.controls.first?.gain == 2.25)
+    try await waitUntil { model.snapshot?.controls.first?.gain == 2.25 }
+    #expect(model.snapshot?.hasDraft == false)
     model.enqueue(.editFilter(filter: 0, frequency: 100, gain: 0))
     #expect(model.error != nil)
 }

@@ -10,7 +10,7 @@ public struct ContentView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             AudioStatusView(deviceName: model.snapshot?.deviceName,
                             isProcessing: model.snapshot?.acceptedChain != nil)
 
@@ -29,9 +29,9 @@ public struct ContentView: View {
                 Text(error).font(.caption).foregroundStyle(.orange)
                     .padding(.horizontal, 12)
             }
-            Divider()
-                .padding(.horizontal, 12)
-            Button("Quit Tunic", action: quit)
+            Button("Quit Tunic", systemImage: "power", action: quit)
+                .labelStyle(.iconOnly)
+                .help("Quit Tunic")
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 12)

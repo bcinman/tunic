@@ -138,11 +138,12 @@ fn session_restores_saved_adjustments_but_not_unsaved_drafts() {
             gain: GainDb::try_new(-4.5).unwrap(),
         })
         .unwrap();
-    session.execute(Command::SaveDraft).unwrap();
     let saved = session.state().clone();
+    assert!(session.draft().is_none());
     session
-        .execute(Command::SetControlGain {
+        .execute(Command::EditFilter {
             filter: FilterId::try_new(8).unwrap(),
+            frequency: FrequencyHz::try_new(1234.0).unwrap(),
             gain: GainDb::try_new(7.0).unwrap(),
         })
         .unwrap();

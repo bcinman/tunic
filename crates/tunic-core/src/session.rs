@@ -81,15 +81,17 @@ const FLAT_PROFILE: &str = "flat";
 ///
 /// Submit intent through [`Command`], not a cloned/replaced [`Profile`]. Session
 /// owns the only draft, so there are no profile revision counters or external
-/// snapshot-save API. Edits preview without saving. Save persists the draft
-/// without republishing audio; Reset restores the saved chain. Successful
-/// selection persistence discards the previous draft.
+/// snapshot-save API. Base EQ edits preview without saving. Named adjustments
+/// persist immediately, updating any base EQ draft without saving its base.
+/// Save persists the base EQ draft without republishing audio; Reset restores
+/// the saved base with current named adjustments. Successful selection
+/// persistence discards the previous draft.
 ///
 /// # Failures and audio lifecycle
 ///
 /// Failed persistence preserves saved state and the draft. A rejected edit or
-/// reset preserves the previous draft. Selection is persisted *before* audio
-/// publication, so DSP rejection can leave the new selection saved while the
+/// reset preserves the previous draft. Selection and named adjustments persist
+/// *before* audio publication, so DSP rejection can leave new settings saved while the
 /// previous chain remains applied. Display both [`Self::action_error`] and
 /// [`Self::audio_error`]: a successful no-op may clear the last action error but
 /// does not resolve an outstanding audio failure.
@@ -415,17 +417,28 @@ impl Session {
     }
 
     fn set_control_gain(&mut self, filter: FilterId, gain: GainDb) -> Result<(), SessionError> {
-        let mut draft = self
-            .editing_profile()
-            .cloned()
-            .ok_or(SessionError::NoSelectedProfile)?;
-        draft
+        let id = self
+            .selected_profile()
+            .ok_or(SessionError::NoSelectedProfile)?
+            .id();
+        let mut next = self.state.clone();
+        let saved = next
+            .profiles
+            .iter_mut()
+            .find(|saved| saved.id() == id)
+            .expect("Selected profiles always belong to saved state");
+        saved
             .adjust_filter_gain(filter, gain)
             .map_err(SessionError::InvalidProfile)?;
-        self.publish(draft.effective_chain())?;
-        self.draft = Some(draft);
-        self.publication_error = None;
-        Ok(())
+        let mut draft = self.draft.clone();
+        if let Some(draft) = &mut draft {
+            draft
+                .adjust_filter_gain(filter, gain)
+                .map_err(SessionError::InvalidProfile)?;
+        }
+        self.commit(next)?;
+        self.draft = draft;
+        self.publish_active_chain()
     }
 
     fn save_draft(&mut self) -> Result<(), SessionError> {

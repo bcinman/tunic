@@ -27,7 +27,9 @@ This file is the source of truth for implemented product capabilities.
   `~/Library/Application Support/Tunic/session.sqlite3`; tests and previews retain
   memory storage. Startup storage errors surface rather than falling back to memory.
   Saved profiles, adjustments, attribution, and selections survive relaunch;
-  unsaved drafts and runtime/visualizer state do not.
+  named gain adjustments persist immediately without saving pending base EQ edits.
+  Only base EQ edits require Save/Reset; unsaved base drafts and runtime/visualizer
+  state do not survive relaunch. Failed adjustment saves preserve prior state and audio.
 - An offline `tunic-presets` catalog with build-validated JSON, static brand/model
   indexes, and on-demand payload decoding. Initial oratory1990 presets cover
   Sennheiser HD650 and Sony MDR-7506.
@@ -65,7 +67,7 @@ This file is the source of truth for implemented product capabilities.
   native resources, retries route failures, and tears down on explicit shutdown
   or handle drop. No audio buffers or real-time callbacks cross into Swift.
 - A SwiftUI menu-bar app linked to generated BoltFFI bindings, with real device
-  status, preset selection, named gain controls, save/reset, and live circular RMS
+  status, preset selection, automatically saved named gain controls, and live circular RMS
   meters flanking the profile picker. Translucent white rings fill with solid white
   arcs on a −60 to 0 dBFS scale, updating with ~30 Hz telemetry.
   A transparent Metal `MTKView` visualizer replaces the Canvas spectrum and EQ

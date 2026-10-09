@@ -20,16 +20,6 @@ struct ProfileEditorView<Levels: View>: View {
                     send(.setControlGain(filter: control.filter, gain: gain))
                 }
             }
-
-            HStack {
-                Spacer()
-                Button("Reset") { send(.resetDraft) }
-                    .disabled(!state.hasDraft)
-                Button("Save") { send(.saveDraft) }
-                    .disabled(!state.hasDraft)
-            }
-            .controlSize(.small)
-            .padding(.horizontal, 12)
         }
     }
 }
