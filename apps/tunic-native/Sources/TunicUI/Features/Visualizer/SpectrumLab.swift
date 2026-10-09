@@ -11,6 +11,7 @@ struct SpectrumLabButton: View {
         } label: {
             Image(systemName: "slider.horizontal.3")
                 .frame(width: 28, height: 28)
+                .contentShape(.interaction, Circle())
         }
         .buttonStyle(.plain)
         .focusEffectDisabled()

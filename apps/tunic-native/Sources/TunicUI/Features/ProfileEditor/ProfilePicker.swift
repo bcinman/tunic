@@ -25,11 +25,12 @@ struct ProfilePicker: View {
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .contentShape(.interaction, Capsule())
         }
         .menuIndicator(.hidden)
         .buttonStyle(.plain)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
         .glassEffect(.regular.interactive())
         .accessibilityLabel("Profile")
         .frame(maxWidth: .infinity, alignment: .center)

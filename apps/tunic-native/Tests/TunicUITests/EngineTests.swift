@@ -16,6 +16,71 @@ private func waitUntil(_ condition: String = "expected state", _ predicate: () -
 
 private struct Timeout: Error { let condition: String }
 
+@Test @MainActor
+func spectrumLabOpensFromButtonSurfaceOutsideIcon() async throws {
+    _ = NSApplication.shared
+    var presented = false
+    let host = NSHostingView(rootView: SpectrumLabButton(
+        style: .constant(SpectrumStyle()), demo: .constant(false),
+        isPresented: Binding(get: { presented }, set: { presented = $0 })
+    ).fixedSize())
+    let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 100, height: 100),
+                          styleMask: [.titled], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    window.contentView = host
+    window.setContentSize(host.fittingSize)
+    window.makeKeyAndOrderFront(nil)
+    NSApplication.shared.activate(ignoringOtherApps: true)
+    defer { window.close() }
+    try await Task.sleep(for: .milliseconds(100))
+
+    // Inside the circular surface, to the left of the icon itself.
+    let location = host.convert(NSPoint(x: 2, y: host.bounds.midY), to: nil)
+    for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+        let event = try #require(NSEvent.mouseEvent(with: type, location: location,
+            modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+            windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+            clickCount: 1, pressure: 1))
+        window.sendEvent(event)
+    }
+    try await waitUntil("lab opens from button surface") { presented }
+}
+
+@Test @MainActor
+func profilePickerOpensFromPaddedSurface() async throws {
+    _ = NSApplication.shared
+    let host = NSHostingView(rootView: ProfilePicker(profileName: "Test profile", presets: [], send: { _ in })
+        .fixedSize())
+    let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 100),
+                          styleMask: [.titled], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    window.contentView = host
+    window.setContentSize(host.fittingSize)
+    window.makeKeyAndOrderFront(nil)
+    NSApplication.shared.activate(ignoringOtherApps: true)
+    defer { window.close() }
+    try await Task.sleep(for: .milliseconds(100))
+
+    var opened = false
+    let observer = NotificationCenter.default.addObserver(
+        forName: NSMenu.didBeginTrackingNotification, object: nil, queue: .main
+    ) { notification in
+        MainActor.assumeIsolated { opened = true }
+        (notification.object as? NSMenu)?.cancelTracking()
+    }
+    defer { NotificationCenter.default.removeObserver(observer) }
+    // Inside the pill's left padding, outside the text.
+    let location = host.convert(NSPoint(x: 16, y: host.bounds.midY), to: nil)
+    for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+        let event = try #require(NSEvent.mouseEvent(with: type, location: location,
+            modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+            windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+            clickCount: 1, pressure: 1))
+        window.sendEvent(event)
+    }
+    try await waitUntil("profile menu opens from padding") { opened }
+}
+
 @Test
 func spectrumUsesDecibelsAndLogarithmicFrequencyCoordinates() {
     let points = spectrumPoints([0, 0.001, 0.1, 2], maximumFrequency: 20_000)
