@@ -6,6 +6,10 @@ import Testing
 import TunicEngine
 @testable import TunicUI
 
+@Observable private final class MeterPreviewRelease {
+    var silent = false
+}
+
 @Test(.enabled(if: ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] != nil)) @MainActor
 func renderProfileMeterStates() async throws {
     let directory = try #require(ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"])
@@ -22,12 +26,15 @@ func renderProfileMeterStates() async throws {
     }
     let snapshot = try #require(model.snapshot)
     for (name, left, right) in [("silent", Float(0), Float(0)),
+                                ("low", 0.0019952623, 0.0056234133),
+                                ("threshold", 0.03162278, 0.17782794),
                                 ("stereo", 0.03162278, 0.25118864), ("full", 1, 1), ] {
+        let release = MeterPreviewRelease()
         let host = NSHostingView(rootView: VStack(spacing: 12) {
             SpectrumView(spectrum: demoSpectrum, maximumFrequency: 20_000, style: SpectrumStyle())
                 .frame(height: 160)
             ProfileEditorView(state: snapshot, send: model.enqueue) { channel in
-                CircularLevelMeter(rms: channel == .left ? left : right, channel: channel)
+                CircularLevelMeter(rms: release.silent ? 0 : channel == .left ? left : right, channel: channel)
             }
         }
         .padding(.bottom, 12).frame(width: 320)
@@ -39,14 +46,18 @@ func renderProfileMeterStates() async throws {
         window.setContentSize(host.fittingSize)
         window.orderFrontRegardless()
         defer { window.close() }
-        try await Task.sleep(for: .milliseconds(350))
-        let capture = Process()
-        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
-                             directory + "/meters-\(name).png", ]
-        try capture.run()
-        capture.waitUntilExit()
-        #expect(capture.terminationStatus == 0)
+        let phases = name == "full" ? [("", 350), ("-decay", 200), ("-settled", 2_300)] : [("", 350)]
+        for (phase, delay) in phases {
+            if phase == "-decay" { release.silent = true }
+            try await Task.sleep(for: .milliseconds(delay))
+            let capture = Process()
+            capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
+                                 directory + "/meters-\(name)\(phase).png", ]
+            try capture.run()
+            capture.waitUntilExit()
+            #expect(capture.terminationStatus == 0)
+        }
     }
 }
 

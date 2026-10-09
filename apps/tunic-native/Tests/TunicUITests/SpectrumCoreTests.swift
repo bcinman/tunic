@@ -4,6 +4,37 @@ import Testing
 @testable import TunicUI
 
 @Test
+func levelMetersAttackImmediatelyAndReleaseByElapsedTime() {
+    var meter = LevelEnvelope()
+    meter.observe(1, at: 0)
+    #expect(meter.fill == 1)
+    #expect(!meter.isDecaying)
+    meter.observe(0.01, at: 0) // −40 dBFS: one-third fill.
+    #expect(meter.fill == 1)
+    #expect(meter.isDecaying)
+    var split = meter
+    meter.advance(to: 0.1)
+    #expect(abs(meter.fill - (1.0 / 3 + 2.0 / 3 / exp(1))) < 0.000001)
+    for step in 1...10 {
+        // Repeated telemetry must not restart or slow the release.
+        split.observe(0.01, at: Double(step) * 0.01)
+    }
+    #expect(abs(split.fill - meter.fill) < 0.000001)
+    meter.observe(1, at: 0.1)
+    #expect(meter.fill == 1)
+    meter.observe(0, at: 0.1)
+    meter.advance(to: 0.2)
+    #expect(abs(meter.fill - 1 / exp(1)) < 0.000001)
+    meter.advance(to: 3)
+    #expect(meter.fill == 0)
+    #expect(!meter.isDecaying)
+    meter.observe(1, at: 3)
+    meter.observe(nil, at: 3)
+    #expect(meter.fill == 0)
+    #expect(!meter.isDecaying)
+}
+
+@Test
 func shapeSmoothingMatchesGaussianAndPreservesGeometry() {
     let original: [SIMD2<Float>] = (0..<256).map { index in
         SIMD2(Float(index) / 127.5 - 1, index == 32 || index == 224 ? 1 : -1)

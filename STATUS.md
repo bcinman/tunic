@@ -73,8 +73,11 @@ This file is the source of truth for implemented product capabilities.
   or handle drop. No audio buffers or real-time callbacks cross into Swift.
 - A SwiftUI menu-bar app linked to generated BoltFFI bindings, with real device
   status, preset selection, automatically saved named gain controls, and live circular RMS
-  meters flanking the profile picker. Translucent white rings fill with solid white
-  arcs on a −60 to 0 dBFS scale, updating with ~30 Hz telemetry.
+  meters flanking the profile picker. Translucent white rings fill with white
+  arcs on a −60 to 0 dBFS scale, updating with ~30 Hz telemetry. Arc opacity rises
+  linearly from 25% at empty to 100% at full.
+  Meter rises are immediate; arc length and opacity decay together with a 100 ms
+  exponential release. Animation stops when settled and resets when hidden.
   A transparent Metal `MTKView` visualizer renders the spectrum. Hovering a gain
   control dims the spectrum and fades in the combined EQ response: a subtle white
   stroke with a brighter 2-point white highlight and white fill weighted by that filter's gain
