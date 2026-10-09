@@ -21,8 +21,9 @@ This file is the source of truth for implemented product capabilities.
   remain visible across no-op commands until resolved; refresh cannot bypass a
   failed output-watcher installation.
 - A `tunic-sqlite` persistence adapter using bundled SQLite, atomic JSON snapshots,
-  and full synchronous commits. Versioned SQL migrations run transactionally;
-  newer schemas are rejected without resetting saved data. Both macOS hosts use
+  and `synchronous=EXTRA` commits with macOS full-drive flushing. Versioned SQL
+  migrations run transactionally; newer schemas are rejected without resetting
+  saved data. Both macOS hosts use
   `~/Library/Application Support/Tunic/session.sqlite3`; tests and previews retain
   memory storage. Startup storage errors surface rather than falling back to memory.
   Saved profiles, adjustments, attribution, and selections survive relaunch;

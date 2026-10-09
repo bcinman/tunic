@@ -31,9 +31,10 @@ impl SqlitePersistence {
         connection
             .busy_timeout(Duration::from_secs(5))
             .map_err(storage_error)?;
-        // Do not acknowledge a save before SQLite has synced its commit.
+        // EXTRA also syncs the directory after deleting the rollback journal,
+        // making the commit durable before acknowledging the save.
         connection
-            .pragma_update(None, "synchronous", "FULL")
+            .pragma_update(None, "synchronous", "EXTRA")
             .map_err(storage_error)?;
         // macOS needs F_FULLFSYNC to flush drive caches; ignored elsewhere.
         connection
