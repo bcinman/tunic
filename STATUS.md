@@ -77,7 +77,7 @@ This file is the source of truth for implemented product capabilities.
   arcs on a −60 to 0 dBFS scale, updating with ~30 Hz telemetry.
   A transparent Metal `MTKView` visualizer renders the spectrum. Hovering a gain
   control dims the spectrum and fades in the combined EQ response: a subtle white
-  stroke with system-accent highlighting and fill weighted by that filter's gain
+  stroke with a brighter 2-point white highlight and white fill weighted by that filter's gain
   sensitivity, including at zero gain. Sliders keep their normal appearance.
   Hover fades respect Reduce Motion. An icon-only tuning button over the visualizer's top-right opens
   a scrollable lab popover; its settings remain live and survive dismissal.

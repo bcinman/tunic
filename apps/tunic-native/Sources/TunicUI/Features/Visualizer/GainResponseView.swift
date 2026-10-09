@@ -25,7 +25,7 @@ struct GainResponseView: View {
                         y: geometry.size.height * (0.5 - gain / 48))
             }
             let gradient = LinearGradient(stops: influence.enumerated().map { index, weight in
-                Gradient.Stop(color: Color.accentColor.opacity(weight),
+                Gradient.Stop(color: Color.white.opacity(weight),
                               location: Double(index) / Double(max(1, influence.count - 1)))
             }, startPoint: .leading, endPoint: .trailing)
             let curve = Path { path in
@@ -45,7 +45,7 @@ struct GainResponseView: View {
             }
             .stroke(.white.opacity(0.12), lineWidth: 1 / displayScale)
             curve.stroke(.white.opacity(0.16), lineWidth: 1)
-            curve.stroke(gradient, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+            curve.stroke(gradient, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
         }
         .clipped()
         .allowsHitTesting(false)
