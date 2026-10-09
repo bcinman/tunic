@@ -5,6 +5,50 @@ import SwiftUI
 import Testing
 @testable import TunicUI
 
+@Test(.enabled(if: ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] != nil)) @MainActor
+func renderProfileMeterStates() async throws {
+    let directory = try #require(ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"])
+    _ = NSApplication.shared
+    let model = TunicModel(connectAudio: false)
+    defer { model.shutdown() }
+    for _ in 0..<100 where model.snapshot == nil {
+        try await Task.sleep(for: .milliseconds(10))
+    }
+    let preset = try #require(model.snapshot?.presets.first { $0.model == "HD650" })
+    model.enqueue(.usePreset(id: preset.id))
+    for _ in 0..<100 where model.snapshot?.presetId != preset.id {
+        try await Task.sleep(for: .milliseconds(10))
+    }
+    let snapshot = try #require(model.snapshot)
+    for (name, left, right) in [("silent", Float(0), Float(0)),
+                                ("stereo", 0.03162278, 0.25118864), ("full", 1, 1), ] {
+        let host = NSHostingView(rootView: VStack(spacing: 12) {
+            SpectrumView(spectrum: demoSpectrum, maximumFrequency: 20_000, style: SpectrumStyle())
+                .frame(height: 160)
+            ProfileEditorView(state: snapshot, send: model.enqueue) { channel in
+                CircularLevelMeter(rms: channel == .left ? left : right, channel: channel)
+            }
+        }
+        .padding(.bottom, 12).frame(width: 320)
+        .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, .dark))
+        let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 360),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.setContentSize(host.fittingSize)
+        window.orderFrontRegardless()
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(350))
+        let capture = Process()
+        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
+                             directory + "/meters-\(name).png", ]
+        try capture.run()
+        capture.waitUntilExit()
+        #expect(capture.terminationStatus == 0)
+    }
+}
+
 @Test @MainActor
 func spectrumAttackAndDecayUseElapsedTimeAndSettle() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())

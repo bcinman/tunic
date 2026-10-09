@@ -34,6 +34,5 @@ struct ProfilePicker: View {
         .glassEffect(.regular.interactive())
         .accessibilityLabel("Profile")
         .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.horizontal, 12)
     }
 }

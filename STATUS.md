@@ -65,7 +65,9 @@ This file is the source of truth for implemented product capabilities.
   native resources, retries route failures, and tears down on explicit shutdown
   or handle drop. No audio buffers or real-time callbacks cross into Swift.
 - A SwiftUI menu-bar app linked to generated BoltFFI bindings, with real device
-  status, preset selection, named gain controls, save/reset, and live RMS readings.
+  status, preset selection, named gain controls, save/reset, and live circular RMS
+  meters flanking the profile picker. Translucent white rings fill with solid white
+  arcs on a −60 to 0 dBFS scale, updating with ~30 Hz telemetry.
   A transparent Metal `MTKView` visualizer replaces the Canvas spectrum and EQ
   response curve. An icon-only tuning button over the visualizer's top-right opens
   a scrollable lab popover; its settings remain live and survive dismissal.
@@ -100,9 +102,8 @@ This file is the source of truth for implemented product capabilities.
   dots stay crisp and raw bass-hit detection is unchanged. Zero restores raw geometry.
   Startup and Reset default to 0 ms attack, 100 ms decay, gradient grid halftone with
   3 pt dots, 4 pt spacing, 0.5 amplitude response, and chromatic aberration
-  enabled. Continuous redraws run only during spectrum settling or
-  chromatic pulses; numeric RMS readings are
-  limited to 5 Hz.
+  enabled. Continuous spectrum redraws run only during spectrum settling or
+  chromatic pulses.
   Visualization settings, pure envelope/pulse dynamics, SwiftUI lifecycle,
   and Metal resource ownership are separate components. Shader composition applies
   chromatic offsets, then halftone coverage/color in one pass.

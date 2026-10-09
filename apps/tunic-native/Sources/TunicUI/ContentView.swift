@@ -16,8 +16,8 @@ public struct ContentView: View {
 
             if let state = model.snapshot {
                 VisualizerView(model: model, maximumFrequency: min(20_000, state.sampleRate * 0.499))
-                ProfileEditorView(state: state, send: model.enqueue) {
-                    LiveLevels(model: model)
+                ProfileEditorView(state: state, send: model.enqueue) { channel in
+                    LiveLevels(model: model, channel: channel)
                 }
             }
 

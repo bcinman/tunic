@@ -4,11 +4,16 @@ import TunicEngine
 struct ProfileEditorView<Levels: View>: View {
     let state: StateSnapshot
     let send: (EngineCommand) -> Void
-    @ViewBuilder var levels: () -> Levels
+    @ViewBuilder var levels: (LiveLevels.Channel) -> Levels
 
     var body: some View {
         Group {
-            ProfilePicker(profileName: state.profileName, presets: state.presets, send: send)
+            HStack(spacing: 8) {
+                levels(.left)
+                ProfilePicker(profileName: state.profileName, presets: state.presets, send: send)
+                levels(.right)
+            }
+            .padding(.horizontal, 16)
 
             ForEach(state.controls, id: \.filter) { control in
                 GainControlRow(control: control) { gain in
@@ -17,7 +22,6 @@ struct ProfileEditorView<Levels: View>: View {
             }
 
             HStack {
-                levels()
                 Spacer()
                 Button("Reset") { send(.resetDraft) }
                     .disabled(!state.hasDraft)

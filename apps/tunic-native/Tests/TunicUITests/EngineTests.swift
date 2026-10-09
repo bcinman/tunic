@@ -331,7 +331,6 @@ func liveAudioThroughSwiftBindings() async throws {
         model.telemetry.map { $0.leftRms > 0 || $0.rightRms > 0 } ?? false
     }
     #expect(model.telemetry?.spectrum.count == 256)
-    try await waitUntil("numeric level readout") { model.levelText.hasPrefix("L ") }
     if let directory = ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] {
         // This test already owns telemetry demand; don't mount another popup task.
         let renderer = ImageRenderer(content: ContentView(model: model)
@@ -344,16 +343,14 @@ func liveAudioThroughSwiftBindings() async throws {
     measurements.cancel()
     await measurements.value
     #expect(model.telemetry == nil)
-    #expect(model.levelText == "No audio measurements")
     #expect(model.snapshot?.acceptedChain != nil)
 
     let reopened = Task { await model.measureWhileVisible() }
     defer { reopened.cancel() }
-    try await waitUntil("readout after reopening") { model.levelText.hasPrefix("L ") }
-    #expect(model.telemetry != nil)
+    try await waitUntil("readout after reopening") { model.telemetry != nil }
     reopened.cancel()
     await reopened.value
-    #expect(model.levelText == "No audio measurements")
+    #expect(model.telemetry == nil)
 }
 
 @MainActor
