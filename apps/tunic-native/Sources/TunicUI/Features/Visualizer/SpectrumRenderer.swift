@@ -98,7 +98,6 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
             Task { @MainActor in
                 guard let self, let view, view.window?.isVisible == true,
                       self.presentationGeneration == generation else { return }
-                (view as? SpectrumMetalView)?.recordCompletedFrame()
                 if hasPoints { view.layer?.isHidden = false }
             }
         }

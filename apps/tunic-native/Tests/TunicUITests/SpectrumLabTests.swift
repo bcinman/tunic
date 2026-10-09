@@ -266,7 +266,7 @@ func overlappingAndInvertedHalftoneMatchCircleUnion() async throws {
         for spacing in [3.0, 8.0] {
             renderer.style = SpectrumStyle(dotSize: 12, dotSpacing: spacing,
                                            amplitudeResponse: 0, dotPattern: pattern,
-                                           chromaticEnabled: false)
+                                           chromaticEnabled: false, whiteHalftone: true)
             // Independent reference: enumerate the entire lattice, rather than
             // copying the shader's per-pixel neighbor search.
             var circles: [(Double, Double, Double)] = []
@@ -493,7 +493,7 @@ private func findMetalView(_ view: NSView) -> MTKView? {
 }
 
 @Test(.enabled(if: ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] != nil)) @MainActor
-func renderFrameRateActiveAndIdle() async throws {
+func renderSpectrumActiveAndIdle() async throws {
     let directory = try #require(ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"])
     _ = NSApplication.shared
     let state = LabState()
@@ -512,28 +512,23 @@ func renderFrameRateActiveAndIdle() async throws {
     try await Task.sleep(for: .milliseconds(100))
     state.demo = true
     let metal = try #require(findMetalView(host))
-    let label = try #require(metal.subviews.compactMap { $0 as? NSTextField }.first)
     for name in ["active", "idle"] {
         if name == "idle" { state.style.attack = 0 }
         try await Task.sleep(for: .milliseconds(2400))
-        #expect(label.stringValue.hasSuffix(" FPS"))
         if name == "active" {
-            #expect(label.stringValue != "0 FPS")
             #expect(!metal.isPaused)
         } else {
-            #expect(label.stringValue == "0 FPS")
             #expect(metal.isPaused)
         }
         let capture = Process()
         capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
         capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
-                             directory + "/fps-\(name).png", ]
+                             directory + "/spectrum-\(name).png", ]
         try capture.run()
         capture.waitUntilExit()
         #expect(capture.terminationStatus == 0)
     }
     window.orderOut(nil)
-    #expect(label.stringValue == "0 FPS")
     #expect(metal.isPaused)
 }
 

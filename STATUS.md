@@ -71,7 +71,7 @@ This file is the source of truth for implemented product capabilities.
   a scrollable lab popover; its settings remain live and survive dismissal.
   The button is hidden until hovering the spectrum, fades over 200 ms, and remains
   visible while the popover is open; Reduce Motion disables the fade.
-  The FPS readout sits at the top-left. The lab switches between white points
+  The lab switches between white points
   and a signed distance field of the spectrum curve, with line, glow, contour-band,
   and distance-debug mappings; width, spread, and hue update live. Halftone shading
   fills beneath the curve with white or horizontal-gradient grid/hexagonal dots, with
@@ -98,14 +98,11 @@ This file is the source of truth for implemented product capabilities.
   heights before temporal smoothing, strongest at bass frequencies and tapering
   toward treble. It reuses scratch storage and runs on input updates, not per pixel;
   dots stay crisp and raw bass-hit detection is unchanged. Zero restores raw geometry.
-  Startup and Reset default to 0 ms attack, 100 ms decay, white grid halftone with
+  Startup and Reset default to 0 ms attack, 100 ms decay, gradient grid halftone with
   3 pt dots, 4 pt spacing, 0.5 amplitude response, and chromatic aberration
   enabled. Continuous redraws run only during spectrum settling or
   chromatic pulses; numeric RMS readings are
   limited to 5 Hz.
-  A visualizer FPS overlay reports GPU-completed frames over elapsed wall time,
-  updated once per second without driving additional Metal frames. Idle reads zero;
-  hiding the window stops the counter timer and resets the reading.
   Visualization settings, pure envelope/pulse dynamics, SwiftUI lifecycle,
   and Metal resource ownership are separate components. Shader composition applies
   chromatic offsets, then halftone coverage/color in one pass.

@@ -40,7 +40,7 @@ struct SpectrumStyle: Equatable {
     var chromaticStrength: Double = 8
     var bassThreshold: Double = -42
     var chromaticDecay: Double = 250
-    var whiteHalftone = true
+    var whiteHalftone = false
     var invertedHalftone = false
     var attack: Double = 0
     var decay: Double = 100
