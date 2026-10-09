@@ -12,6 +12,7 @@ struct GainControlRow: View {
     let control: Control
     let processedCommand: UInt64
     let send: (EngineCommand) -> UInt64?
+    var dragChanged: (Bool) -> Void = { _ in }
     @State private var interaction = Interaction.idle
 
     private var gain: Double {
@@ -45,6 +46,7 @@ struct GainControlRow: View {
         .onExitCommand {
             guard case .dragging = interaction else { return }
             interaction = .cancelled
+            dragChanged(false)
             _ = send(.cancelControlGain)
         }
         .onDisappear { editingChanged(false) }
@@ -66,8 +68,10 @@ struct GainControlRow: View {
     private func editingChanged(_ editing: Bool) {
         if editing {
             interaction = .dragging(gain)
+            dragChanged(true)
         } else if case .dragging(let value) = interaction {
             finish(value)
+            dragChanged(false)
         } else if case .cancelled = interaction {
             interaction = .idle
         }

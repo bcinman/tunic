@@ -79,6 +79,8 @@ This file is the source of truth for implemented product capabilities.
   control dims the spectrum and fades in the combined EQ response: a subtle white
   stroke with a brighter 2-point white highlight and white fill weighted by that filter's gain
   sensitivity, including at zero gain. Sliders keep their normal appearance.
+  During a drag, the curve stays pinned to that control even outside its hover
+  area; release or cancellation returns to normal pointer-based highlighting.
   Hover fades respect Reduce Motion. An icon-only tuning button over the visualizer's top-right opens
   a scrollable lab popover; its settings remain live and survive dismissal.
   The button is hidden until hovering the spectrum, fades over 200 ms, and remains

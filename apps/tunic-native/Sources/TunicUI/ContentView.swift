@@ -4,6 +4,7 @@ public struct ContentView: View {
     private let model: TunicModel
     private let quit: () -> Void
     @State private var hoveredFilter: UInt32?
+    @State private var draggedFilter: UInt32?
 
     public init(model: TunicModel, quit: @escaping () -> Void = {}) {
         self.model = model
@@ -17,9 +18,10 @@ public struct ContentView: View {
 
             if let state = model.snapshot {
                 VisualizerView(model: model, maximumFrequency: min(20_000, state.sampleRate * 0.499),
-                               hoveredFilter: hoveredFilter)
+                               hoveredFilter: draggedFilter ?? hoveredFilter)
                 ProfileEditorView(state: state, send: model.enqueue,
                                   hoverChanged: { hoveredFilter = $0 },
+                                  dragChanged: { draggedFilter = $0 },
                                   levels: { LiveLevels(model: model, channel: $0) })
             }
 
@@ -41,8 +43,14 @@ public struct ContentView: View {
         }
         .frame(width: 320)
         .task { await model.measureWhileVisible() }
-        .onChange(of: model.snapshot?.presetId) { hoveredFilter = nil }
-        .onDisappear { hoveredFilter = nil }
+        .onChange(of: model.snapshot?.presetId) {
+            hoveredFilter = nil
+            draggedFilter = nil
+        }
+        .onDisappear {
+            hoveredFilter = nil
+            draggedFilter = nil
+        }
     }
 }
 

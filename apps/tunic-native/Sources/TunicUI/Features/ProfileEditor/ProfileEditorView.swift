@@ -5,6 +5,7 @@ struct ProfileEditorView<Levels: View>: View {
     let state: StateSnapshot
     let send: (EngineCommand) -> UInt64?
     var hoverChanged: (UInt32?) -> Void = { _ in }
+    var dragChanged: (UInt32?) -> Void = { _ in }
     @ViewBuilder var levels: (LiveLevels.Channel) -> Levels
 
     var body: some View {
@@ -19,7 +20,8 @@ struct ProfileEditorView<Levels: View>: View {
             if !state.controls.isEmpty {
                 VStack(spacing: 0) {
                     ForEach(state.controls, id: \.filter) { control in
-                        GainControlRow(control: control, processedCommand: state.processedCommand, send: send)
+                        GainControlRow(control: control, processedCommand: state.processedCommand, send: send,
+                                       dragChanged: { dragChanged($0 ? control.filter : nil) })
                         .padding(.top, control.filter == state.controls.first?.filter ? 0 : 8)
                         .padding(.bottom, control.filter == state.controls.last?.filter ? 0 : 8)
                         .contentShape(Rectangle())
