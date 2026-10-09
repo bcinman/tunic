@@ -7,6 +7,7 @@ import TunicEngine
 public final class TunicModel {
     public private(set) var snapshot: StateSnapshot?
     public private(set) var response: [Double] = []
+    private(set) var gainInfluences: [UInt32: [Double]] = [:]
     public private(set) var telemetry: TelemetryFrame?
     public private(set) var error: String?
 
@@ -62,8 +63,15 @@ public final class TunicModel {
             response = try frequencyResponse(
                 chain: next.desiredChain, sampleRate: next.sampleRate, frequencies: frequencies
             )
+            var influences: [UInt32: [Double]] = [:]
+            for filter in next.desiredChain.filters where next.controls.contains(where: { $0.filter == filter.id }) {
+                influences[filter.id] = try gainInfluence(filter: filter, sampleRate: next.sampleRate,
+                                                        frequencies: frequencies)
+            }
+            gainInfluences = influences
         } catch {
             response = []
+            gainInfluences = [:]
             self.error = String(describing: error)
         }
     }

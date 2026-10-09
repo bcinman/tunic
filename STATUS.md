@@ -70,8 +70,11 @@ This file is the source of truth for implemented product capabilities.
   status, preset selection, automatically saved named gain controls, and live circular RMS
   meters flanking the profile picker. Translucent white rings fill with solid white
   arcs on a −60 to 0 dBFS scale, updating with ~30 Hz telemetry.
-  A transparent Metal `MTKView` visualizer replaces the Canvas spectrum and EQ
-  response curve. An icon-only tuning button over the visualizer's top-right opens
+  A transparent Metal `MTKView` visualizer renders the spectrum. Hovering a gain
+  control dims the spectrum and fades in the combined EQ response: a subtle white
+  stroke with system-accent highlighting and fill weighted by that filter's gain
+  sensitivity, including at zero gain. Sliders keep their normal appearance.
+  Hover fades respect Reduce Motion. An icon-only tuning button over the visualizer's top-right opens
   a scrollable lab popover; its settings remain live and survive dismissal.
   The button is hidden until hovering the spectrum, fades over 200 ms, and remains
   visible while the popover is open; Reduce Motion disables the fade.

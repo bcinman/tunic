@@ -3,6 +3,7 @@ import MetalKit
 import Observation
 import SwiftUI
 import Testing
+import TunicEngine
 @testable import TunicUI
 
 @Test(.enabled(if: ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] != nil)) @MainActor
@@ -781,4 +782,70 @@ func renderVisualizerLab() async throws {
     renderer.receiveSpectrum(demoSpectrum, maximumFrequency: 20_000, at: CACurrentMediaTime())
     metal.draw()
     #expect(renderer.points.contains { $0.y > -1 })
+    try await renderGainHoverStates(directory: directory)
+}
+
+@MainActor
+private func renderGainHoverStates(directory: String) async throws {
+    let model = TunicModel(connectAudio: false)
+    defer { model.shutdown() }
+    for _ in 0..<100 where model.snapshot == nil {
+        try await Task.sleep(for: .milliseconds(10))
+    }
+    let preset = try #require(model.snapshot?.presets.first { $0.model == "HD650" })
+    model.enqueue(.usePreset(id: preset.id))
+    for _ in 0..<100 where model.snapshot?.presetId != preset.id {
+        try await Task.sleep(for: .milliseconds(10))
+    }
+    let snapshot = try #require(model.snapshot)
+    let shelf = try #require(snapshot.controls.first)
+    let peak = try #require(snapshot.controls.dropFirst().first)
+    for (name, filter) in [("Resting", nil), ("Shelf", shelf.filter), ("Peak", peak.filter), ] {
+        let host = NSHostingView(rootView: VStack(spacing: 16) {
+            AudioStatusView(deviceName: snapshot.deviceName, isProcessing: false)
+            VisualizerView(model: model, maximumFrequency: 20_000, hoveredFilter: filter)
+            ProfileEditorView(state: snapshot, send: model.enqueue) { channel in
+                CircularLevelMeter(rms: 0, channel: channel)
+            }
+        }.padding(.bottom, 16).frame(width: 320)
+            .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, .dark))
+        let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 500),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.setContentSize(host.fittingSize)
+        window.orderFrontRegardless()
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(250))
+        let metal = try #require(findMetalView(host))
+        let renderer = try #require(metal.delegate as? SpectrumRenderer)
+        renderer.receiveSpectrum(demoSpectrum, maximumFrequency: 20_000, at: CACurrentMediaTime())
+        metal.draw()
+        try await Task.sleep(for: .milliseconds(400))
+        let capture = Process()
+        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
+                             directory + "/gain-hover-\(name).png", ]
+        try capture.run()
+        capture.waitUntilExit()
+        #expect(capture.terminationStatus == 0)
+    }
+}
+
+@Test(arguments: [-12.0, 0, 6])
+func gainHighlightFollowsFilterSensitivity(gain: Double) throws {
+    let frequencies = [20.0, 200, 1_000, 10_000]
+    let peak = try gainInfluence(filter: Filter(id: 2, kind: .peaking, frequency: 1_000,
+                                              gain: gain, qualityFactor: 2),
+                                 sampleRate: 48_000, frequencies: frequencies)
+    #expect(peak[2] > 0.98)
+    #expect(peak[0] < 0.01 && peak[3] < 0.02)
+    for kind in [FilterKind.lowShelf, .highShelf] {
+        let shelf = try gainInfluence(filter: Filter(id: 1, kind: kind, frequency: 200,
+                                                   gain: gain, qualityFactor: 0.707),
+                                      sampleRate: 48_000, frequencies: frequencies)
+        #expect(abs(shelf[1] - 0.5) < 0.02)
+        #expect(shelf[kind == .lowShelf ? 0 : 3] > 0.98)
+        #expect(shelf[kind == .lowShelf ? 3 : 0] < 0.02)
+    }
 }

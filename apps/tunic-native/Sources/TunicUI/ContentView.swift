@@ -3,6 +3,7 @@ import SwiftUI
 public struct ContentView: View {
     private let model: TunicModel
     private let quit: () -> Void
+    @State private var hoveredFilter: UInt32?
 
     public init(model: TunicModel, quit: @escaping () -> Void = {}) {
         self.model = model
@@ -15,10 +16,11 @@ public struct ContentView: View {
                             isProcessing: model.snapshot?.acceptedChain != nil)
 
             if let state = model.snapshot {
-                VisualizerView(model: model, maximumFrequency: min(20_000, state.sampleRate * 0.499))
-                ProfileEditorView(state: state, send: model.enqueue) { channel in
-                    LiveLevels(model: model, channel: channel)
-                }
+                VisualizerView(model: model, maximumFrequency: min(20_000, state.sampleRate * 0.499),
+                               hoveredFilter: hoveredFilter)
+                ProfileEditorView(state: state, send: model.enqueue,
+                                  hoverChanged: { hoveredFilter = $0 },
+                                  levels: { LiveLevels(model: model, channel: $0) })
             }
 
             if let error = model.error ?? model.snapshot?.actionError {
@@ -39,6 +41,8 @@ public struct ContentView: View {
         }
         .frame(width: 320)
         .task { await model.measureWhileVisible() }
+        .onChange(of: model.snapshot?.presetId) { hoveredFilter = nil }
+        .onDisappear { hoveredFilter = nil }
     }
 }
 
