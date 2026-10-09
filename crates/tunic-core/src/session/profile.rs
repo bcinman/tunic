@@ -85,7 +85,8 @@ pub struct Profile {
 }
 
 impl Profile {
-    pub(crate) fn new(
+    /// Restores a profile from its saved parts, checking profile invariants.
+    pub fn new(
         id: ProfileId,
         name: ProfileName,
         base: Chain,

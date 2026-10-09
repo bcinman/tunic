@@ -11,6 +11,7 @@ use std::time::{Duration, Instant};
 use boltffi::{EventSubscription, export};
 use tunic_core::{Command, MemoryPersistence, Session, Telemetry};
 use tunic_presets::BundledCatalog;
+use tunic_sqlite::SqlitePersistence;
 
 enum Message {
     Execute(Command),
@@ -82,8 +83,9 @@ pub struct Engine {
 
 #[export]
 impl Engine {
-    /// Offline mode is useful for previews/tests and hosts without an audio adapter.
-    pub fn new(connect_audio: bool) -> Result<Self, EngineError> {
+    /// A missing database path selects memory storage for previews/tests.
+    /// Hosts must create the database's parent directory before calling.
+    pub fn new(connect_audio: bool, database_path: Option<String>) -> Result<Self, EngineError> {
         #[cfg(not(target_os = "macos"))]
         if connect_audio {
             return Err(EngineError::Unavailable {
@@ -94,11 +96,26 @@ impl Engine {
         let shared = Arc::new(Shared::default());
         let worker_shared = Arc::clone(&shared);
         let notify_sender = sender.clone();
+        let (ready_sender, ready_receiver) = mpsc::sync_channel(1);
         let worker = thread::Builder::new()
             .name("tunic-session".into())
             .spawn(move || {
-                let session = Session::new(MemoryPersistence::default(), BundledCatalog)
-                    .expect("the in-memory store starts with valid state");
+                let session = match database_path {
+                    Some(path) => SqlitePersistence::open(path)
+                        .map_err(tunic_core::SessionError::PersistenceFailed)
+                        .and_then(|store| Session::new(store, BundledCatalog)),
+                    None => Session::new(MemoryPersistence::default(), BundledCatalog),
+                };
+                let session = match session {
+                    Ok(session) => session,
+                    Err(error) => {
+                        let _ = ready_sender.send(Err(EngineError::Unavailable {
+                            message: format!("Cannot open saved state: {error:?}"),
+                        }));
+                        return;
+                    }
+                };
+                let _ = ready_sender.send(Ok(()));
                 #[cfg(target_os = "macos")]
                 let session = if connect_audio {
                     session.with_audio(
@@ -117,6 +134,15 @@ impl Engine {
             .map_err(|e| EngineError::Unavailable {
                 message: e.to_string(),
             })?;
+        let ready = ready_receiver.recv().unwrap_or_else(|error| {
+            Err(EngineError::Unavailable {
+                message: error.to_string(),
+            })
+        });
+        if let Err(error) = ready {
+            let _ = worker.join();
+            return Err(error);
+        }
         Ok(Self {
             sender,
             shared,

@@ -10,6 +10,7 @@ crate-type = ["lib", "staticlib", "cdylib"]
 boltffi = "=0.30.1"
 tunic-core.workspace = true
 tunic-presets.workspace = true
+tunic-sqlite.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
 tunic-macos.workspace = true

@@ -20,6 +20,13 @@ This file is the source of truth for implemented product capabilities.
   of corrupt restored state. Failed saves retain drafts. DSP publication errors
   remain visible across no-op commands until resolved; refresh cannot bypass a
   failed output-watcher installation.
+- A `tunic-sqlite` persistence adapter using bundled SQLite, atomic JSON snapshots,
+  and full synchronous commits. Versioned SQL migrations run transactionally;
+  newer schemas are rejected without resetting saved data. Both macOS hosts use
+  `~/Library/Application Support/Tunic/session.sqlite3`; tests and previews retain
+  memory storage. Startup storage errors surface rather than falling back to memory.
+  Saved profiles, adjustments, attribution, and selections survive relaunch;
+  unsaved drafts and runtime/visualizer state do not.
 - An offline `tunic-presets` catalog with build-validated JSON, static brand/model
   indexes, and on-demand payload decoding. Initial oratory1990 presets cover
   Sennheiser HD650 and Sony MDR-7506.
@@ -129,8 +136,6 @@ This file is the source of truth for implemented product capabilities.
 - Production-ready native menu-bar UI and editable graph gestures.
   Non-Swift bindings and non-macOS audio
   adapters are not yet integrated or verified.
-- Durable storage. A future crate such as `tunic-sqlite` can implement the
-  core's `Persistence` contract; the app currently uses `MemoryPersistence`.
 - Bulk preset ingestion, AutoEq data, and catalog updates independent of app releases.
 - Filter types other than peaking, low-shelf, and high-shelf EQ.
 - Profile import/export.

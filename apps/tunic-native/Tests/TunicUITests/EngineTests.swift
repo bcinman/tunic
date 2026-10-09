@@ -213,7 +213,7 @@ func swiftModelUsesRustDraftsAndReceivesFailedCommands() async throws {
 
 @Test @MainActor
 func updateStreamsHaveIndependentLifetimesAndFinishAtShutdown() async throws {
-    let engine = try Engine(connectAudio: false)
+    let engine = try Engine(connectAudio: false, databasePath: nil)
     defer { engine.shutdown() }
     var firstCount = 0
     let first = Task {
@@ -244,8 +244,32 @@ func updateStreamsHaveIndependentLifetimesAndFinishAtShutdown() async throws {
 }
 
 @Test @MainActor
+func diskStorageSurvivesEngineRecreationAndReportsCorruption() async throws {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let database = directory.appendingPathComponent("session.sqlite3")
+    let engine = try Engine(connectAudio: false, databasePath: database.path)
+    defer { engine.shutdown() }
+    try engine.enqueue(command: .useFlat)
+    try await waitUntil { engine.snapshot()?.profileName != nil }
+    let savedName = engine.snapshot()?.profileName
+    engine.shutdown()
+
+    let reopened = try Engine(connectAudio: false, databasePath: database.path)
+    defer { reopened.shutdown() }
+    try await waitUntil { reopened.snapshot() != nil }
+    #expect(reopened.snapshot()?.profileName == savedName)
+    reopened.shutdown()
+    try Data("corrupt database".utf8).write(to: database)
+    #expect(throws: EngineError.self) {
+        try Engine(connectAudio: false, databasePath: database.path)
+    }
+}
+
+@Test @MainActor
 func foreignResponseAndTelemetryTypesRoundTrip() throws {
-    let engine = try Engine(connectAudio: false)
+    let engine = try Engine(connectAudio: false, databasePath: nil)
     defer { engine.shutdown() }
     let batch = engine.pollTelemetry()
     #expect(batch.frames.isEmpty)

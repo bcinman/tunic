@@ -9,8 +9,9 @@ use gpui::{
     App, AppContext, Bounds, Context, Entity, IntoElement, Render, Task, TitlebarOptions, Window,
     WindowBackgroundAppearance, WindowBounds, WindowOptions, point, px, size,
 };
-use tunic_core::{ChangeHandler, Command, MemoryPersistence, Platform, Session};
+use tunic_core::{ChangeHandler, Command, Platform, Session};
 use tunic_presets::BundledCatalog;
+use tunic_sqlite::SqlitePersistence;
 use tunic_ui::TunicView;
 
 use tunic_macos::MacosPlatform;
@@ -24,15 +25,13 @@ struct Root {
 }
 
 impl Root {
-    fn new(platform: impl Platform + 'static, cx: &mut Context<Self>) -> Self {
+    fn new(session: Session, platform: impl Platform + 'static, cx: &mut Context<Self>) -> Self {
         let changes = Arc::new(ChangeSignal::default());
         let notify: ChangeHandler = {
             let changes = Arc::clone(&changes);
             Arc::new(move || changes.notify())
         };
-        let session = Session::new(MemoryPersistence::default(), BundledCatalog)
-            .expect("the in-memory store starts with valid state")
-            .with_audio(platform, notify);
+        let session = session.with_audio(platform, notify);
         if session.audio_retry_needed() {
             changes.notify();
         }
@@ -116,6 +115,13 @@ impl ChangeSignal {
 }
 
 fn main() {
+    let session = match persisted_session() {
+        Ok(session) => session,
+        Err(error) => {
+            eprintln!("Cannot open Tunic's saved state: {error}");
+            std::process::exit(1);
+        }
+    };
     gpui_platform::application().run(move |cx: &mut App| {
         let bounds = Bounds::centered(None, size(px(640.0), px(460.0)), cx);
         cx.open_window(
@@ -132,10 +138,19 @@ fn main() {
             |_, cx| {
                 window::set_max_width(MAX_WINDOW_WIDTH);
                 window::configure_backdrop_blur();
-                cx.new(|cx| Root::new(MacosPlatform::default(), cx))
+                cx.new(|cx| Root::new(session, MacosPlatform::default(), cx))
             },
         )
         .expect("failed to open Tunic window");
         cx.activate(true);
     });
+}
+
+fn persisted_session() -> Result<Session, String> {
+    let home = std::env::var_os("HOME").ok_or("HOME is not set")?;
+    let directory = std::path::PathBuf::from(home).join("Library/Application Support/Tunic");
+    std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+    let store = SqlitePersistence::open(directory.join("session.sqlite3"))
+        .map_err(|error| format!("{error:?}"))?;
+    Session::new(store, BundledCatalog).map_err(|error| format!("{error:?}"))
 }

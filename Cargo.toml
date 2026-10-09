@@ -5,6 +5,7 @@ members = [
     "crates/tunic-ffi",
     "crates/tunic-macos",
     "crates/tunic-presets",
+    "crates/tunic-sqlite",
     "crates/tunic-ui",
 ]
 resolver = "3"
@@ -43,9 +44,11 @@ objc2-foundation = { version = "0.3.2", features = [
     "NSUUID",
 ] }
 rustfft = "6.4.1"
+rusqlite = { version = "0.40.2", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tunic-macos = { path = "crates/tunic-macos" }
 tunic-core = { path = "crates/tunic-core" }
 tunic-presets = { path = "crates/tunic-presets" }
+tunic-sqlite = { path = "crates/tunic-sqlite" }
 tunic-ui = { path = "crates/tunic-ui" }

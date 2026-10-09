@@ -15,6 +15,7 @@ objc2-app-kit.workspace = true
 tunic-core.workspace = true
 tunic-macos.workspace = true
 tunic-presets.workspace = true
+tunic-sqlite.workspace = true
 tunic-ui.workspace = true
 
 [lints]

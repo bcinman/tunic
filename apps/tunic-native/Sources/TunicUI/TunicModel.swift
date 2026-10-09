@@ -16,7 +16,16 @@ public final class TunicModel {
 
     public init(connectAudio: Bool = true) {
         do {
-            let engine = try Engine(connectAudio: connectAudio)
+            var databasePath: String?
+            if connectAudio {
+                let directory = try FileManager.default.url(
+                    for: .applicationSupportDirectory, in: .userDomainMask,
+                    appropriateFor: nil, create: true
+                ).appendingPathComponent("Tunic", isDirectory: true)
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                databasePath = directory.appendingPathComponent("session.sqlite3").path
+            }
+            let engine = try Engine(connectAudio: connectAudio, databasePath: databasePath)
             self.engine = engine
             updates = Task { [weak self] in
                 for await _ in engine.updates() {

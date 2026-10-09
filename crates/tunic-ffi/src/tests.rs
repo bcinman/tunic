@@ -16,7 +16,14 @@ fn wait_for(engine: &Engine, predicate: impl Fn(&StateSnapshot) -> bool) -> Stat
 
 #[test]
 fn commands_preserve_drafts_and_publish_failures() {
-    let engine = Engine::new(false).unwrap();
+    let directory = std::env::temp_dir().join(format!("tunic-ffi-{}", std::process::id()));
+    std::fs::create_dir(&directory).unwrap();
+    let database = directory
+        .join("session.sqlite3")
+        .to_str()
+        .unwrap()
+        .to_owned();
+    let engine = Engine::new(false, Some(database.clone())).unwrap();
     let initial = wait_for(&engine, |_| true);
     let preset = initial.presets.iter().find(|p| p.model == "HD650").unwrap();
     engine
@@ -69,6 +76,19 @@ fn commands_preserve_drafts_and_publish_failures() {
         engine.enqueue(EngineCommand::UseFlat),
         Err(EngineError::Closed)
     ));
+    let reopened = Engine::new(false, Some(database.clone())).unwrap();
+    let restored = wait_for(&reopened, |_| true);
+    assert_eq!(restored.preset_id, Some(preset.id.clone()));
+    assert_eq!(restored.base_chain.filters[0].gain, 2.5);
+    assert_eq!(restored.base_chain.filters[0].frequency, 237.0);
+    assert!(!restored.has_draft);
+    reopened.shutdown();
+    std::fs::write(&database, "not a SQLite database").unwrap();
+    assert!(matches!(
+        Engine::new(false, Some(database)),
+        Err(EngineError::Unavailable { .. })
+    ));
+    std::fs::remove_dir_all(directory).unwrap();
 }
 
 #[test]
@@ -107,7 +127,7 @@ fn validates_foreign_values_and_uses_processing_response() {
 
 #[test]
 fn concurrent_callers_share_one_owner_and_drop_stops_it() {
-    let engine = Arc::new(Engine::new(false).unwrap());
+    let engine = Arc::new(Engine::new(false, None).unwrap());
     wait_for(&engine, |_| true);
     let shared = Arc::clone(&engine.shared);
     let workers: Vec<_> = (0..4)
@@ -142,7 +162,7 @@ fn telemetry_mapping_preserves_channel_order_and_cursor() {
         false,
     )
     .unwrap();
-    let engine = Engine::new(false).unwrap();
+    let engine = Engine::new(false, None).unwrap();
     wait_for(&engine, |_| true);
     {
         let mut measurements = engine.shared.measurements.lock().unwrap();
