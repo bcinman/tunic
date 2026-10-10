@@ -20,6 +20,10 @@ struct TunicApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = TunicModel()
 
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         model.shutdown()
     }

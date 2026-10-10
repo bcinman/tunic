@@ -15,7 +15,7 @@ struct ProfileEditorView<Levels: View>: View {
                 ProfilePicker(profileName: state.profileName, presets: state.presets, send: { _ = send($0) })
                 levels(.right)
             }
-            .padding(.horizontal, 16)
+            .padding(20)
 
             if !state.controls.isEmpty {
                 VStack(spacing: 0) {

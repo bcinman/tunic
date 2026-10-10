@@ -188,6 +188,13 @@ func swiftModelUsesRustDraftsAndReceivesFailedCommands() async throws {
     try await waitUntil { model.snapshot?.presetId == preset.id }
     let control = try #require(model.snapshot?.controls.first)
     let originalResponse = model.response
+    #expect(model.snapshot?.processingEnabled == true)
+    model.enqueue(.setProcessingEnabled(enabled: false))
+    try await waitUntil { model.snapshot?.processingEnabled == false }
+    #expect(model.snapshot?.presetId == preset.id)
+    #expect(model.response == originalResponse)
+    model.enqueue(.setProcessingEnabled(enabled: true))
+    try await waitUntil { model.snapshot?.processingEnabled == true }
     model.enqueue(.previewControlGain(filter: control.filter, gain: -3.5))
     try await waitUntil { model.snapshot?.controls.first?.gain == -3.5 }
     #expect(model.snapshot?.isPreviewingGain == true)

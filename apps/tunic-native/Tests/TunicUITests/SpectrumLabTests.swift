@@ -811,9 +811,10 @@ private func renderGainHoverStates(directory: String) async throws {
     let snapshot = try #require(model.snapshot)
     let shelf = try #require(snapshot.controls.first)
     let peak = try #require(snapshot.controls.dropFirst().first)
-    for (name, filter) in [("Resting", nil), ("Shelf", shelf.filter), ("Peak", peak.filter), ] {
+    for (name, filter) in [("Resting", nil), ("Processing-Off", nil),
+                           ("Shelf", shelf.filter), ("Peak", peak.filter), ] {
         let host = NSHostingView(rootView: VStack(spacing: 16) {
-            AudioStatusView(deviceName: snapshot.deviceName, isProcessing: false)
+            AudioStatusView(deviceName: "Headphones", isProcessing: .constant(name != "Processing-Off"))
             VisualizerView(model: model, maximumFrequency: 20_000, hoveredFilter: filter)
             ProfileEditorView(state: snapshot, send: model.enqueue) { channel in
                 CircularLevelMeter(rms: 0, channel: channel)

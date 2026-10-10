@@ -47,6 +47,8 @@ This file is the source of truth for implemented product capabilities.
 - A cloneable controller that publishes latest-value chain replacements and
   atomic bypass changes to the processor. Chain replacements use a
   five-millisecond crossfade.
+- A native header mini switch bypasses processing without muting audio or changing
+  profiles. Session retains the setting across route changes; launch defaults to on.
 - Demand-driven, allocation-free post-output telemetry with a lock-free history
   of sequenced raw stereo peak/RMS measurements and 256-point spectra.
 - A minimal GPUI-CE application split into shared `tunic-ui` presentation and
@@ -145,7 +147,7 @@ This file is the source of truth for implemented product capabilities.
 ## Not In Yet
 
 - Product-complete UI, explicit permission UX, recovery beyond retrying the
-  current default output, bypass, and full equalizer controls; GPUI builds and
+  current default output, and full equalizer controls; GPUI builds and
   platform integrations for Linux and Windows.
 - Production-ready native menu-bar UI and editable graph gestures.
   Non-Swift bindings and non-macOS audio

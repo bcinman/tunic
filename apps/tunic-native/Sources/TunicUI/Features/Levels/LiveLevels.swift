@@ -28,12 +28,15 @@ struct CircularLevelMeter: View {
         ZStack {
             Circle().stroke(.white.opacity(0.2), lineWidth: 1)
             Circle().trim(from: 0, to: fill)
-                .stroke(.white.opacity(0.25 + 0.75 * fill),
-                        style: StrokeStyle(lineWidth: 1, lineCap: .round))
+                .stroke(.white.opacity(0.10 + 0.75 * fill),
+                        style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .scaleEffect(x: channel == .right ? -1 : 1, y: 1)
+            Text(channel == .left ? "L" : "R")
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(.white.opacity(0.2))
         }
-        .frame(width: 28, height: 28)
+        .frame(width: 24, height: 24)
         .accessibilityElement(children: .ignore)
         .accessibilityValue(rms == nil ? "No audio measurements" :
             decibels <= -60 ? "Silent" : "\(Int(decibels.rounded())) decibels full scale")

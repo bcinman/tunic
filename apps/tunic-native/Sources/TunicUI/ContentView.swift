@@ -12,9 +12,13 @@ public struct ContentView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
             AudioStatusView(deviceName: model.snapshot?.deviceName,
-                            isProcessing: model.snapshot?.acceptedChain != nil)
+                            isProcessing: Binding(
+                                get: { model.snapshot?.processingEnabled ?? true },
+                                set: { model.enqueue(.setProcessingEnabled(enabled: $0)) }
+                            ))
+                .disabled(model.snapshot == nil)
 
             if let state = model.snapshot {
                 VisualizerView(model: model, maximumFrequency: min(20_000, state.sampleRate * 0.499),
@@ -42,6 +46,7 @@ public struct ContentView: View {
                 .padding(.bottom, 12)
         }
         .frame(width: 320)
+        .preferredColorScheme(.dark)
         .task { await model.measureWhileVisible() }
         .onChange(of: model.snapshot?.presetId) {
             hoveredFilter = nil

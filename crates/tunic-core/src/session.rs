@@ -136,6 +136,7 @@ pub struct Session {
     audio_retry_needed: bool,
     audio_generation: u64,
     applied_chain: Option<Chain>,
+    processing_enabled: bool,
 }
 
 impl Session {
@@ -167,6 +168,7 @@ impl Session {
             audio_retry_needed: false,
             audio_generation: 0,
             applied_chain: None,
+            processing_enabled: true,
         })
     }
 
@@ -300,6 +302,11 @@ impl Session {
         self.audio_retry_needed
     }
 
+    #[must_use]
+    pub fn processing_enabled(&self) -> bool {
+        self.processing_enabled
+    }
+
     /// Selection is persisted before audio publication; an audio error does not roll it back.
     pub fn execute(&mut self, command: Command) -> Result<(), SessionError> {
         if matches!(
@@ -330,6 +337,13 @@ impl Session {
             self.finish_control_gain()?;
         }
         match command {
+            Command::SetProcessingEnabled(enabled) => {
+                self.processing_enabled = enabled;
+                if let Some(controller) = &self.controller {
+                    controller.set_bypassed(!enabled);
+                }
+                Ok(())
+            }
             Command::RefreshAudio => self.refresh_audio(),
             Command::UseFlat => self.use_profile(None),
             Command::UsePreset(id) => self.use_profile(Some(id)),
@@ -603,6 +617,7 @@ impl Session {
         })?;
         match platform.refresh_default_output(&chain) {
             Ok(Some(connection)) => {
+                connection.controller.set_bypassed(!self.processing_enabled);
                 self.device_name = connection.device_name;
                 self.controller = Some(connection.controller);
                 self.audio_error = None;

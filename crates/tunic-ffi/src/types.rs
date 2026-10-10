@@ -20,6 +20,9 @@ impl EngineError {
 #[data]
 #[derive(Clone, Debug)]
 pub enum EngineCommand {
+    SetProcessingEnabled {
+        enabled: bool,
+    },
     UseFlat,
     UsePreset {
         id: String,
@@ -49,6 +52,7 @@ impl TryFrom<EngineCommand> for core::Command {
 
     fn try_from(command: EngineCommand) -> Result<Self, Self::Error> {
         Ok(match command {
+            EngineCommand::SetProcessingEnabled { enabled } => Self::SetProcessingEnabled(enabled),
             EngineCommand::UseFlat => Self::UseFlat,
             EngineCommand::UsePreset { id } => {
                 Self::UsePreset(core::PresetId::try_new(id).map_err(EngineError::invalid)?)
@@ -187,6 +191,7 @@ pub struct StateSnapshot {
     /// All enqueue receipts through this value have executed, successfully or otherwise.
     pub processed_command: u64,
     pub device_name: String,
+    pub processing_enabled: bool,
     pub profile_name: Option<String>,
     pub preset_id: Option<String>,
     pub has_draft: bool,
@@ -210,6 +215,7 @@ impl StateSnapshot {
             revision,
             processed_command,
             device_name: session.device_name().to_owned(),
+            processing_enabled: session.processing_enabled(),
             profile_name: profile.map(|p| p.name().to_string()),
             preset_id: profile.and_then(|p| p.origin()).map(|o| o.id.to_string()),
             has_draft: session.draft().is_some(),

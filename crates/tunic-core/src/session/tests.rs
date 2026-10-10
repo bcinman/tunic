@@ -155,6 +155,54 @@ impl Platform for TestPlatform {
 }
 
 #[test]
+fn processing_switch_bypasses_audio_and_survives_route_replacement() {
+    struct Routes(VecDeque<Controller>);
+    impl Platform for Routes {
+        fn watch_default_output(&mut self, _: ChangeHandler) -> Result<(), String> {
+            Ok(())
+        }
+        fn refresh_default_output(&mut self, chain: &Chain) -> Result<Option<Connection>, String> {
+            let controller = self.0.pop_front().unwrap();
+            controller.set_chain(chain.clone()).unwrap();
+            Ok(Some(Connection {
+                device_name: "Test output".into(),
+                controller,
+            }))
+        }
+    }
+    let chain = preset().chain;
+    let format = AudioFormat {
+        sample_rate: SampleRateHz::try_new(48_000.0).unwrap(),
+        maximum_frame_count: NonZeroUsize::new(64).unwrap(),
+    };
+    let (mut first, controller) = Processor::new(format, chain.clone(), false).unwrap();
+    let (mut second, replacement) = Processor::new(format, chain, false).unwrap();
+    let mut session = Session::new(MemoryPersistence::default(), vec![preset()]).unwrap();
+    session.execute(use_preset()).unwrap();
+    assert!(session.processing_enabled());
+    let mut session = session.with_audio(Routes([controller, replacement].into()), Arc::new(|| {}));
+    session
+        .execute(Command::SetProcessingEnabled(false))
+        .unwrap();
+    assert!(!session.processing_enabled());
+    let mut samples = [0.25, -0.5];
+    first.process(&mut samples);
+    assert_eq!(samples, [0.25, -0.5]);
+    session.execute(adjust(5.0)).unwrap();
+    let desired = session.active_chain();
+    session.execute(Command::RefreshAudio).unwrap();
+    second.process(&mut samples);
+    assert_eq!(samples, [0.25, -0.5]);
+    session
+        .execute(Command::SetProcessingEnabled(true))
+        .unwrap();
+    assert!(session.processing_enabled());
+    assert_eq!(session.active_chain(), desired);
+    second.process(&mut samples);
+    assert_ne!(samples, [0.25, -0.5]);
+}
+
+#[test]
 fn creation_selection_and_provenance_are_saved_atomically() {
     let store = TestPersistence::default();
     let source = preset();

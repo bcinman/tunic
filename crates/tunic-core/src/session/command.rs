@@ -9,6 +9,7 @@ use crate::{FilterId, FrequencyHz, GainDb};
 /// An intended change to Tunic's product state.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Command {
+    SetProcessingEnabled(bool),
     UseFlat,
     UsePreset(PresetId),
     EditFilter {
