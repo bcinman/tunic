@@ -15,6 +15,17 @@ This builds the macOS arm64 XCFramework and generated Swift package under
 opening the Swift package in Xcode. Rust changes require regenerating bindings
 and rebuilding the native app. Tool versions are pinned in `mise.toml` and Cargo.
 
+For SwiftUI previews, select the **TunicUI** scheme with **My Mac** as the
+destination, open `Sources/TunicUI/ContentView.swift` from the package navigator,
+and resume the canvas. The preview uses an offline engine without capturing
+system audio. Use the **Tunic** scheme to run the app; previewing under that
+executable scheme produces an `ENABLE_DEBUG_DYLIB` error because SwiftPM cannot
+configure that Xcode-only build setting.
+
+The `TunicUI` product is dynamic so the normal linker includes the Rust FFI
+archive before Xcode loads the preview. Automatic/static linkage leaves the
+preview JIT unable to resolve the `boltffi_*` symbols.
+
 The app owns one engine for its entire lifetime. Closing the popup stops meter
 polling and FFT demand, not audio processing. Quit tears down the Core Audio
 route. Save currently uses in-memory persistence and does not survive quitting.

@@ -59,6 +59,6 @@ public struct ContentView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sizeThatFitsLayout) {
     ContentView(model: TunicModel(connectAudio: false))
 }

@@ -9,6 +9,7 @@ let package = Package(
     ],
     products: [
         .executable(name: "Tunic", targets: ["Tunic"]),
+        .library(name: "TunicUI", type: .dynamic, targets: ["TunicUI"]),
     ],
     dependencies: [
         .package(name: "TunicEngine", path: "../../target/tunic-ffi/apple"),
