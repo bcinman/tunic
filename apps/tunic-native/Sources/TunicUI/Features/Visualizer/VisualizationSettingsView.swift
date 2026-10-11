@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct SpectrumDebugPanel: View {
+struct VisualizationSettingsView: View {
     @Binding var style: SpectrumStyle
     @Binding var demo: Bool
 

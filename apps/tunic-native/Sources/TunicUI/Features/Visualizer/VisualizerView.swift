@@ -12,16 +12,35 @@ struct VisualizerView: View {
     var body: some View {
         VStack(spacing: 0) {
             spectrum
-            DisclosureGroup("Visualizer settings", isExpanded: $labPresented) {
+                .overlay(alignment: .bottomTrailing) {
+                    labToggle
+                        .padding(8)
+                }
+            if labPresented {
                 ScrollView {
-                    SpectrumDebugPanel(style: $style, demo: $demo)
-                        .padding(12)
+                    VisualizationSettingsView(style: $style, demo: $demo)
+                        .padding(.vertical, 12)
                 }
                 .frame(height: 260)
+                .background(.white.opacity(0.1))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
         }
+    }
+
+    private var labToggle: some View {
+        Button {
+            labPresented.toggle()
+        } label: {
+            Image(systemName: labPresented ? "chevron.up" : "chevron.down")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Visualizer settings")
+        .accessibilityValue(labPresented ? "Expanded" : "Collapsed")
+        .help(labPresented ? "Hide visualizer settings" : "Show visualizer settings")
     }
 
     private var spectrum: some View {

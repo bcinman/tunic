@@ -576,7 +576,7 @@ private struct LabPreview: View {
             SpectrumView(spectrum: state.demo ? state.spectrum : [], maximumFrequency: 20_000,
                          style: state.style)
                 .frame(height: 160)
-            SpectrumDebugPanel(style: $state.style, demo: $state.demo)
+            VisualizationSettingsView(style: $state.style, demo: $state.demo)
                 .padding(.horizontal, 12)
         }
         .padding(.bottom, 12)
@@ -672,14 +672,14 @@ func nativeVisualizerHostsMetalView() async throws {
         capture.waitUntilExit()
         #expect(capture.terminationStatus == 0)
     }
-    // Exercise the real disclosure in both directions, without replacing the renderer.
+    // Exercise the overlay toggle in both directions, without replacing the renderer.
     window.orderFrontRegardless()
     let collapsedSize = host.fittingSize
     try await Task.sleep(for: .milliseconds(100))
     for expanded in [true, false] {
-        // The native disclosure row sits immediately below the spectrum.
-        let location = metal.convert(NSPoint(x: 16,
-                                             y: metal.isFlipped ? metal.bounds.height + 20 : -20), to: nil)
+        // The chevron overlays the bottom-right corner of the spectrum.
+        let location = metal.convert(NSPoint(x: metal.bounds.width - 22,
+                                             y: metal.isFlipped ? metal.bounds.height - 22 : 22), to: nil)
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
             let event = try #require(NSEvent.mouseEvent(with: type, location: location,
                 modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
