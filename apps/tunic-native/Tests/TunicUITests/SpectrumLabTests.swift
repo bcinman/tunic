@@ -632,8 +632,8 @@ func renderSpectrumActiveAndIdle() async throws {
     #expect(metal.isPaused)
 }
 
-@Test @MainActor
-func nativeVisualizerHostsMetalView() async throws {
+@Test(arguments: [false, true]) @MainActor
+func nativeVisualizerHostsMetalView(reduceMotion: Bool) async throws {
     _ = NSApplication.shared
     let model = TunicModel(connectAudio: false)
     defer { model.shutdown() }
@@ -646,7 +646,10 @@ func nativeVisualizerHostsMetalView() async throws {
         try await Task.sleep(for: .milliseconds(10))
     }
     #expect(model.snapshot?.controls.isEmpty == false)
+    // macOS exposes the public Reduce Motion environment value as read-only.
+    // Override its writable backing key only in the test host, not in production views.
     let host = NSHostingView(rootView: ContentView(model: model)
+        .environment(\._accessibilityReduceMotion, reduceMotion)
         .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, .dark))
     let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 500),
                           styleMask: [.borderless], backing: .buffered, defer: false)
@@ -687,9 +690,18 @@ func nativeVisualizerHostsMetalView() async throws {
         try hoverCapture.run()
         hoverCapture.waitUntilExit()
         #expect(hoverCapture.terminationStatus == 0)
-
-        // Exercise the real icon button, not a test-only presentation binding.
-        let visibleWindows = Set(NSApplication.shared.windows.filter(\.isVisible).map(\.windowNumber))
+    }
+    // Exercise the real disclosure in both directions, without replacing the renderer.
+    window.orderFrontRegardless()
+    let collapsedSize = host.fittingSize
+    let center = metal.convert(NSPoint(x: metal.bounds.midX, y: metal.bounds.midY), to: nil)
+    let entered = try #require(NSEvent.enterExitEvent(with: .mouseEntered, location: center,
+        modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+        windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+        trackingNumber: 0, userData: nil))
+    metal.mouseEntered(with: entered)
+    try await Task.sleep(for: .milliseconds(400))
+    for expanded in [true, false] {
         let location = metal.convert(NSPoint(x: metal.bounds.width - 26,
                                              y: metal.isFlipped ? 20 : metal.bounds.height - 20), to: nil)
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
@@ -699,17 +711,43 @@ func nativeVisualizerHostsMetalView() async throws {
                 clickCount: 1, pressure: 1))
             window.sendEvent(event)
         }
+        // A drawing-only SwiftUI animation reports the final fitting size immediately,
+        // making MenuBarExtra and the gain controls jump. Layout must expose in-between sizes.
+        var heights: [CGFloat] = []
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(16))
+            heights.append(host.fittingSize.height)
+        }
         try await Task.sleep(for: .milliseconds(500))
-        let popover = try #require(NSApplication.shared.windows.first {
-            $0.isVisible && !visibleWindows.contains($0.windowNumber)
-        })
-        let popupCapture = Process()
-        popupCapture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        popupCapture.arguments = ["-x", "-o", "-l", String(popover.windowNumber),
-                                  directory + "/visualizer-lab-popover.png", ]
-        try popupCapture.run()
-        popupCapture.waitUntilExit()
-        #expect(popupCapture.terminationStatus == 0)
+        let size = host.fittingSize
+        let expandedHeight = collapsedSize.height + 260
+        if reduceMotion {
+            #expect(heights.allSatisfy { $0 == collapsedSize.height || $0 == expandedHeight })
+            #expect(heights.last == size.height)
+        } else {
+            #expect(heights.contains { $0 > collapsedSize.height + 1 && $0 < expandedHeight - 1 })
+        }
+        #expect(size.width == collapsedSize.width)
+        #expect(size.height == (expanded ? expandedHeight : collapsedSize.height))
+        #expect(findMetalView(host) === metal)
+        #expect(metal.bounds.height == 140)
+        let top = window.frame.maxY
+        window.setContentSize(size)
+        window.setFrameTopLeftPoint(NSPoint(x: window.frame.minX, y: top))
+        try await Task.sleep(for: .milliseconds(250))
+        if let directory = ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] {
+            let renderer = try #require(metal.delegate as? SpectrumRenderer)
+            renderer.receiveSpectrum(demoSpectrum, maximumFrequency: 20_000, at: CACurrentMediaTime())
+            metal.draw()
+            try await Task.sleep(for: .milliseconds(250))
+            let capture = Process()
+            capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
+                                 directory + "/visualizer-\(expanded ? "expanded" : "collapsed").png", ]
+            try capture.run()
+            capture.waitUntilExit()
+            #expect(capture.terminationStatus == 0)
+        }
     }
 }
 
@@ -844,6 +882,7 @@ func renderVisualizerLab() async throws {
     metal.draw()
     #expect(renderer.points.contains { $0.y > -1 })
     try await renderGainHoverStates(directory: directory)
+    try await nativeVisualizerHostsMetalView(reduceMotion: false)
 }
 
 @MainActor

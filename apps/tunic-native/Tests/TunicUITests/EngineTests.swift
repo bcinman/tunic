@@ -21,7 +21,6 @@ func spectrumLabOpensFromButtonSurfaceOutsideIcon() async throws {
     _ = NSApplication.shared
     var presented = false
     let host = NSHostingView(rootView: SpectrumLabButton(
-        style: .constant(SpectrumStyle()), demo: .constant(false),
         isPresented: Binding(get: { presented }, set: { presented = $0 })
     ).fixedSize())
     let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 100, height: 100),

@@ -86,10 +86,14 @@ This file is the source of truth for implemented product capabilities.
   sensitivity, including at zero gain. Sliders keep their normal appearance.
   During a drag, the curve stays pinned to that control even outside its hover
   area; release or cancellation returns to normal pointer-based highlighting.
-  Hover fades respect Reduce Motion. An icon-only tuning button over the visualizer's top-right opens
-  a scrollable lab popover; its settings remain live and survive dismissal.
+  Hover fades respect Reduce Motion. A chevron over the visualizer's top-right opens
+  a scrollable settings area beneath the spectrum in the same panel; settings remain live
+  and survive collapse. The clipped viewport springs open independently of the controls'
+  fade; collapse fades controls out faster than the viewport closes. Both respect Reduce Motion.
+  Intermediate layout heights drive the gain controls and menu window together, keeping
+  the window's top edge fixed instead of jumping to its final size.
   The button is hidden until hovering the spectrum, fades over 200 ms, and remains
-  visible while the popover is open; Reduce Motion disables the fade.
+  visible while settings are expanded; Reduce Motion disables the fade.
   The lab switches between white points
   and a signed distance field of the spectrum curve, with line, glow, contour-band,
   and distance-debug mappings; width, spread, and hue update live. Grid fill shading

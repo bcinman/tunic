@@ -1,30 +1,23 @@
 import SwiftUI
 
 struct SpectrumLabButton: View {
-    @Binding var style: SpectrumStyle
-    @Binding var demo: Bool
     @Binding var isPresented: Bool
 
     var body: some View {
         Button {
             isPresented.toggle()
         } label: {
-            Image(systemName: "slider.horizontal.3")
+            Image(systemName: "chevron.down")
+                .rotationEffect(.degrees(isPresented ? 180 : 0))
                 .frame(width: 28, height: 28)
                 .contentShape(.interaction, Circle())
         }
         .buttonStyle(.plain)
         .focusEffectDisabled()
         .glassEffect(.regular.interactive(), in: .circle)
-        .accessibilityLabel("Visualizer lab")
-        .help("Visualizer lab")
-        .popover(isPresented: $isPresented, arrowEdge: .trailing) {
-            ScrollView {
-                SpectrumDebugPanel(style: $style, demo: $demo)
-                    .padding(12)
-            }
-            .frame(width: 340, height: 540)
-        }
+        .accessibilityLabel("Visualizer settings")
+        .accessibilityValue(isPresented ? "Expanded" : "Collapsed")
+        .help(isPresented ? "Hide visualizer settings" : "Show visualizer settings")
     }
 }
 
@@ -35,7 +28,7 @@ struct SpectrumDebugPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Visualizer lab").fontWeight(.medium)
+                Text("Visualizer settings").fontWeight(.medium)
                 Spacer()
                 Button("Reset") { style = SpectrumStyle() }
                     .help("Reset visual settings; audio settings are unchanged")
