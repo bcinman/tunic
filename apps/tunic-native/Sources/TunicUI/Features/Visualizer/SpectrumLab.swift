@@ -1,26 +1,5 @@
 import SwiftUI
 
-struct SpectrumLabButton: View {
-    @Binding var isPresented: Bool
-
-    var body: some View {
-        Button {
-            isPresented.toggle()
-        } label: {
-            Image(systemName: "chevron.down")
-                .rotationEffect(.degrees(isPresented ? 180 : 0))
-                .frame(width: 28, height: 28)
-                .contentShape(.interaction, Circle())
-        }
-        .buttonStyle(.plain)
-        .focusEffectDisabled()
-        .glassEffect(.regular.interactive(), in: .circle)
-        .accessibilityLabel("Visualizer settings")
-        .accessibilityValue(isPresented ? "Expanded" : "Collapsed")
-        .help(isPresented ? "Hide visualizer settings" : "Show visualizer settings")
-    }
-}
-
 struct SpectrumDebugPanel: View {
     @Binding var style: SpectrumStyle
     @Binding var demo: Bool

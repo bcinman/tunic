@@ -17,35 +17,6 @@ private func waitUntil(_ condition: String = "expected state", _ predicate: () -
 private struct Timeout: Error { let condition: String }
 
 @Test @MainActor
-func spectrumLabOpensFromButtonSurfaceOutsideIcon() async throws {
-    _ = NSApplication.shared
-    var presented = false
-    let host = NSHostingView(rootView: SpectrumLabButton(
-        isPresented: Binding(get: { presented }, set: { presented = $0 })
-    ).fixedSize())
-    let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 100, height: 100),
-                          styleMask: [.titled], backing: .buffered, defer: false)
-    window.isReleasedWhenClosed = false
-    window.contentView = host
-    window.setContentSize(host.fittingSize)
-    window.makeKeyAndOrderFront(nil)
-    NSApplication.shared.activate(ignoringOtherApps: true)
-    defer { window.close() }
-    try await Task.sleep(for: .milliseconds(100))
-
-    // Inside the circular surface, to the left of the icon itself.
-    let location = host.convert(NSPoint(x: 2, y: host.bounds.midY), to: nil)
-    for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-        let event = try #require(NSEvent.mouseEvent(with: type, location: location,
-            modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
-            windowNumber: window.windowNumber, context: nil, eventNumber: 0,
-            clickCount: 1, pressure: 1))
-        window.sendEvent(event)
-    }
-    try await waitUntil("lab opens from button surface") { presented }
-}
-
-@Test @MainActor
 func profilePickerOpensFromPaddedSurface() async throws {
     _ = NSApplication.shared
     let host = NSHostingView(rootView: ProfilePicker(profileName: "Test profile", presets: [], send: { _ in })

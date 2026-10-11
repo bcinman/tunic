@@ -6,7 +6,6 @@ struct SpectrumView: NSViewRepresentable {
     let spectrum: [Float]
     let maximumFrequency: Double
     var style = SpectrumStyle()
-    var hoverChanged: ((Bool) -> Void)?
 
     func makeCoordinator() -> SpectrumRenderer? {
         guard let device = MTLCreateSystemDefaultDevice() else { return nil }
@@ -31,7 +30,6 @@ struct SpectrumView: NSViewRepresentable {
     }
 
     func updateNSView(_ view: MTKView, context: Context) {
-        (view as? SpectrumMetalView)?.hoverChanged = hoverChanged
         let time = CACurrentMediaTime()
         context.coordinator?.style = style
         context.coordinator?.receiveSpectrum(spectrum, maximumFrequency: maximumFrequency, at: time)
@@ -48,22 +46,7 @@ struct SpectrumView: NSViewRepresentable {
 
 /// MenuBarExtra retains its window between presentations, including Metal's last drawable.
 final class SpectrumMetalView: MTKView {
-    var hoverChanged: ((Bool) -> Void)?
-    private var hoverTracking: NSTrackingArea?
     private var visibilityObservation: NSKeyValueObservation?
-
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        if let hoverTracking { removeTrackingArea(hoverTracking) }
-        let area = NSTrackingArea(rect: .zero,
-                                  options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
-                                  owner: self, userInfo: nil)
-        addTrackingArea(area)
-        hoverTracking = area
-    }
-
-    override func mouseEntered(with event: NSEvent) { hoverChanged?(true) }
-    override func mouseExited(with event: NSEvent) { hoverChanged?(false) }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()

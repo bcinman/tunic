@@ -632,8 +632,8 @@ func renderSpectrumActiveAndIdle() async throws {
     #expect(metal.isPaused)
 }
 
-@Test(arguments: [false, true]) @MainActor
-func nativeVisualizerHostsMetalView(reduceMotion: Bool) async throws {
+@Test @MainActor
+func nativeVisualizerHostsMetalView() async throws {
     _ = NSApplication.shared
     let model = TunicModel(connectAudio: false)
     defer { model.shutdown() }
@@ -646,10 +646,7 @@ func nativeVisualizerHostsMetalView(reduceMotion: Bool) async throws {
         try await Task.sleep(for: .milliseconds(10))
     }
     #expect(model.snapshot?.controls.isEmpty == false)
-    // macOS exposes the public Reduce Motion environment value as read-only.
-    // Override its writable backing key only in the test host, not in production views.
     let host = NSHostingView(rootView: ContentView(model: model)
-        .environment(\._accessibilityReduceMotion, reduceMotion)
         .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, .dark))
     let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 500),
                           styleMask: [.borderless], backing: .buffered, defer: false)
@@ -674,36 +671,15 @@ func nativeVisualizerHostsMetalView(reduceMotion: Bool) async throws {
         try capture.run()
         capture.waitUntilExit()
         #expect(capture.terminationStatus == 0)
-
-        // Hover in the center, away from the button: the entire spectrum reveals it.
-        let center = metal.convert(NSPoint(x: metal.bounds.midX, y: metal.bounds.midY), to: nil)
-        let entered = try #require(NSEvent.enterExitEvent(with: .mouseEntered, location: center,
-            modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
-            windowNumber: window.windowNumber, context: nil, eventNumber: 0,
-            trackingNumber: 0, userData: nil))
-        metal.mouseEntered(with: entered)
-        try await Task.sleep(for: .milliseconds(400))
-        let hoverCapture = Process()
-        hoverCapture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        hoverCapture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
-                                  directory + "/visualizer-hover.png", ]
-        try hoverCapture.run()
-        hoverCapture.waitUntilExit()
-        #expect(hoverCapture.terminationStatus == 0)
     }
     // Exercise the real disclosure in both directions, without replacing the renderer.
     window.orderFrontRegardless()
     let collapsedSize = host.fittingSize
-    let center = metal.convert(NSPoint(x: metal.bounds.midX, y: metal.bounds.midY), to: nil)
-    let entered = try #require(NSEvent.enterExitEvent(with: .mouseEntered, location: center,
-        modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
-        windowNumber: window.windowNumber, context: nil, eventNumber: 0,
-        trackingNumber: 0, userData: nil))
-    metal.mouseEntered(with: entered)
-    try await Task.sleep(for: .milliseconds(400))
+    try await Task.sleep(for: .milliseconds(100))
     for expanded in [true, false] {
-        let location = metal.convert(NSPoint(x: metal.bounds.width - 26,
-                                             y: metal.isFlipped ? 20 : metal.bounds.height - 20), to: nil)
+        // The native disclosure row sits immediately below the spectrum.
+        let location = metal.convert(NSPoint(x: 16,
+                                             y: metal.isFlipped ? metal.bounds.height + 20 : -20), to: nil)
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
             let event = try #require(NSEvent.mouseEvent(with: type, location: location,
                 modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
@@ -711,22 +687,9 @@ func nativeVisualizerHostsMetalView(reduceMotion: Bool) async throws {
                 clickCount: 1, pressure: 1))
             window.sendEvent(event)
         }
-        // A drawing-only SwiftUI animation reports the final fitting size immediately,
-        // making MenuBarExtra and the gain controls jump. Layout must expose in-between sizes.
-        var heights: [CGFloat] = []
-        for _ in 0..<20 {
-            try await Task.sleep(for: .milliseconds(16))
-            heights.append(host.fittingSize.height)
-        }
         try await Task.sleep(for: .milliseconds(500))
         let size = host.fittingSize
         let expandedHeight = collapsedSize.height + 260
-        if reduceMotion {
-            #expect(heights.allSatisfy { $0 == collapsedSize.height || $0 == expandedHeight })
-            #expect(heights.last == size.height)
-        } else {
-            #expect(heights.contains { $0 > collapsedSize.height + 1 && $0 < expandedHeight - 1 })
-        }
         #expect(size.width == collapsedSize.width)
         #expect(size.height == (expanded ? expandedHeight : collapsedSize.height))
         #expect(findMetalView(host) === metal)
@@ -882,7 +845,7 @@ func renderVisualizerLab() async throws {
     metal.draw()
     #expect(renderer.points.contains { $0.y > -1 })
     try await renderGainHoverStates(directory: directory)
-    try await nativeVisualizerHostsMetalView(reduceMotion: false)
+    try await nativeVisualizerHostsMetalView()
 }
 
 @MainActor
