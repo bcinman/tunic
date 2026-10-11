@@ -33,3 +33,9 @@ manifest, sources, and tests in strict mode (warnings fail the check), excluding
 generated bindings and build output. Rules live in `.swiftlint.yml`, with
 test-only size and complexity exceptions under `apps/tunic-native/Tests/`.
 Use `mise exec -- swiftlint lint --fix` to apply supported automatic corrections.
+
+The synthetic profile-menu interaction test is disabled by default: running it
+can leave the macOS Dock unable to reveal itself, requiring a Dock restart.
+To investigate explicitly, run `TUNIC_MENU_TESTS=1 mise exec -- swift test
+--package-path apps/tunic-native --filter profilePickerOpensFromPaddedSurface`.
+The cause is unresolved; other native window tests still run normally.
