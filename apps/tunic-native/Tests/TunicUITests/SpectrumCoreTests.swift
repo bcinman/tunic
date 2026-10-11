@@ -76,10 +76,10 @@ func shapeSmoothingMatchesGaussianAndPreservesGeometry() {
 
 @Test
 func spectrumUniformsMatchMetalLayout() {
-    #expect(MemoryLayout<SpectrumUniforms>.stride == 8 * 16)
+    #expect(MemoryLayout<SpectrumUniforms>.stride == 10 * 16)
     #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.variation) == 3 * 16)
-    #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.gradientStart) == 4 * 16)
-    #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.gradientEnd) == 7 * 16)
+    #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.gradientStart) == 6 * 16)
+    #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.gradientEnd) == 9 * 16)
 }
 
 @Test

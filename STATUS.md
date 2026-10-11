@@ -92,18 +92,21 @@ This file is the source of truth for implemented product capabilities.
   visible while the popover is open; Reduce Motion disables the fade.
   The lab switches between white points
   and a signed distance field of the spectrum curve, with line, glow, contour-band,
-  and distance-debug mappings; width, spread, and hue update live. Halftone shading
-  fills beneath the curve with white or horizontal-gradient grid/hexagonal dots, with
+  and distance-debug mappings; width, spread, and hue update live. Grid fill shading
+  fills beneath the curve with circle or square cells on a regular grid (no hex layout),
+  using a selectable solid color or horizontal gradient, with
   four editable color stops at 0%, 33%, 67%, and 100% of the frequency axis.
   Gradient defaults use bright cyan, mint, lavender, and pink, interpolated between stops.
-  Halftone's gradient replaces its hue control. Dot diameter and spacing are adjustable,
-  with a response control that scales diameter by displayed spectrum
-  height at each dot's frequency. Diameters above the spacing overlap into connected
-  areas; an Invert option fills the graph around transparent dot-shaped holes.
-  Boundary dots shrink to fit their full circles
+  Maximum cell size and center spacing are adjustable. Independent size and opacity
+  responses map bottom-to-curve position to cell appearance; zero keeps size constant
+  or opacity full. Level influence additionally scales that response by displayed
+  spectrum height. Sizes above the spacing overlap into connected
+  areas; an Invert option fills the graph around cell-shaped holes, with opacity
+  response controlling hole transparency. Boundary cells shrink to fit their full shapes
   inside the spectrum and viewport, including their antialiased edges, rather than
-  being sliced by the fill mask. Dots always taper from smaller at the bottom to
-  larger toward the top of each frequency's filled area (fixed vertical response 1).
+  being sliced by the fill mask. Square fitting accounts for corners on slopes and in valleys.
+  The default preserves the halftone taper: smaller at the bottom and larger toward
+  the top of each frequency's filled area, with size response 1 and opacity response 0.
   Optional bass-hit
   chromatic aberration splits color channels across the entire halftone image,
   with adjustable strength, 20–180 Hz trigger threshold, and time-based decay.
@@ -118,7 +121,7 @@ This file is the source of truth for implemented product capabilities.
   toward treble. It reuses scratch storage and runs on input updates, not per pixel;
   dots stay crisp and raw bass-hit detection is unchanged. Zero restores raw geometry.
   Startup and Reset default to 0 ms attack, 100 ms decay, gradient grid halftone with
-  3 pt dots, 4 pt spacing, 0.5 amplitude response, and chromatic aberration
+  3 pt circles, 4 pt spacing, 0.5 level influence, and chromatic aberration
   enabled. Continuous spectrum redraws run only during spectrum settling or
   chromatic pulses.
   Visualization settings, pure envelope/pulse dynamics, SwiftUI lifecycle,

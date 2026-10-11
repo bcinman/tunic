@@ -25,8 +25,10 @@ vertex float4 fieldVertex(uint id [[vertex_id]]) {
 struct FieldParameters {
     float4 viewport; // logical width, height, backing scale, bin count
     float4 mapping;  // stroke width, spread, hue, shading mode
-    float4 halftone; // maximum diameter, center spacing, amplitude response, grid/hex
-    float4 variation; // padding, bass-driven channel shift in points, white color flag, inverted flag
+    float4 halftone; // maximum cell size, center spacing, level influence, circle/square
+    float4 variation; // padding, bass-driven channel shift in points, solid color flag, inverted flag
+    float4 response; // size response, opacity response, padding
+    float4 solidColor;
     float4 gradientStart;
     float4 gradientSecond;
     float4 gradientThird;
@@ -103,10 +105,24 @@ float spectrumHeight(float x, const device float2 *points, uint count, float wid
     return clamp(0.5 * (mix(points[index].y, points[index + 1].y, bin - index) + 1), 0.0f, 1.0f);
 }
 
-// Halftone only needs clearance up to a dot's radius + AA, not the full SDF.
+float squareSegmentDistance(float2 delta, float2 edge) {
+    // Minimize L-infinity distance along the segment: endpoints or where |x| = |y|.
+    float nearest = min(max(abs(delta.x), abs(delta.y)),
+                        max(abs(delta.x - edge.x), abs(delta.y - edge.y)));
+    for (int sign = -1; sign <= 1; sign += 2) {
+        float denominator = edge.x - sign * edge.y;
+        float t = denominator == 0 ? 0 : clamp((delta.x - sign * delta.y) / denominator, 0.0f, 1.0f);
+        float2 offset = abs(delta - t * edge);
+        nearest = min(nearest, max(offset.x, offset.y));
+    }
+    return nearest;
+}
+
+// Cells only need clearance up to their half-size + AA, not the full SDF.
 // With monotonic, uniformly spaced x bins, segments outside this x interval
 // cannot be nearer. Include both segments straddling the interval endpoints.
-float spectrumClearance(float2 p, float limit, const device float2 *points, uint count, float2 size) {
+float spectrumClearance(float2 p, float limit, const device float2 *points, uint count, float2 size,
+                        bool square = false) {
     if (p.y <= size.y * (1 - spectrumHeight(p.x, points, count, size.x))) return 0;
     float firstX = logicalPoint(points[0], size).x;
     float step = (points[1].x - points[0].x) * 0.5 * size.x;
@@ -119,7 +135,12 @@ float spectrumClearance(float2 p, float limit, const device float2 *points, uint
         float2 edge = b - a;
         float t = clamp(dot(p - a, edge) / dot(edge, edge), 0.0f, 1.0f);
         float2 delta = p - (a + t * edge);
-        nearestSquared = min(nearestSquared, dot(delta, delta));
+        float distanceSquared = dot(delta, delta);
+        if (square) {
+            float distance = squareSegmentDistance(p - a, edge);
+            distanceSquared = distance * distance;
+        }
+        nearestSquared = min(nearestSquared, distanceSquared);
         a = b;
     }
     return sqrt(nearestSquared);
@@ -130,8 +151,8 @@ float4 shadeHalftone(float2 p, const device float2 *points,
     float inside = p.y - parameters.viewport.y * (1 - spectrumHeight(p.x, points, uint(parameters.viewport.w), parameters.viewport.x));
     if (inside <= 0) return float4(0);
     float spacing = parameters.halftone.y;
-    bool hex = parameters.halftone.w > 0.5;
-    float rowStep = spacing * (hex ? sqrt(3.0f) * 0.5 : 1.0f);
+    bool square = parameters.halftone.w > 0.5;
+    float rowStep = spacing;
     float aa = 0.75 / parameters.viewport.z;
     float reach = 0.5 * parameters.halftone.x + aa;
     // Anchor to the bottom so the lattice stays fixed as the spectrum moves.
@@ -142,33 +163,33 @@ float4 shadeHalftone(float2 p, const device float2 *points,
     int firstRow = max(0, int(ceil((q.y - reach - spacing * 0.5) / rowStep)));
     int lastRow = int(floor((q.y + reach - spacing * 0.5) / rowStep));
     for (int r = firstRow; r <= lastRow; ++r) {
-        float offset = hex && (r % 2 != 0) ? spacing * 0.5 : 0;
-        int firstColumn = int(ceil((q.x - reach - spacing * 0.5 - offset) / spacing));
-        int lastColumn = int(floor((q.x + reach - spacing * 0.5 - offset) / spacing));
+        int firstColumn = int(ceil((q.x - reach - spacing * 0.5) / spacing));
+        int lastColumn = int(floor((q.x + reach - spacing * 0.5) / spacing));
         for (int c = firstColumn; c <= lastColumn; ++c) {
-            float2 center = float2((c + 0.5) * spacing + offset, spacing * 0.5 + r * rowStep);
+            float2 center = float2((c + 0.5) * spacing, spacing * 0.5 + r * rowStep);
             float height = spectrumHeight(center.x, points, uint(parameters.viewport.w), parameters.viewport.x);
             if (height <= 0) continue;
             // Evaluate at the dot center to keep circles round. Normalize within this
             // frequency's filled area, not the whole viewport: 0 at bottom, 1 at curve.
             float position = clamp(center.y / (height * parameters.viewport.y), 0.0f, 1.0f);
-            float radius = 0.5 * parameters.halftone.x
-                * mix(1.0f, height, parameters.halftone.z) * position;
-            float fromCenter = distance(q, center);
+            float response = mix(1.0f, height, parameters.halftone.z) * position;
+            float radius = 0.5 * parameters.halftone.x * mix(1.0f, response, parameters.response.x);
+            float opacity = mix(1.0f, response, parameters.response.y);
+            float2 offset = abs(q - center);
+            float fromCenter = square ? max(offset.x, offset.y) : length(offset);
             if (radius <= 0 || fromCenter >= radius + aa) continue;
-            // Fit the entire circle (including its antialias fringe) inside the
-            // graph. Perpendicular distance also handles steep slopes and valleys;
-            // vertical clearance alone would still slice the sides of a dot.
+            // Fit the entire cell and its AA fringe. Euclidean clearance fits
+            // circles; L-infinity clearance fits square corners, even in valleys.
             float2 screenCenter = float2(center.x, parameters.viewport.y - center.y);
             float2 edge = min(screenCenter, parameters.viewport.xy - screenCenter);
             float limit = min(radius + aa, min(edge.x, edge.y));
             if (limit <= aa) continue;
             float clearance = spectrumClearance(screenCenter, limit, points,
-                                                uint(parameters.viewport.w), parameters.viewport.xy);
+                                                uint(parameters.viewport.w), parameters.viewport.xy, square);
             radius = min(radius, clearance - aa);
             if (radius <= 0) continue;
             float dot = 1 - smoothstep(radius - aa, radius + aa, fromCenter);
-            coverage = max(coverage, dot);
+            coverage = max(coverage, dot * opacity);
         }
     }
     float alpha = parameters.variation.w > 0.5
@@ -178,7 +199,7 @@ float4 shadeHalftone(float2 p, const device float2 *points,
         ? mix(parameters.gradientStart.rgb, parameters.gradientSecond.rgb, x)
         : x < 2 ? mix(parameters.gradientSecond.rgb, parameters.gradientThird.rgb, x - 1)
                 : mix(parameters.gradientThird.rgb, parameters.gradientEnd.rgb, x - 2);
-    if (parameters.variation.z > 0.5) color = float3(1);
+    if (parameters.variation.z > 0.5) color = parameters.solidColor.rgb;
     return float4(color * alpha, alpha);
 }
 
@@ -199,8 +220,8 @@ float4 chromaticHalftone(float2 p, const device float2 *points,
     float4 red = sampleHalftone(p - float2(shift, 0), points, parameters);
     float4 blue = sampleHalftone(p + float2(shift, 0), points, parameters);
     float3 rgb = float3(red.r, base.g, blue.b);
-    // Preserve transparent gaps without dark fringes from an absent color channel.
-    return float4(rgb, max(rgb.r, max(rgb.g, rgb.b)));
+    // Coverage is independent of color brightness, including dark/black solid fills.
+    return float4(rgb, max(red.a, max(base.a, blue.a)));
 }
 
 fragment float4 fieldFragment(float4 position [[position]],

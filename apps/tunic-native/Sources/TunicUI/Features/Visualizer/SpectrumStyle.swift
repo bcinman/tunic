@@ -14,15 +14,15 @@ enum SpectrumShading: UInt32, CaseIterable {
         case .glow: "Glow"
         case .bands: "Bands"
         case .distance: "Distance"
-        case .halftone: "Halftone"
+        case .halftone: "Grid fill"
         }
     }
 }
 
-enum HalftonePattern: UInt32, CaseIterable {
-    case grid, hex
+enum CellShape: UInt32, CaseIterable {
+    case circle, square
 
-    var label: String { self == .grid ? "Grid" : "Hex" }
+    var label: String { self == .circle ? "Circle" : "Square" }
 }
 
 /// Ephemeral visual settings only; these never change the audio chain.
@@ -35,12 +35,15 @@ struct SpectrumStyle: Equatable {
     var dotSize: Double = 3
     var dotSpacing: Double = 4
     var amplitudeResponse: Double = 0.5
-    var dotPattern: HalftonePattern = .grid
+    var cellShape: CellShape = .circle
+    var sizeResponse: Double = 1
+    var opacityResponse: Double = 0
     var chromaticEnabled = true
     var chromaticStrength: Double = 8
     var bassThreshold: Double = -42
     var chromaticDecay: Double = 250
-    var whiteHalftone = false
+    var solidFill = false
+    var solidColor = Color.white
     var invertedHalftone = false
     var attack: Double = 0
     var decay: Double = 100

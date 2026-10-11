@@ -48,7 +48,7 @@ struct SpectrumDebugPanel: View {
                 .pickerStyle(.segmented)
                 Text("1 · Spectrum distance")
                     .foregroundStyle(.secondary)
-                slider("Shape", value: $style.shapeSmoothing, range: 0...1, unit: "", enabled: true)
+                slider("Smoothing", value: $style.shapeSmoothing, range: 0...1, unit: "", enabled: true)
                     .help("Shape smoothing: rounds spectrum steps, strongest in the bass. "
                           + "0: original shape; does not blur dots or delay bass hits")
                 slider("Attack", value: $style.attack, range: 0...500, unit: "ms", enabled: true)
@@ -72,21 +72,26 @@ struct SpectrumDebugPanel: View {
                 }
                 .disabled(style.mode == .points)
                 if style.usesHalftone {
-                    Picker("Pattern", selection: $style.dotPattern) {
-                        ForEach(HalftonePattern.allCases, id: \.self) { pattern in
-                            Text(pattern.label).tag(pattern)
+                    Picker("Cell shape", selection: $style.cellShape) {
+                        ForEach(CellShape.allCases, id: \.self) { shape in
+                            Text(shape.label).tag(shape)
                         }
                     }
                     .pickerStyle(.segmented)
-                    Toggle("Invert · dots become holes", isOn: $style.invertedHalftone)
-                        .help("Fill the spectrum around transparent dots; larger holes remove more fill")
-                    slider("Dot size", value: $style.dotSize, range: 0.5...12, unit: "pt", enabled: true)
-                        .help("Maximum diameter; sizes above the spacing overlap into connected areas")
+                    Toggle("Invert · cells become holes", isOn: $style.invertedHalftone)
+                        .help("Fill around cells; size controls hole size and opacity controls hole transparency")
+                    slider("Max size", value: $style.dotSize, range: 0.5...12, unit: "pt", enabled: true)
+                        .help("Circle diameter or square width; sizes above the spacing overlap")
                     slider("Spacing", value: $style.dotSpacing, range: 3...18, unit: "pt", enabled: true)
-                        .help("Distance between neighboring dot centers")
-                    slider("Amplitude", value: $style.amplitudeResponse, range: 0...1, unit: "", enabled: true)
-                        .help("0: no amplitude scaling. 1: diameter follows spectrum height (−90…0 dBFS). "
-                              + "Dots always taper from smaller at the bottom to larger near the curve.")
+                        .help("Distance between neighboring cell centers")
+                    slider("Size response", value: $style.sizeResponse, range: 0...1, unit: "", enabled: true)
+                        .help("0: constant size. 1: smaller at the bottom, larger toward the curve. "
+                              + "Cells always fit the boundary")
+                    slider("Opacity response", value: $style.opacityResponse, range: 0...1, unit: "", enabled: true)
+                        .help("0: fully opaque. 1: fainter at the bottom, stronger toward the curve")
+                    slider("Level influence", value: $style.amplitudeResponse, range: 0...1, unit: "", enabled: true)
+                        .help("Makes size and opacity responses weaker in shorter parts of the spectrum. "
+                              + "0: position only. 1: also scale by displayed spectrum height (−90…0 dBFS)")
                 } else {
                     slider("Width", value: $style.width, range: 0.5...8, unit: "pt",
                            enabled: style.mode == .points || style.shading != .distance)
@@ -94,12 +99,14 @@ struct SpectrumDebugPanel: View {
                            enabled: style.mode == .sdf && style.shading != .line)
                 }
                 if style.usesHalftone {
-                    Picker("Color", selection: $style.whiteHalftone) {
+                    Picker("Color", selection: $style.solidFill) {
                         Text("Gradient").tag(false)
-                        Text("White").tag(true)
+                        Text("Solid").tag(true)
                     }
                     .pickerStyle(.segmented)
-                    if !style.whiteHalftone {
+                    if style.solidFill {
+                        ColorPicker("Cell color", selection: $style.solidColor, supportsOpacity: false)
+                    } else {
                         HStack {
                             ColorPicker("0%", selection: $style.gradientStart, supportsOpacity: false)
                             ColorPicker("33%", selection: $style.gradientSecond, supportsOpacity: false)
@@ -143,7 +150,7 @@ struct SpectrumDebugPanel: View {
     private func slider(_ label: String, value: Binding<Double>, range: ClosedRange<Double>,
                         unit: String, enabled: Bool) -> some View {
         HStack(spacing: 8) {
-            Text(label).frame(width: 58, alignment: .leading)
+            Text(label).frame(width: 92, alignment: .leading)
             Slider(value: value, in: range)
                 .accessibilityLabel(label)
             Text("\(value.wrappedValue, specifier: unit == "ms" ? "%.0f" : unit.isEmpty ? "%.2f" : "%.1f")\(unit)")

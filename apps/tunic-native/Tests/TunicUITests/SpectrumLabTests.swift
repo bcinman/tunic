@@ -237,7 +237,7 @@ func distanceMappingsUseSignedEuclideanDistanceAndLiveParameters() async throws 
 func halftoneBoundaryShrinksWholeCirclesInsteadOfClipping() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.style = SpectrumStyle(shading: .halftone, dotSize: 8, dotSpacing: 10,
-                                   amplitudeResponse: 0, whiteHalftone: true)
+                                   amplitudeResponse: 0, solidFill: true)
     // Boundary y=33, only 2pt above the dot at (55,35). Its old 4pt
     // radius would be sliced; the new radius is 2 minus the AA fringe.
     renderer.points = [SIMD2(-1, -0.1), SIMD2(1, -0.1)]
@@ -259,6 +259,57 @@ func halftoneBoundaryShrinksWholeCirclesInsteadOfClipping() async throws {
 }
 
 @Test @MainActor
+func gridFillMapsSizeAndOpacityIndependentlyWithSolidColor() async throws {
+    let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
+    renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)]
+    for shape in CellShape.allCases {
+        renderer.style = SpectrumStyle(dotSize: 8, dotSpacing: 10, amplitudeResponse: 0,
+                                       cellShape: shape, sizeResponse: 0, chromaticEnabled: false,
+                                       solidFill: true, solidColor: Color(red: 1, green: 0.25, blue: 0))
+        let constant = try await fieldPixels(renderer)
+        #expect(constant[57, 45].w == 255 && constant[57, 55].w == 255)
+        renderer.style.opacityResponse = 1
+        let opacity = try await fieldPixels(renderer)
+        // Cell centers are 15 and 5 points above the bottom of a 30-point fill.
+        #expect(abs(Int(opacity[57, 45].w) - 128) <= 1)
+        #expect(abs(Int(opacity[57, 55].w) - 43) <= 1)
+        #expect(opacity[57, 45].z == opacity[57, 45].w)
+        #expect(abs(Int(opacity[57, 45].y) - 32) <= 1 && opacity[57, 45].x == 0)
+        renderer.style.sizeResponse = 1
+        let both = try await fieldPixels(renderer)
+        renderer.style.opacityResponse = 0
+        let size = try await fieldPixels(renderer)
+        #expect(size[57, 45].w < constant[57, 45].w)
+        #expect(abs(Int(both[57, 45].w) * 2 - Int(size[57, 45].w)) <= 1)
+        renderer.style.sizeResponse = 0
+        renderer.style.opacityResponse = 0.5
+        renderer.style.amplitudeResponse = 1
+        let level = try await fieldPixels(renderer)
+        // Half-height spectrum × halfway up = 0.25; half response gives alpha 0.625.
+        #expect(abs(Int(level[57, 45].w) - 159) <= 1)
+        renderer.style.invertedHalftone = true
+        let inverted = try await fieldPixels(renderer)
+        #expect(abs(Int(inverted[57, 45].w) + Int(level[57, 45].w) - 255) <= 1)
+    }
+}
+
+@Test @MainActor
+func squareCellsFitSlopesWithoutClippingOrExcessiveShrinking() async throws {
+    let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
+    renderer.style = SpectrumStyle(dotSize: 8, dotSpacing: 10, cellShape: .square,
+                                   sizeResponse: 0, chromaticEnabled: false, solidFill: true)
+    renderer.points = [SIMD2(-1, -1), SIMD2(1, 1)] // y = 60 − x/2.
+    // Center (55,35) is 2.5pt below the line. Its top-left corner fits when
+    // half-width = 2.5 / 1.5, before subtracting the antialias fringe.
+    let normal = try await fieldPixels(renderer)
+    #expect(abs(Int(normal[56, 34].w) - 9) <= 1)
+    #expect(normal[56, 34].w == normal[56, 35].w)
+    let retina = try await fieldPixels(renderer, scale: 2)
+    #expect(abs(Int(retina[112, 69].w) - 149) <= 1)
+    #expect(retina[113, 69].w == 0)
+}
+
+@Test @MainActor
 func halftoneMasksDotsAndControlsTheirLatticeAndAmplitude() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)] // Filled area is the lower half.
@@ -276,20 +327,6 @@ func halftoneMasksDotsAndControlsTheirLatticeAndAmplitude() async throws {
     let spaced = try await fieldPixels(renderer)
     #expect(spaced[18, 42].w > 200)
     #expect(spaced[15, 55].w == 0)
-
-    renderer.style.dotSpacing = 10
-    renderer.style.dotPattern = .hex
-    let hex = try await fieldPixels(renderer)
-    // Odd rows shift by half the spacing; row separation is 10√3/2, not 10.
-    #expect(hex[10, 46].w > 200)
-    #expect(grid[10, 46].w == 0)
-    #expect(hex[5, 45].w == 0)
-    #expect(grid[5, 45].w > 190)
-    #expect(hex[5, 37].w > 200)
-    #expect(grid[5, 37].w < 50)
-    let retina = try await fieldPixels(renderer, scale: 2)
-    #expect(retina[20, 92].w == 255)
-    #expect(retina[10, 90].w == 0)
 
     renderer.points = [SIMD2(-1, -0.5), SIMD2(1, 0.5)]
     renderer.style = SpectrumStyle(shading: .halftone, dotSize: 8, dotSpacing: 10, amplitudeResponse: 1)
@@ -315,23 +352,22 @@ func halftoneMasksDotsAndControlsTheirLatticeAndAmplitude() async throws {
 }
 
 @Test @MainActor
-func overlappingAndInvertedHalftoneMatchCircleUnion() async throws {
+func overlappingAndInvertedGridFillMatchesCellUnion() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.points = [SIMD2(-1, 0.6), SIMD2(1, 0.6)] // Flat top at y=12; 48pt filled.
-    for pattern in HalftonePattern.allCases {
+    for shape in CellShape.allCases {
         for spacing in [3.0, 8.0] {
             renderer.style = SpectrumStyle(dotSize: 12, dotSpacing: spacing,
-                                           amplitudeResponse: 0, dotPattern: pattern,
-                                           chromaticEnabled: false, whiteHalftone: true)
+                                           amplitudeResponse: 0, cellShape: shape,
+                                           chromaticEnabled: false, solidFill: true)
             // Independent reference: enumerate the entire lattice, rather than
             // copying the shader's per-pixel neighbor search.
             var circles: [(Double, Double, Double)] = []
-            let rowStep = spacing * (pattern == .hex ? sqrt(3) / 2 : 1)
+            let rowStep = spacing
             for row in 0...Int(48 / rowStep) {
                 let y = spacing / 2 + Double(row) * rowStep
                 for column in 0...Int(120 / spacing) {
                     let x = (Double(column) + 0.5) * spacing
-                        + (pattern == .hex && row % 2 != 0 ? spacing / 2 : 0)
                     let radius = min(6 * y / 48, min(x, 120 - x, y, 48 - y) - 0.75)
                     if radius > 0 { circles.append((x, y, radius)) }
                 }
@@ -344,7 +380,9 @@ func overlappingAndInvertedHalftoneMatchCircleUnion() async throws {
                     var coverage = 0.0
                     if y >= 12 {
                         for (cx, cy, radius) in circles {
-                            let distance = hypot(Double(x) + 0.5 - cx, 59.5 - Double(y) - cy)
+                            let deltaX = abs(Double(x) + 0.5 - cx)
+                            let deltaY = abs(59.5 - Double(y) - cy)
+                            let distance = shape == .circle ? hypot(deltaX, deltaY) : max(deltaX, deltaY)
                             let t = min(1, max(0, (distance - radius + 0.75) / 1.5))
                             coverage = max(coverage, 1 - t * t * (3 - 2 * t))
                         }
@@ -366,13 +404,13 @@ func overlappingAndInvertedHalftoneMatchCircleUnion() async throws {
 }
 
 @Test @MainActor
-func halftoneAlwaysTapersTowardTheBottomOfTheLocalSpectrumArea() async throws {
+func gridFillSizeResponseTapersTowardTheBottomOfTheLocalSpectrumArea() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)] // 30pt filled area in a 60pt view.
-    for pattern in HalftonePattern.allCases {
+    for shape in CellShape.allCases {
         renderer.style = SpectrumStyle(shading: .halftone, dotSize: 8, dotSpacing: 10,
-                                       amplitudeResponse: 0, dotPattern: pattern)
-        let topRow = pattern == .grid ? 35 : 37
+                                       amplitudeResponse: 0, cellShape: shape)
+        let topRow = 35
         let top = try await fieldPixels(renderer)
         #expect(top[7, topRow].w > 200)
         #expect(top[7, 55].w == 0)
@@ -418,7 +456,7 @@ func bassChromaticSplitAffectsBothEndsAndStopsWhenDisabledOrHidden() async throw
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)]
     renderer.style = SpectrumStyle(shading: .halftone, dotSize: 3, dotSpacing: 10,
                                    amplitudeResponse: 0, chromaticEnabled: true, chromaticStrength: 3,
-                                   whiteHalftone: false, gradientStart: .white)
+                                   solidFill: false, gradientStart: .white)
     let baseline = try await fieldPixels(renderer)
     var bins = [Float](repeating: 0, count: 256)
     bins[30] = 1
@@ -455,21 +493,21 @@ func whiteHalftonePreservesCoverageAndSplitsAllThreeChannels() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.points = [SIMD2(-1, 0), SIMD2(1, 0)]
     renderer.style = SpectrumStyle(shading: .halftone, dotSize: 2, dotSpacing: 10,
-                                   amplitudeResponse: 0, whiteHalftone: true)
+                                   amplitudeResponse: 0, solidFill: true)
     let white = try await fieldPixels(renderer)
     #expect(white[105, 35].w > 150)
     for i in stride(from: 0, to: white.bytes.count, by: 4) {
         let pixel = Array(white.bytes[i...i + 3])
         #expect(pixel.allSatisfy { $0 == pixel[3] }) // White premultiplied by coverage.
     }
-    renderer.style.whiteHalftone = false
+    renderer.style.solidFill = false
     let gradient = try await fieldPixels(renderer)
     #expect(gradient[105, 35].x > gradient[105, 35].y)
     #expect(gradient[105, 35].z > gradient[105, 35].y)
     for i in stride(from: 3, to: white.bytes.count, by: 4) {
         #expect(gradient.bytes[i] == white.bytes[i])
     }
-    renderer.style.whiteHalftone = true
+    renderer.style.solidFill = true
     renderer.style.chromaticEnabled = true
     renderer.style.chromaticStrength = 3
     renderer.receiveBass([1, 0], at: 0)
@@ -477,13 +515,19 @@ func whiteHalftonePreservesCoverageAndSplitsAllThreeChannels() async throws {
     #expect(split[108, 35].z > 150 && split[108, 35].x == 0)
     #expect(split[105, 35].y > 150 && split[105, 35].z == 0)
     #expect(split[102, 35].x > 150 && split[102, 35].y == 0)
+    renderer.style.solidColor = .black
+    let black = try await fieldPixels(renderer)
+    for i in stride(from: 0, to: black.bytes.count, by: 4) {
+        #expect(black.bytes[i...i + 2].allSatisfy { $0 == 0 })
+        #expect(black.bytes[i + 3] == split.bytes[i + 3])
+    }
 }
 
 @Test @MainActor
 func halftoneGradientInterpolatesAcrossXAtBothScales() async throws {
     let renderer = try SpectrumRenderer(device: #require(MTLCreateSystemDefaultDevice()))
     renderer.points = [SIMD2(-1, 1), SIMD2(1, 1)]
-    renderer.style = SpectrumStyle(chromaticEnabled: false, whiteHalftone: false,
+    renderer.style = SpectrumStyle(chromaticEnabled: false, solidFill: false,
                                    invertedHalftone: true,
                                    gradientStart: Color(red: 1, green: 0, blue: 0),
                                    gradientSecond: Color(red: 0, green: 1, blue: 0),
@@ -553,7 +597,7 @@ func renderSpectrumActiveAndIdle() async throws {
     let directory = try #require(ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"])
     _ = NSApplication.shared
     let state = LabState()
-    state.style.whiteHalftone = false
+    state.style.solidFill = false
     state.style.chromaticEnabled = false
     state.style.attack = 500
     state.demo = false
@@ -686,36 +730,42 @@ func renderVisualizerLab() async throws {
     let cases: [(String, SpectrumStyle, Bool, ColorScheme)] = SpectrumShading.allCases.map {
         ($0.label, SpectrumStyle(shading: $0), true, .dark)
     } + [
-        ("Halftone-Hex", SpectrumStyle(shading: .halftone, dotPattern: .hex), true, .dark),
+        ("Grid-Square", SpectrumStyle(dotSize: 6, dotSpacing: 8, cellShape: .square,
+                                      chromaticEnabled: false), true, .dark),
+        ("Grid-Opacity", SpectrumStyle(dotSize: 4, dotSpacing: 6, sizeResponse: 0, opacityResponse: 1,
+                                       chromaticEnabled: false), true, .dark),
+        ("Grid-Both", SpectrumStyle(dotSize: 6, dotSpacing: 8, opacityResponse: 1,
+                                    chromaticEnabled: false), true, .dark),
+        ("Grid-Constant-Solid", SpectrumStyle(dotSize: 4, dotSpacing: 6, cellShape: .square,
+                                              sizeResponse: 0, chromaticEnabled: false,
+                                              solidFill: true, solidColor: .orange), true, .dark),
         ("Halftone-Overlap", SpectrumStyle(dotSize: 12, dotSpacing: 6,
                                             chromaticEnabled: false), true, .dark),
         ("Halftone-Inverted", SpectrumStyle(dotSize: 5, dotSpacing: 7,
                                              chromaticEnabled: false, invertedHalftone: true), true, .dark),
-        ("Halftone-Inverted-Hex", SpectrumStyle(dotSize: 9, dotSpacing: 6, dotPattern: .hex,
+        ("Grid-Inverted-Square", SpectrumStyle(dotSize: 9, dotSpacing: 6, cellShape: .square,
                                                  chromaticEnabled: false, invertedHalftone: true), true, .dark),
         ("Halftone-Taper-Grid", SpectrumStyle(shading: .halftone, dotSize: 5,
                                              amplitudeResponse: 0), true, .dark),
-        ("Halftone-Taper-Hex", SpectrumStyle(shading: .halftone, dotSize: 5, amplitudeResponse: 0,
-                                            dotPattern: .hex), true, .dark),
         ("Halftone-Round-Boundary", SpectrumStyle(shading: .halftone, dotSize: 8, dotSpacing: 10,
-                                                  amplitudeResponse: 0, whiteHalftone: true), true, .dark),
+                                                  amplitudeResponse: 0, solidFill: true), true, .dark),
         ("Halftone-Light", SpectrumStyle(shading: .halftone), true, .light),
-        ("Halftone-Gradient", SpectrumStyle(chromaticEnabled: false, whiteHalftone: false), true, .dark),
-        ("Halftone-Gradient-Light", SpectrumStyle(chromaticEnabled: false, whiteHalftone: false), true, .light),
-        ("Halftone-Gradient-Inverted", SpectrumStyle(chromaticEnabled: false, whiteHalftone: false,
+        ("Halftone-Gradient", SpectrumStyle(chromaticEnabled: false, solidFill: false), true, .dark),
+        ("Halftone-Gradient-Light", SpectrumStyle(chromaticEnabled: false, solidFill: false), true, .light),
+        ("Halftone-Gradient-Inverted", SpectrumStyle(chromaticEnabled: false, solidFill: false,
                                                      invertedHalftone: true), true, .dark),
         ("Halftone-Chromatic", SpectrumStyle(shading: .halftone, dotSize: 4, dotSpacing: 9,
                                             amplitudeResponse: 0, chromaticEnabled: true,
                                             chromaticStrength: 8, chromaticDecay: 1000,
-                                            whiteHalftone: false), true, .dark),
-        ("Halftone-White", SpectrumStyle(shading: .halftone, whiteHalftone: true), true, .dark),
+                                            solidFill: false), true, .dark),
+        ("Halftone-White", SpectrumStyle(shading: .halftone, solidFill: true), true, .dark),
         ("Halftone-White-Chromatic", SpectrumStyle(shading: .halftone, dotSize: 4, dotSpacing: 9,
                                                   amplitudeResponse: 0, chromaticEnabled: true,
                                                   chromaticStrength: 3, chromaticDecay: 1000,
-                                                  whiteHalftone: true), true, .dark),
+                                                  solidFill: true), true, .dark),
         ("Defaults", SpectrumStyle(), true, .dark),
         ("Deep-Glow", SpectrumStyle(deepGlowEnabled: true, deepGlowStrength: 4), true, .dark),
-        ("Deep-Glow-Gradient", SpectrumStyle(whiteHalftone: false,
+        ("Deep-Glow-Gradient", SpectrumStyle(solidFill: false,
                                         deepGlowEnabled: true, deepGlowStrength: 4), true, .dark),
         ("Deep-Glow-Light", SpectrumStyle(deepGlowEnabled: true, deepGlowStrength: 4), true, .light),
         ("Shape-Before", SpectrumStyle(chromaticEnabled: false, shapeSmoothing: 0), true, .dark),
