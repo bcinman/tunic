@@ -1,35 +1,5 @@
 import Foundation
 
-/// Peak magnitude in 20–180 Hz; bins retain their original 20 Hz–20 kHz spacing.
-func bassDrive(_ spectrum: [Float], threshold: Double) -> Double {
-    guard spectrum.count > 1 else { return 0 }
-    let last = Int(floor(log(180.0 / 20) / log(1000.0) * Double(spectrum.count - 1)))
-    let peak = Double(spectrum[0...last].max() ?? 0)
-    let db = 20 * log10(max(peak, 0.000_001))
-    return min(1, max(0, (db - threshold) / 18))
-}
-
-/// Positive bass changes excite a pulse; elapsed time, not frame count, controls release.
-struct BassPulse {
-    private(set) var level: Double = 0
-    private var previousDrive: Double = 0
-    private var lastTime: Double?
-
-    mutating func advance(to time: Double, decay: Double) {
-        if let lastTime {
-            level *= exp(-max(0, time - lastTime) / (decay / 1000))
-            if level < 0.001 { level = 0 }
-        }
-        lastTime = time
-    }
-
-    mutating func observe(_ drive: Double, at time: Double, decay: Double) {
-        advance(to: time, decay: decay)
-        level = max(level, max(0, drive - previousDrive))
-        previousDrive = drive
-    }
-}
-
 /// Clip-space coordinates: bins span 20 Hz–20 kHz logarithmically; height is −90…0 dBFS.
 func spectrumPoints(_ amplitudes: [Float], maximumFrequency: Double) -> [SIMD2<Float>] {
     var points: [SIMD2<Float>] = []
@@ -58,7 +28,7 @@ private func updateSpectrumPoints(_ amplitudes: [Float], maximumFrequency: Doubl
     }
 }
 
-/// Displayed spectrum geometry, independent of the rendering backend and bass effects.
+/// Displayed spectrum geometry, independent of the rendering backend.
 struct SpectrumEnvelope {
     var points: [SIMD2<Float>] = []
     private var target: [SIMD2<Float>] = []

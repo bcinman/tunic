@@ -89,9 +89,7 @@ This file is the source of truth for implemented product capabilities.
   Hover fades respect Reduce Motion. A native disclosure row beneath the spectrum opens
   a scrollable settings area in the same panel; visual settings survive collapse.
   Disclosure uses standard SwiftUI behavior with no custom expansion or window animation.
-  The lab switches between white points
-  and a signed distance field of the spectrum curve, with line, glow, contour-band,
-  and distance-debug mappings; width, spread, and hue update live. Grid fill shading
+  The visualizer uses only SDF geometry with grid fill shading. Grid fill
   fills beneath the curve with circle or square cells on a regular grid (no hex layout),
   using a selectable solid color or horizontal gradient, with
   four editable color stops at 0%, 33%, 67%, and 100% of the frequency axis.
@@ -100,43 +98,31 @@ This file is the source of truth for implemented product capabilities.
   responses map bottom-to-curve position to cell appearance; zero keeps size constant
   or opacity full. Level influence additionally scales that response by displayed
   spectrum height. Sizes above the spacing overlap into connected
-  areas; an Invert option fills the graph around cell-shaped holes, with opacity
-  response controlling hole transparency. Boundary cells shrink to fit their full shapes
+  areas. Boundary cells shrink to fit their full shapes
   inside the spectrum and viewport, including their antialiased edges, rather than
   being sliced by the fill mask. Square fitting accounts for corners on slopes and in valleys.
   The default preserves the halftone taper: smaller at the bottom and larger toward
   the top of each frequency's filled area, with size response 1 and opacity response 0.
-  Optional bass-hit
-  chromatic aberration splits color channels across the entire halftone image,
-  with adjustable strength, 20–180 Hz trigger threshold, and time-based decay.
-  Extra redraws stop when the pulse settles or the view is hidden. A static demo
+  Extra redraws stop when the spectrum settles or the view is hidden. A static demo
   input supports tuning without audio. Visual settings are ephemeral and separate
-  from audio settings. Distance and color are separate shader functions in one
+  from audio settings. Cell clearance and color are separate shader functions in one
   pass, not a general layer compositor. Rendering follows ~30 Hz telemetry updates,
   with adjustable spectrum attack (0–500 ms) and decay (0–1500 ms) smoothing of
-  displayed dB heights across all styles, independent of bass-hit detection.
+  displayed dB heights.
   A Shape smoothing control (0–1, default 0.5) applies a Gaussian blur to dB
   heights before temporal smoothing, strongest at bass frequencies and tapering
   toward treble. It reuses scratch storage and runs on input updates, not per pixel;
-  dots stay crisp and raw bass-hit detection is unchanged. Zero restores raw geometry.
+  dots stay crisp. Zero restores raw geometry.
   Startup and Reset default to 0 ms attack, 100 ms decay, gradient grid halftone with
-  3 pt circles, 4 pt spacing, 0.5 level influence, and chromatic aberration
-  enabled. Continuous spectrum redraws run only during spectrum settling or
-  chromatic pulses.
-  Visualization settings, pure envelope/pulse dynamics, SwiftUI lifecycle,
-  and Metal resource ownership are separate components. Shader composition applies
-  chromatic offsets, then halftone coverage/color in one pass.
-  Optional Deep glow follows chromatic aberration for all visualization styles,
-  combining five octave-spaced Gaussian scales to approximate inverse-square
-  falloff (not the proprietary plugin's exact kernel). It uses linear-light
-  blending, half-float downsampled intermediates, and exposure/radius controls.
-  The crisp source and transparent background are preserved; reusable render
-  targets are resized on demand and released when bypassed. Disabled by default.
+  3 pt circles, 4 pt spacing, and 0.5 level influence.
+  Visualization settings, pure envelope dynamics, SwiftUI lifecycle,
+  and Metal resource ownership are separate components. The shader renders
+  halftone coverage and color in one pass, without glow or chromatic effects.
   Spectrum target storage is reused, envelope coefficients are computed once per
   frame, and GPU uniforms use a fixed-size value rather than a temporary array.
-  Halftone clearance scans only nearby spectrum segments within the dot radius;
-  full-distance SDF styles retain the complete scan. GPU differential tests compare
-  bounded clearance against the original full scan on steep and cropped spectra.
+  Halftone clearance scans only nearby spectrum segments within the dot radius.
+  GPU differential tests compare bounded clearance against a test-only full scan
+  on steep and cropped spectra.
   Telemetry observation is isolated from profile controls. Closing the popup
   stops telemetry demand, not processing.
   Run it with `mise run run-native`.

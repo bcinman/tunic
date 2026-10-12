@@ -76,10 +76,10 @@ func shapeSmoothingMatchesGaussianAndPreservesGeometry() {
 
 @Test
 func spectrumUniformsMatchMetalLayout() {
-    #expect(MemoryLayout<SpectrumUniforms>.stride == 10 * 16)
-    #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.variation) == 3 * 16)
-    #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.gradientStart) == 6 * 16)
-    #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.gradientEnd) == 9 * 16)
+    #expect(MemoryLayout<SpectrumUniforms>.stride == 8 * 16)
+    #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.response) == 2 * 16)
+    #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.gradientStart) == 4 * 16)
+    #expect(MemoryLayout<SpectrumUniforms>.offset(of: \.gradientEnd) == 7 * 16)
 }
 
 @Test
@@ -106,6 +106,24 @@ func boundedHalftoneClearanceMatchesFullDistance() async throws {
         .appendingPathComponent("Sources/TunicUI/Features/Visualizer/Spectrum.metal")
     let source = try String(contentsOf: sourceURL, encoding: .utf8)
     let kernel = """
+    // Full-segment signed distance reference, independent of the bounded search.
+    float spectrumDistance(float2 p, const device float2 *points, uint count, float2 size) {
+        float nearest = INFINITY;
+        float side = 1;
+        float2 a = logicalPoint(points[0], size);
+        for (uint i = 1; i < count; ++i) {
+            float2 b = logicalPoint(points[i], size);
+            float2 edge = b - a;
+            float t = clamp(dot(p - a, edge) / dot(edge, edge), 0.0f, 1.0f);
+            nearest = min(nearest, length(p - (a + t * edge)));
+            if (p.x >= a.x && p.x <= b.x) {
+                float curveY = mix(a.y, b.y, (p.x - a.x) / (b.x - a.x));
+                side = p.y <= curveY ? 1.0f : -1.0f;
+            }
+            a = b;
+        }
+        return nearest * side;
+    }
     kernel void compareClearance(const device float2 *points [[buffer(0)]],
                                  device float2 *results [[buffer(1)]], uint id [[thread_position_in_grid]]) {
         float2 p = float2((id % 320) + 0.37, (id / 320) + 0.23);

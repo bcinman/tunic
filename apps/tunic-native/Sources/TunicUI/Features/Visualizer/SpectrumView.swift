@@ -33,7 +33,6 @@ struct SpectrumView: NSViewRepresentable {
         let time = CACurrentMediaTime()
         context.coordinator?.style = style
         context.coordinator?.receiveSpectrum(spectrum, maximumFrequency: maximumFrequency, at: time)
-        context.coordinator?.receiveBass(spectrum, at: time)
         context.coordinator?.updateAnimation(view)
         view.needsDisplay = true
     }

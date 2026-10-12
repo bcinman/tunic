@@ -75,7 +75,7 @@ func spectrumUsesDecibelsAndLogarithmicFrequencyCoordinates() {
 func renderSpectrumStates() async throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let renderer = try SpectrumRenderer(device: device)
-    renderer.style.mode = .points
+    renderer.style = SpectrumStyle(sizeResponse: 0, solidFill: true)
     let width = 592
     let height = 150
     let descriptor = MTLTextureDescriptor.texture2DDescriptor(
@@ -109,27 +109,29 @@ func renderSpectrumStates() async throws {
                              from: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
         }
         let opaque = stride(from: 3, to: pixels.count, by: 4).filter { pixels[$0] != 0 }
-        #expect(opaque.count < width * height / 5)
-        if name == "empty" {
+        #expect(opaque.count < width * height)
+        if name == "empty" || name == "silent" {
             #expect(opaque.isEmpty)
         } else {
             #expect(!opaque.isEmpty)
-            #expect(opaque.allSatisfy { pixels[$0 - 3...$0].allSatisfy { $0 == 255 } })
+            #expect(opaque.allSatisfy { offset in
+                pixels[offset - 3..<offset].allSatisfy { $0 == pixels[offset] }
+            }) // White cells, premultiplied by antialiased coverage.
         }
         if name == "active" {
-            // Bin 82 is near the taller peak (~−20 dBFS), not vertically inverted.
-            let offset = (33 * width + 190) * 4
+            // Cell at (188, 50) is below the taller peak (~−20 dBFS); (188, 20) is above.
+            let offset = (50 * width + 188) * 4
             #expect(pixels[offset + 3] == 255)
-            #expect(pixels[(116 * width + 190) * 4 + 3] == 0)
+            #expect(pixels[(20 * width + 188) * 4 + 3] == 0)
         }
     }
     if let directory = ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] {
         _ = NSApplication.shared
         let host = NSHostingView(rootView: VStack(spacing: 16) {
-            SpectrumView(spectrum: spectrum, maximumFrequency: 20_000, style: SpectrumStyle(mode: .points))
-            SpectrumView(spectrum: [], maximumFrequency: 20_000, style: SpectrumStyle(mode: .points))
+            SpectrumView(spectrum: spectrum, maximumFrequency: 20_000, style: SpectrumStyle())
+            SpectrumView(spectrum: [], maximumFrequency: 20_000, style: SpectrumStyle())
             SpectrumView(spectrum: [Float](repeating: 0, count: 256), maximumFrequency: 20_000,
-                         style: SpectrumStyle(mode: .points))
+                         style: SpectrumStyle())
         }
         .frame(width: 296, height: 257).padding(12)
         .background(Color(red: 0.094, green: 0.125, blue: 0.188)))
