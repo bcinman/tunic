@@ -28,8 +28,9 @@ struct GainControlRow: View {
                 Text(control.name).lineLimit(1)
                 Spacer()
                 Text("\(gain > 0 ? "+" : "")\(gain.formatted(.number.precision(.fractionLength(0...1)))) dB")
+                    .font(.system(size: 11))
                     .monospacedDigit()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.opacity(0.5))
             }
             .font(.system(size: 12))
             Slider(value: Binding(get: { gain }, set: changeGain),
