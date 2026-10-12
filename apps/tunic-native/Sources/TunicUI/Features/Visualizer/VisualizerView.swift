@@ -16,14 +16,19 @@ struct VisualizerView: View {
                     labToggle
                         .padding(8)
                 }
-            if labPresented {
-                ScrollView {
-                    VisualizationSettingsView(style: $style, demo: $demo)
-                        .padding(.vertical, 12)
-                }
-                .frame(height: 260)
-                .background(.white.opacity(0.1))
+            ScrollView {
+                VisualizationSettingsView(style: $style, demo: $demo)
+                    .padding(.vertical, 12)
             }
+            .frame(height: 260)
+            .background(.white.opacity(0.1))
+            // Retain the controls and scroll position without occupying space when collapsed.
+            .frame(height: labPresented ? 260 : 0, alignment: .top)
+            .clipped()
+            .opacity(labPresented ? 1 : 0)
+            .disabled(!labPresented)
+            .allowsHitTesting(labPresented)
+            .accessibilityHidden(!labPresented)
         }
     }
 
