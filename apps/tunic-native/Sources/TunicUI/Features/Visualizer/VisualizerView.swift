@@ -29,15 +29,20 @@ struct VisualizerView: View {
                 }
                 .contentShape(Rectangle())
                 .onHover { spectrumHovered = $0 }
-            if labPresented {
-                VisualizationSettingsView(style: $style, demo: $demo)
-                    .padding(.vertical, 12)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .background(.white.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal, 8)
-                    .padding(.top, 8)
-            }
+            VisualizationSettingsView(style: $style, demo: $demo)
+                .padding(.vertical, 12)
+                .fixedSize(horizontal: false, vertical: true)
+                .background(.white.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 8)
+                .padding(.top, 8)
+                // Keep the controls mounted, using their natural height only when expanded.
+                .frame(height: labPresented ? nil : 0, alignment: .top)
+                .clipped()
+                .opacity(labPresented ? 1 : 0)
+                .disabled(!labPresented)
+                .allowsHitTesting(labPresented)
+                .accessibilityHidden(!labPresented)
         }
     }
 
