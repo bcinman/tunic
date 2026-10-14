@@ -19,9 +19,8 @@ struct VisualizerView: View {
         static let spring = Animation.spring(duration: 0.4, bounce: 0)
     }
 
-    // Open: fade in and move down from -10pt, settling without bounce.
+    // Fade the settings independently of the surrounding layout movement.
     private enum SettingsMotion {
-        static let offset: CGFloat = -10
         static let spring = Animation.spring(duration: 0.4, bounce: 0)
         static let exitSpring = Animation.spring(duration: 0.2, bounce: 0)
         static let layoutSpring = Animation.spring(duration: 0.2, bounce: 0)
@@ -51,7 +50,6 @@ struct VisualizerView: View {
                 } action: { height in
                     settingsHeight = height
                 }
-                .offset(y: labPresented || reduceMotion ? 0 : SettingsMotion.offset)
                 .opacity(labPresented ? 1 : 0)
                 .animation(reduceMotion ? .easeOut(duration: 0.15)
                            : (labPresented ? SettingsMotion.spring : SettingsMotion.exitSpring), value: labPresented)
