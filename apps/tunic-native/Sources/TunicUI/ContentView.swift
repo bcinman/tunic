@@ -12,7 +12,7 @@ public struct ContentView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             AudioStatusView(deviceName: model.snapshot?.deviceName,
                             isProcessing: Binding(
                                 get: { model.snapshot?.processingEnabled ?? true },

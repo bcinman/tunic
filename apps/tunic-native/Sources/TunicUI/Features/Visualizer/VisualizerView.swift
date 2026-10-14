@@ -53,7 +53,7 @@ struct VisualizerView: View {
         return LiveSpectrum(model: model, maximumFrequency: maximumFrequency,
                             style: style, demo: demo)
             .frame(height: 140)
-            .opacity(influence == nil ? 1 : 0.22)
+            .opacity(influence == nil ? 1 : 0.25)
             .overlay {
                 if let influence {
                     GainResponseView(response: model.response, influence: influence)
