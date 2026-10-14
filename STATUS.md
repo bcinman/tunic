@@ -84,7 +84,8 @@ This file is the source of truth for implemented product capabilities.
   Meter rises are immediate; arc length and opacity decay together with a 100 ms
   exponential release. Animation stops when settled and resets when hidden.
   A transparent Metal `MTKView` visualizer renders the spectrum. Hovering a gain
-  control dims the spectrum and fades in the combined EQ response: a subtle white
+  control keeps the affected spectrum at full opacity, fading unaffected frequencies
+  to 25% using the filter's gain sensitivity, and fades in the combined EQ response: a subtle white
   stroke with a brighter 2-point white highlight and white fill weighted by that filter's gain
   sensitivity, including at zero gain. Sliders keep their normal appearance.
   During a drag, the curve stays pinned to that control even outside its hover

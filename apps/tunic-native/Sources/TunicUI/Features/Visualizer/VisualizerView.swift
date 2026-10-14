@@ -91,7 +91,12 @@ struct VisualizerView: View {
         return LiveSpectrum(model: model, maximumFrequency: maximumFrequency,
                             style: style, demo: demo)
             .frame(height: 140)
-            .opacity(influence == nil ? 1 : 0.25)
+            .mask {
+                LinearGradient(stops: (influence ?? [1, 1]).enumerated().map { index, weight in
+                    Gradient.Stop(color: .white.opacity(0.25 + 0.75 * weight),
+                                  location: Double(index) / Double(max(1, (influence?.count ?? 2) - 1)))
+                }, startPoint: .leading, endPoint: .trailing)
+            }
             .overlay {
                 if let influence {
                     GainResponseView(response: model.response, influence: influence)
