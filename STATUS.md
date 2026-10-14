@@ -75,7 +75,10 @@ This file is the source of truth for implemented product capabilities.
   or handle drop. No audio buffers or real-time callbacks cross into Swift.
 - A SwiftUI menu-bar app linked to generated BoltFFI bindings, with real device
   status, preset selection, automatically saved named gain controls, and live circular RMS
-  meters flanking the profile picker. Translucent white rings fill with white
+  meters. A bottom-left gear menu offers Quit Tunic and Open at Login through macOS
+  ServiceManagement; login startup requires a signed app bundle and is disabled
+  in the `swift run` development build. The app currently has no bundle packaging task.
+  The meters flank the profile picker. Translucent white rings fill with white
   arcs on a −60 to 0 dBFS scale, updating with ~30 Hz telemetry. Arc opacity rises
   linearly from 25% at empty to 100% at full.
   Meter rises are immediate; arc length and opacity decay together with a 100 ms

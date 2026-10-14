@@ -12,7 +12,7 @@ public struct ContentView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 8) {
             AudioStatusView(deviceName: model.snapshot?.deviceName,
                             isProcessing: Binding(
                                 get: { model.snapshot?.processingEnabled ?? true },
@@ -37,14 +37,11 @@ public struct ContentView: View {
                 Text(error).font(.caption).foregroundStyle(.orange)
                     .padding(.horizontal, 12)
             }
-            Button("Quit Tunic", systemImage: "power", action: quit)
-                .labelStyle(.iconOnly)
-                .help("Quit Tunic")
-                .buttonStyle(.plain)
+            SettingsMenu(quit: quit)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 12)
-                .padding(.bottom, 12)
         }
+        .padding(.bottom, 12)
         .frame(width: 320)
         .preferredColorScheme(.dark)
         .task { await model.measureWhileVisible() }

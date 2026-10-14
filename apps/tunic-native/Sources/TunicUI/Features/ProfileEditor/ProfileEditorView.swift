@@ -18,6 +18,9 @@ struct ProfileEditorView<Levels: View>: View {
             .padding(16)
 
             if !state.controls.isEmpty {
+                Divider()
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 16)
                 VStack(spacing: 0) {
                     ForEach(state.controls, id: \.filter) { control in
                         GainControlRow(control: control, processedCommand: state.processedCommand, send: send,
