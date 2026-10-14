@@ -39,7 +39,6 @@ struct VisualizerView: View {
                 .contentShape(Rectangle())
                 .onHover { spectrumHovered = $0 }
             VisualizationSettingsView(style: $style, demo: $demo)
-                .padding(.vertical, 12)
                 .fixedSize(horizontal: false, vertical: true)
                 .background(.white.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: 12))

@@ -5,75 +5,125 @@ struct VisualizationSettingsView: View {
     @Binding var demo: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Visualizer settings").fontWeight(.medium)
-                Spacer()
-                Button("Reset") { style = SpectrumStyle() }
-                    .help("Reset visual settings; audio settings are unchanged")
+        VStack(alignment: .leading, spacing: 0) {
+            row {
+                HStack {
+                    Text("Visualizer settings").fontWeight(.semibold)
+                    Spacer()
+                    Button("Reset") { style = SpectrumStyle() }
+                        .help("Reset visual settings; audio settings are unchanged")
+                }
             }
-            VStack(alignment: .leading, spacing: 8) {
-                Picker("Input", selection: $demo) {
-                    Text("Live audio").tag(false)
-                    Text("Demo").tag(true)
-                }
-                .pickerStyle(.segmented)
-                Divider()
-                Text("Grid fill")
-                    .foregroundStyle(.secondary)
-                Picker("Cell shape", selection: $style.cellShape) {
-                    ForEach(CellShape.allCases, id: \.self) { shape in
-                        Text(shape.label).tag(shape)
+            Divider()
+            row {
+                HStack {
+                    Text("Input")
+                    Spacer()
+                    Picker("Input", selection: $demo) {
+                        Text("Live audio").tag(false)
+                        Text("Demo").tag(true)
                     }
+                    .labelsHidden()
+                    .fixedSize()
+                    .frame(width: 116, alignment: .trailing)
                 }
-                .pickerStyle(.segmented)
-                slider("Max size", value: $style.dotSize, range: 0.5...12, unit: "pt")
-                    .help("Circle diameter or square width; sizes above the spacing overlap")
-                slider("Spacing", value: $style.dotSpacing, range: 3...18, unit: "pt")
-                    .help("Distance between neighboring cell centers")
-                slider("Size response", value: $style.sizeResponse, range: 0...1, unit: "")
-                    .help("0: constant size. 1: smaller at the bottom, larger toward the curve. "
-                          + "Cells always fit the boundary")
-                slider("Opacity response", value: $style.opacityResponse, range: 0...1, unit: "")
-                    .help("0: fully opaque. 1: fainter at the bottom, stronger toward the curve")
-                slider("Level influence", value: $style.amplitudeResponse, range: 0...1, unit: "")
-                    .help("Makes size and opacity responses weaker in shorter parts of the spectrum. "
-                          + "0: position only. 1: also scale by displayed spectrum height (−90…0 dBFS)")
-                Picker("Color", selection: $style.solidFill) {
-                    Text("Gradient").tag(false)
-                    Text("Solid").tag(true)
+            }
+            Divider()
+            row {
+                HStack {
+                    Text("Cell shape")
+                    Spacer()
+                    Picker("Cell shape", selection: $style.cellShape) {
+                        ForEach(CellShape.allCases, id: \.self) { shape in
+                            Text(shape.label).tag(shape)
+                        }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                    .frame(width: 116, alignment: .trailing)
                 }
-                .pickerStyle(.segmented)
+            }
+            Divider()
+            slider("Max size", value: $style.dotSize, range: 0.5...12, unit: "pt")
+                .help("Circle diameter or square width; sizes above the spacing overlap")
+            Divider()
+            slider("Spacing", value: $style.dotSpacing, range: 3...18, unit: "pt")
+                .help("Distance between neighboring cell centers")
+            Divider()
+            slider("Size response", value: $style.sizeResponse, range: 0...1, unit: "")
+                .help("0: constant size. 1: smaller at the bottom, larger toward the curve. "
+                      + "Cells always fit the boundary")
+            Divider()
+            slider("Opacity response", value: $style.opacityResponse, range: 0...1, unit: "")
+                .help("0: fully opaque. 1: fainter at the bottom, stronger toward the curve")
+            Divider()
+            slider("Level influence", value: $style.amplitudeResponse, range: 0...1, unit: "")
+                .help("Makes size and opacity responses weaker in shorter parts of the spectrum. "
+                      + "0: position only. 1: also scale by displayed spectrum height (−90…0 dBFS)")
+            Divider()
+            row {
+                HStack {
+                    Text("Color")
+                    Spacer()
+                    Picker("Color", selection: $style.solidFill) {
+                        Text("Gradient").tag(false)
+                        Text("Solid").tag(true)
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                    .frame(width: 116, alignment: .trailing)
+                }
+            }
+            Divider()
+            row {
                 if style.solidFill {
-                    ColorPicker("Cell color", selection: $style.solidColor, supportsOpacity: false)
+                    HStack {
+                        Text("Solid color")
+                        Spacer()
+                        ColorPicker("Solid color", selection: $style.solidColor, supportsOpacity: false)
+                            .labelsHidden()
+                    }
                 } else {
                     HStack {
-                        ColorPicker("0%", selection: $style.gradientStart, supportsOpacity: false)
-                        ColorPicker("33%", selection: $style.gradientSecond, supportsOpacity: false)
-                        ColorPicker("67%", selection: $style.gradientThird, supportsOpacity: false)
-                        ColorPicker("100%", selection: $style.gradientEnd, supportsOpacity: false)
+                        Text("Gradient")
+                        Spacer()
+                        HStack {
+                            ColorPicker("0%", selection: $style.gradientStart, supportsOpacity: false)
+                            ColorPicker("33%", selection: $style.gradientSecond, supportsOpacity: false)
+                            ColorPicker("67%", selection: $style.gradientThird, supportsOpacity: false)
+                            ColorPicker("100%", selection: $style.gradientEnd, supportsOpacity: false)
+                        }
+                        .labelsHidden()
                     }
                     .help("Colors blend left to right across the frequency axis")
                 }
             }
-            .padding(.top, 8)
+            .controlSize(.mini)
         }
         .font(.caption)
-        .controlSize(.mini)
-        .padding(10)
-        .background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 8))
+        .controlSize(.small)
+        .pickerStyle(.menu)
+    }
+
+    private func row<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
     }
 
     private func slider(_ label: String, value: Binding<Double>, range: ClosedRange<Double>,
                         unit: String) -> some View {
-        HStack(spacing: 8) {
-            Text(label).frame(width: 92, alignment: .leading)
-            Slider(value: value, in: range)
-                .accessibilityLabel(label)
-            Text("\(value.wrappedValue, specifier: unit.isEmpty ? "%.2f" : "%.1f")\(unit)")
-                .monospacedDigit()
-                .lineLimit(1)
-                .frame(width: 56, alignment: .trailing)
+        row {
+            HStack(spacing: 8) {
+                Text(label).frame(width: 92, alignment: .leading)
+                Slider(value: value, in: range)
+                    .accessibilityLabel(label)
+                Text("\(value.wrappedValue, specifier: unit.isEmpty ? "%.2f" : "%.1f")\(unit)")
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .frame(width: 40, alignment: .trailing)
+            }
         }
     }
 }
