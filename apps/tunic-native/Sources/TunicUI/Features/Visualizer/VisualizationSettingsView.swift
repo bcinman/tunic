@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct VisualizationSettingsView: View {
@@ -80,20 +81,18 @@ struct VisualizationSettingsView: View {
                     HStack {
                         Text("Solid color")
                         Spacer()
-                        ColorPicker("Solid color", selection: $style.solidColor, supportsOpacity: false)
-                            .labelsHidden()
+                        colorPicker("Solid color", selection: $style.solidColor)
                     }
                 } else {
                     HStack {
                         Text("Gradient")
                         Spacer()
                         HStack {
-                            ColorPicker("0%", selection: $style.gradientStart, supportsOpacity: false)
-                            ColorPicker("33%", selection: $style.gradientSecond, supportsOpacity: false)
-                            ColorPicker("67%", selection: $style.gradientThird, supportsOpacity: false)
-                            ColorPicker("100%", selection: $style.gradientEnd, supportsOpacity: false)
+                            colorPicker("0%", selection: $style.gradientStart)
+                            colorPicker("33%", selection: $style.gradientSecond)
+                            colorPicker("67%", selection: $style.gradientThird)
+                            colorPicker("100%", selection: $style.gradientEnd)
                         }
-                        .labelsHidden()
                     }
                     .help("Colors blend left to right across the frequency axis")
                 }
@@ -103,6 +102,11 @@ struct VisualizationSettingsView: View {
         .font(.caption)
         .controlSize(.small)
         .pickerStyle(.menu)
+    }
+
+    private func colorPicker(_ label: String, selection: Binding<Color>) -> some View {
+        SettingsColorWell(label: label, selection: selection)
+            .frame(width: 28, height: 16)
     }
 
     private func row<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -124,6 +128,58 @@ struct VisualizationSettingsView: View {
                     .lineLimit(1)
                     .frame(width: 40, alignment: .trailing)
             }
+        }
+    }
+}
+
+private struct SettingsColorWell: NSViewRepresentable {
+    let label: String
+    @Binding var selection: Color
+
+    func makeCoordinator() -> Coordinator { Coordinator(selection: $selection) }
+
+    func makeNSView(context: Context) -> NSColorWell {
+        let well = NSColorWell()
+        well.colorWellStyle = .minimal
+        well.controlSize = .mini
+        well.supportsAlpha = false
+        well.target = context.coordinator
+        well.action = #selector(Coordinator.colorChanged(_:))
+        well.pulldownTarget = context.coordinator
+        well.pulldownAction = #selector(Coordinator.showPanel(_:))
+        return well
+    }
+
+    func updateNSView(_ well: NSColorWell, context: Context) {
+        context.coordinator.selection = $selection
+        well.color = NSColor(selection)
+        well.isEnabled = context.environment.isEnabled
+        well.setAccessibilityLabel(label)
+        if !well.isEnabled { well.deactivate() }
+    }
+
+    static func dismantleNSView(_ well: NSColorWell, coordinator: Coordinator) {
+        well.deactivate()
+    }
+
+    final class Coordinator: NSObject {
+        var selection: Binding<Color>
+
+        init(selection: Binding<Color>) { self.selection = selection }
+
+        @MainActor @objc func colorChanged(_ well: NSColorWell) {
+            selection.wrappedValue = Color(nsColor: well.color)
+        }
+
+        @MainActor @objc func showPanel(_ well: NSColorWell) {
+            NSApplication.shared.activate()
+            well.activate(true)
+            let panel = NSColorPanel.shared
+            // The menu-bar window can lose focus when the color panel opens.
+            panel.hidesOnDeactivate = false
+            panel.isContinuous = true
+            panel.makeKeyAndOrderFront(nil)
+            panel.orderFrontRegardless()
         }
     }
 }

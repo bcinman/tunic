@@ -40,7 +40,7 @@ struct VisualizerView: View {
                 .onHover { spectrumHovered = $0 }
             VisualizationSettingsView(style: $style, demo: $demo)
                 .fixedSize(horizontal: false, vertical: true)
-                .background(.white.opacity(0.1))
+                .background(.white.opacity(0.15))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 8)
                 .padding(.top, 8)
