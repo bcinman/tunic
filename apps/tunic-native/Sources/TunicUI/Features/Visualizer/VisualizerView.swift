@@ -7,6 +7,7 @@ struct VisualizerView: View {
     @State private var style = SpectrumStyle()
     @State private var demo = false
     @State private var labPresented = false
+    @State private var settingsHeight: CGFloat = 0
     @State private var spectrumHovered = false
     @FocusState private var toggleFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -16,6 +17,15 @@ struct VisualizerView: View {
         static let offset: CGFloat = 5
         static let blur: CGFloat = 10
         static let spring = Animation.spring(duration: 0.4, bounce: 0)
+    }
+
+    // Open: fade in and move down from -10pt, settling without bounce.
+    private enum SettingsMotion {
+        static let offset: CGFloat = -10
+        static let spring = Animation.spring(duration: 0.4, bounce: 0)
+        static let exitSpring = Animation.spring(duration: 0.2, bounce: 0)
+        static let layoutSpring = Animation.spring(duration: 0.2, bounce: 0)
+        static let layoutExitSpring = Animation.spring(duration: 0.4, bounce: 0)
     }
 
     private var toggleVisible: Bool { labPresented || spectrumHovered || toggleFocused }
@@ -36,10 +46,17 @@ struct VisualizerView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 8)
                 .padding(.top, 8)
-                // Keep the controls mounted, using their natural height only when expanded.
-                .frame(height: labPresented ? nil : 0, alignment: .top)
-                .clipped()
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    proxy.size.height
+                } action: { height in
+                    settingsHeight = height
+                }
+                .offset(y: labPresented || reduceMotion ? 0 : SettingsMotion.offset)
                 .opacity(labPresented ? 1 : 0)
+                .animation(reduceMotion ? .easeOut(duration: 0.15)
+                           : (labPresented ? SettingsMotion.spring : SettingsMotion.exitSpring), value: labPresented)
+                // Animate occupied space independently of the mounted panel's entrance.
+                .frame(height: labPresented ? settingsHeight : 0, alignment: .top)
                 .disabled(!labPresented)
                 .allowsHitTesting(labPresented)
                 .accessibilityHidden(!labPresented)
@@ -48,7 +65,10 @@ struct VisualizerView: View {
 
     private var labToggle: some View {
         Button {
-            labPresented.toggle()
+            let layoutAnimation = labPresented ? SettingsMotion.layoutExitSpring : SettingsMotion.layoutSpring
+            withAnimation(reduceMotion ? nil : layoutAnimation) {
+                labPresented.toggle()
+            }
         } label: {
             Image(systemName: labPresented ? "chevron.up" : "slider.horizontal.3")
                 .font(.system(size: 11, weight: .medium))
