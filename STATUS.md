@@ -107,13 +107,12 @@ This file is the source of truth for implemented product capabilities.
   input supports tuning without audio. Visual settings are ephemeral and separate
   from audio settings. Cell clearance and color are separate shader functions in one
   pass, not a general layer compositor. Rendering follows ~30 Hz telemetry updates,
-  with adjustable spectrum attack (0–500 ms) and decay (0–1500 ms) smoothing of
-  displayed dB heights.
-  A Shape smoothing control (0–1, default 0.5) applies a Gaussian blur to dB
+  with fixed 10 ms attack and 100 ms decay smoothing of displayed dB heights.
+  Fixed shape smoothing of 0.5 applies a Gaussian blur to dB
   heights before temporal smoothing, strongest at bass frequencies and tapering
   toward treble. It reuses scratch storage and runs on input updates, not per pixel;
-  dots stay crisp. Zero restores raw geometry.
-  Startup and Reset default to 0 ms attack, 100 ms decay, gradient grid halftone with
+  dots stay crisp. These smoothing settings are not exposed in the lab.
+  Startup and Reset default to gradient grid halftone with
   3 pt circles, 4 pt spacing, and 0.5 level influence.
   Visualization settings, pure envelope dynamics, SwiftUI lifecycle,
   and Metal resource ownership are separate components. The shader renders

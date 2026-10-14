@@ -65,20 +65,18 @@ func renderProfileMeterStates() async throws {
 func spectrumAttackAndDecayUseElapsedTimeAndSettle() throws {
     let device = try #require(MTLCreateSystemDefaultDevice())
     let renderer = try SpectrumRenderer(device: device)
-    renderer.style.attack = 100
-    renderer.style.decay = 400
     renderer.receiveSpectrum([1, 0.001], maximumFrequency: 20_000, at: 0)
-    renderer.advanceSpectrum(to: 0.1)
+    renderer.advanceSpectrum(to: 0.01) // Fixed 10 ms attack: one time constant.
     #expect(abs(renderer.points[0].y - Float(1 - 2 / exp(Double(1)))) < 0.00001)
     #expect(abs(renderer.points[1].y - Float(-1 + (2.0 / 3) * (1 - 1 / exp(Double(1))))) < 0.00001)
     let split = try SpectrumRenderer(device: device)
     split.style = renderer.style
     split.receiveSpectrum([1, 0.001], maximumFrequency: 20_000, at: 0)
-    for step in 1...10 { split.advanceSpectrum(to: Double(step) / 100) }
+    for step in 1...10 { split.advanceSpectrum(to: Double(step) / 1000) }
     #expect(abs(split.points[0].y - renderer.points[0].y) < 0.00001)
     let peak = renderer.points[0].y
-    renderer.receiveSpectrum([0, 0], maximumFrequency: 20_000, at: 0.1)
-    renderer.advanceSpectrum(to: 0.5)
+    renderer.receiveSpectrum([0, 0], maximumFrequency: 20_000, at: 0.01)
+    renderer.advanceSpectrum(to: 0.11) // Fixed 100 ms decay: one time constant.
     #expect(abs(renderer.points[0].y - (-1 + (peak + 1) / Float(exp(Double(1))))) < 0.00001)
     let view = MTKView(frame: .zero, device: device)
     renderer.updateAnimation(view)
@@ -86,14 +84,10 @@ func spectrumAttackAndDecayUseElapsedTimeAndSettle() throws {
     renderer.advanceSpectrum(to: 10)
     renderer.updateAnimation(view)
     #expect(view.isPaused)
-    renderer.style.attack = 0
     renderer.receiveSpectrum([1, 1], maximumFrequency: 20_000, at: 10)
-    #expect(renderer.points.map(\.y) == [1, 1])
-    renderer.style.decay = 0
-    renderer.receiveSpectrum([0, 0], maximumFrequency: 20_000, at: 10)
     #expect(renderer.points.map(\.y) == [-1, -1])
-    renderer.style.attack = 500
-    renderer.receiveSpectrum([1, 1], maximumFrequency: 20_000, at: 11)
+    renderer.advanceSpectrum(to: 10.01)
+    #expect(renderer.points.allSatisfy { $0.y > -1 && $0.y < 1 })
     renderer.draw(in: view) // Hidden views stop even with an unfinished envelope.
     #expect(view.isPaused)
     #expect(renderer.points.isEmpty)
@@ -420,12 +414,11 @@ private func findMetalView(_ view: NSView) -> MTKView? {
 }
 
 @Test(.enabled(if: ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] != nil)) @MainActor
-func renderSpectrumActiveAndIdle() async throws {
+func renderSpectrumSettlesWhenIdle() async throws {
     let directory = try #require(ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"])
     _ = NSApplication.shared
     let state = LabState()
     state.style.solidFill = false
-    state.style.attack = 500
     state.demo = false
     let host = NSHostingView(rootView: LabPreview(state: state))
     let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 600),
@@ -436,24 +429,21 @@ func renderSpectrumActiveAndIdle() async throws {
     window.orderFrontRegardless()
     defer { window.close() }
     try await Task.sleep(for: .milliseconds(100))
-    state.demo = true
     let metal = try #require(findMetalView(host))
-    for name in ["active", "idle"] {
-        if name == "idle" { state.style.attack = 0 }
-        try await Task.sleep(for: .milliseconds(2400))
-        if name == "active" {
-            #expect(!metal.isPaused)
-        } else {
-            #expect(metal.isPaused)
-        }
-        let capture = Process()
-        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
-                             directory + "/spectrum-\(name).png", ]
-        try capture.run()
-        capture.waitUntilExit()
-        #expect(capture.terminationStatus == 0)
-    }
+    let renderer = try #require(metal.delegate as? SpectrumRenderer)
+    renderer.receiveSpectrum(demoSpectrum, maximumFrequency: 20_000, at: CACurrentMediaTime())
+    renderer.updateAnimation(metal)
+    #expect(!metal.isPaused)
+    try await Task.sleep(for: .milliseconds(350))
+    #expect(metal.isPaused)
+    #expect(renderer.points.contains { $0.y > -1 })
+    let capture = Process()
+    capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+    capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
+                         directory + "/spectrum-idle.png", ]
+    try capture.run()
+    capture.waitUntilExit()
+    #expect(capture.terminationStatus == 0)
     window.orderOut(nil)
     #expect(metal.isPaused)
 }
@@ -568,22 +558,13 @@ func renderVisualizerLab() async throws {
                                                   amplitudeResponse: 0, solidFill: true), true, .dark),
         ("Halftone-White", SpectrumStyle(solidFill: true), true, .dark),
         ("Defaults", SpectrumStyle(), true, .dark),
-        ("Shape-Before", SpectrumStyle(shapeSmoothing: 0), true, .dark),
-        ("Shape-After", SpectrumStyle(shapeSmoothing: 0.5), true, .dark),
-        ("Envelope", SpectrumStyle(attack: 150, decay: 800), true, .dark),
         ("Empty", SpectrumStyle(), false, .dark),
         ("Light", SpectrumStyle(), true, .light),
     ]
     for (name, style, demo, scheme) in cases {
         state.style = style
         state.demo = demo
-        state.spectrum = name.hasPrefix("Shape-") ? (0..<256).map { index in
-            if index >= 85 { return demoSpectrum[index] }
-            let db = index < 20 ? -45.0 : index < 43 ? -15 : index < 65 ? -30 : -55
-            return Float(pow(10, db / 20))
-        } : demoSpectrum
         state.scheme = scheme
-        if name.hasPrefix("Shape-") { try await Task.sleep(for: .seconds(1)) }
         try await Task.sleep(for: .milliseconds(250))
         window.setContentSize(host.fittingSize)
         try await Task.sleep(for: .milliseconds(100))

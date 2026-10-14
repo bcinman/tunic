@@ -16,9 +16,9 @@ struct SpectrumStyle: Equatable {
     var opacityResponse: Double = 0
     var solidFill = false
     var solidColor = Color.white
-    var attack: Double = 0
-    var decay: Double = 100
-    var shapeSmoothing: Double = 0.5
+    let attack: Double = 10
+    let decay: Double = 100
+    let shapeSmoothing: Double = 0.5
     var gradientStart = Color(red: 0.27, green: 0.91, blue: 1)
     var gradientSecond = Color(red: 0.61, green: 1, blue: 0.94)
     var gradientThird = Color(red: 0.82, green: 0.81, blue: 1)

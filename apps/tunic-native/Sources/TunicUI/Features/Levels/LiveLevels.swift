@@ -36,7 +36,7 @@ struct CircularLevelMeter: View {
                 .font(.system(size: 9, weight: .medium))
                 .foregroundStyle(.white.opacity(0.2))
         }
-        .frame(width: 24, height: 24)
+        .frame(width: 28, height: 28)
         .accessibilityElement(children: .ignore)
         .accessibilityValue(rms == nil ? "No audio measurements" :
             decibels <= -60 ? "Silent" : "\(Int(decibels.rounded())) decibels full scale")

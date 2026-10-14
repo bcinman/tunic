@@ -18,18 +18,8 @@ struct VisualizationSettingsView: View {
                     Text("Demo").tag(true)
                 }
                 .pickerStyle(.segmented)
-                Text("1 · Spectrum distance")
-                    .foregroundStyle(.secondary)
-                slider("Smoothing", value: $style.shapeSmoothing, range: 0...1, unit: "")
-                    .help("Shape smoothing: rounds spectrum steps, strongest in the bass. "
-                          + "0: original shape; does not blur dots or delay bass hits")
-                slider("Attack", value: $style.attack, range: 0...500, unit: "ms")
-                    .help("Rise smoothing for the spectrum. "
-                          + "0: instant; time to cover 63% of the remaining distance")
-                slider("Decay", value: $style.decay, range: 0...1500, unit: "ms")
-                    .help("Fall smoothing for the spectrum. 0: instant")
                 Divider()
-                Text("2 · Grid fill")
+                Text("Grid fill")
                     .foregroundStyle(.secondary)
                 Picker("Cell shape", selection: $style.cellShape) {
                     ForEach(CellShape.allCases, id: \.self) { shape in
@@ -80,7 +70,7 @@ struct VisualizationSettingsView: View {
             Text(label).frame(width: 92, alignment: .leading)
             Slider(value: value, in: range)
                 .accessibilityLabel(label)
-            Text("\(value.wrappedValue, specifier: unit == "ms" ? "%.0f" : unit.isEmpty ? "%.2f" : "%.1f")\(unit)")
+            Text("\(value.wrappedValue, specifier: unit.isEmpty ? "%.2f" : "%.1f")\(unit)")
                 .monospacedDigit()
                 .lineLimit(1)
                 .frame(width: 56, alignment: .trailing)

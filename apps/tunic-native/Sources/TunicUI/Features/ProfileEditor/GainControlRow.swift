@@ -23,7 +23,7 @@ struct GainControlRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Text(control.name).lineLimit(1)
                 Spacer()
