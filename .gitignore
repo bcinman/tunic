@@ -2,3 +2,4 @@
 **/.build/
 **/.swiftpm/xcode/
 **/.DS_Store
+.amp/portals/*

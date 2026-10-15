@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Prepare a Linux Amp orb for Tunic's portable Rust crates.
+# macOS-only work (tunic-macos, tunic-app, Swift, SwiftLint, BoltFFI packaging) cannot run here.
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+step() {
+  local label="$1"
+  shift
+  echo "==> $label"
+  local start=$SECONDS
+  "$@"
+  echo "<== $label ($((SECONDS - start))s)"
+}
+
+install_mise() {
+  if ! command -v mise >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/mise" ]; then
+    curl -fsSL https://mise.run | sh
+  fi
+}
+step "install mise" install_mise
+export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$PATH"
+
+# SwiftLint's Linux binary needs glibc 2.38 (orbs ship Debian 12 with 2.36), and BoltFFI only
+# packages Apple targets. Disable both so `mise exec`/`mise run` never try to auto-install them.
+configure_mise() {
+  mkdir -p "$HOME/.config/mise"
+  cat >"$HOME/.config/mise/config.toml" <<'EOF'
+[settings]
+disable_tools = ["swiftlint", "cargo:boltffi_cli"]
+EOF
+  mise trust --quiet "$repo_root/mise.toml"
+}
+step "configure mise" configure_mise
+step "install pinned tools" mise install --yes
+step "reshim" mise reshim
+
+persist_shims() {
+  local marker="# tunic: mise shims"
+  if ! grep -Fqx "$marker" "$HOME/.bash_profile" 2>/dev/null; then
+    cat >>"$HOME/.bash_profile" <<EOF
+
+$marker
+export PATH="\$HOME/.local/share/mise/shims:\$HOME/.local/bin:\$PATH"
+EOF
+  fi
+}
+step "persist mise shims in ~/.bash_profile" persist_shims
+
+portable=(--workspace --exclude tunic-app --exclude tunic-macos --all-targets --all-features)
+step "fetch crates" cargo fetch --locked
+step "warm clippy" cargo clippy --locked "${portable[@]}" --quiet
+step "warm test build" cargo test --locked "${portable[@]}" --no-run --quiet
+
+write_guidance() {
+  local guidance="$HOME/.config/amp/AGENTS.md"
+  local marker="# Tunic on Linux orbs"
+  mkdir -p "$(dirname "$guidance")"
+  if ! grep -Fqx "$marker" "$guidance" 2>/dev/null; then
+    cat >>"$guidance" <<'EOF'
+
+# Tunic on Linux orbs
+
+- `tunic-macos` and `tunic-app` depend on `objc2` and only build on macOS. Swift, SwiftLint, and
+  BoltFFI packaging are also macOS-only, so `mise run check`, `lint`, and `test` fail here.
+- Check the portable crates instead:
+  `cargo clippy --workspace --exclude tunic-app --exclude tunic-macos --all-targets --all-features -- -D warnings`
+  and `cargo test --workspace --exclude tunic-app --exclude tunic-macos --all-targets --all-features`.
+  `cargo fmt --all --check` works for the whole workspace.
+EOF
+  fi
+}
+step "write orb agent guidance" write_guidance
