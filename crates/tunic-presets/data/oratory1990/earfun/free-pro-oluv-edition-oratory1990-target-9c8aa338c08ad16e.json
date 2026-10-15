@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/earfun/free-pro-oluv-edition-oratory1990-target-9c8aa338c08ad16e",
+    "revision": "2021-03-23.1",
+    "brand": "Earfun",
+    "model": "Free Pro (Oluv Edition)",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/5a43rw7xr93zwns/Earfun%20Free%20Pro%20%28Oluv%20Edition%29%20%28oratory1990%20target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 80.0,
+        "gain_db": 4.5,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 320.0,
+        "gain_db": -1.7,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1370.0,
+        "gain_db": -2.4,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1860.0,
+        "gain_db": -0.7,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2760.0,
+        "gain_db": -3.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4200.0,
+        "gain_db": -1.1,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 12500.0,
+        "gain_db": -3.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 16500.0,
+        "gain_db": -2.0,
+        "quality_factor": 2.0
+      }
+    ]
+  }
+}

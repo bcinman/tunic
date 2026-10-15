@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/dyson/zone-standard-harman-target-over-ear-cd0f1b9600bf12dd",
+    "revision": "2023-09-16.1",
+    "brand": "Dyson",
+    "model": "Zone",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/xjkvdv89sk6i81628lwm1/Dyson-Zone.pdf?rlkey=hjc6rj8ng29prevgejc31wjym&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 40.0,
+        "gain_db": -7.9,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 420.0,
+        "gain_db": -0.5,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 670.0,
+        "gain_db": 1.0,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1050.0,
+        "gain_db": 1.0,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1700.0,
+        "gain_db": -1.5,
+        "quality_factor": 2.6,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3800.0,
+        "gain_db": -1.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4600.0,
+        "gain_db": 3.5,
+        "quality_factor": 1.0,
+        "control_name": "Treble detail"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 6950.0,
+        "gain_db": -5.8,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 11200.0,
+        "gain_db": -7.0,
+        "quality_factor": 4.0
+      }
+    ]
+  }
+}

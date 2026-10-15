@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/dan-clark-audio/noire-x-open-standard-harman-target-over-ear-be9f98a9e74a6a2c",
+    "revision": "2026-03-25.1",
+    "brand": "Dan Clark Audio",
+    "model": "Noire X Open",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/az9x34nt9vlw8qisrndqf/Dan-Clark-Audio-Noire-XO.pdf?rlkey=kwva205a4lw1z0hrck9lngu4f&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": 0.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 115.0,
+        "gain_db": -2.3,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 320.0,
+        "gain_db": -2.5,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 660.0,
+        "gain_db": 1.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -1.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2250.0,
+        "gain_db": -3.6,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 2500.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.25,
+        "control_name": "Treble"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -1.4,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 6500.0,
+        "gain_db": -2.2,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.8,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/crinear/daybreak-standard-harman-target-in-ear-3883b5ce9b3c968a",
+    "revision": "2025-10-20.1",
+    "brand": "CrinEar",
+    "model": "Daybreak",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/oobl621qwfe2p38clsdh5/CrinEar-Daybreak-Megaclite-Eartips.pdf?rlkey=zkkov1mrilgmf2gg5xh4909oi&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.6,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 190.0,
+        "gain_db": 1.2,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 300.0,
+        "gain_db": -1.3,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 870.0,
+        "gain_db": 1.1,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1400.0,
+        "gain_db": -0.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2100.0,
+        "gain_db": 1.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -1.6,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.35
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

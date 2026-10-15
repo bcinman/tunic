@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/final-audio/e5000-oratory1990-target-3e14489ec3855005",
+    "revision": "2020-11-23.1",
+    "brand": "Final Audio",
+    "model": "E5000",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/h6s76j30rwb6n2l/Final%20Audio%20E5000%20%28oratory%20target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 46.0,
+        "gain_db": -2.2,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 234.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 800.0,
+        "gain_db": 1.9,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1230.0,
+        "gain_db": -1.2,
+        "quality_factor": 1.1
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2200.0,
+        "gain_db": 1.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3080.0,
+        "gain_db": -2.1,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5500.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.5
+      }
+    ]
+  }
+}

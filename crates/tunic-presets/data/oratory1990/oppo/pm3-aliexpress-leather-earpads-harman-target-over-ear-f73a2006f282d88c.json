@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/oppo/pm3-aliexpress-leather-earpads-harman-target-over-ear-f73a2006f282d88c",
+    "revision": "2023-02-19.1",
+    "brand": "Oppo",
+    "model": "PM3",
+    "target": "Harman AE/OE 2018",
+    "variant": "Aliexpress Leather earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/3re6o589hpjpmi3/Oppo%20PM3%20%28Aliexpress%20Leather%20earpads%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 110.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.65
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 355.0,
+        "gain_db": 3.9,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1800.0,
+        "gain_db": -1.4,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2600.0,
+        "gain_db": -1.0,
+        "quality_factor": 2.2
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": -0.9,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 7000.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 8500.0,
+        "gain_db": -2.7,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 12500.0,
+        "gain_db": -6.0,
+        "quality_factor": 7.0
+      }
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "summary": {
+    "id": "oratory1990/akg/n5005-oratory1990-target-4cd034d11e1abebb",
+    "revision": "2019-05-30.1",
+    "brand": "AKG",
+    "model": "N5005",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/w1x9wd6ds5ia9jn/AKG%20N5005%20%28USound%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 115.0,
+        "gain_db": 2.5,
+        "quality_factor": 0.85
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 995.0,
+        "gain_db": 1.2,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1450.0,
+        "gain_db": -2.3,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2450.0,
+        "gain_db": -2.1,
+        "quality_factor": 2.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 4730.0,
+        "gain_db": -3.4,
+        "quality_factor": 4.0
+      }
+    ]
+  }
+}

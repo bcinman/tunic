@@ -1,0 +1,54 @@
+{
+  "summary": {
+    "id": "oratory1990/shuoer/tape-oratory1990-target-e97086ffa46a8248",
+    "revision": "2020-02-19.1",
+    "brand": "Shuoer",
+    "model": "Tape",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/ytm2jloh6igd98p/Shuoer%20Tape%20%28oratory1990%20target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 2.8,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -1.8,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 3300.0,
+        "gain_db": -5.6,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3950.0,
+        "gain_db": -2.7,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.4
+      }
+    ]
+  }
+}

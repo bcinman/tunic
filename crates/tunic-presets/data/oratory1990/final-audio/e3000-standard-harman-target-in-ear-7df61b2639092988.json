@@ -1,0 +1,70 @@
+{
+  "summary": {
+    "id": "oratory1990/final-audio/e3000-standard-harman-target-in-ear-7df61b2639092988",
+    "revision": "2023-11-08.1",
+    "brand": "Final Audio",
+    "model": "E3000",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/81ocf56tzhdd0n3/Final%20Audio%20E3000.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 75.0,
+        "gain_db": -11.0,
+        "quality_factor": 0.35
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 10.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 810.0,
+        "gain_db": 1.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2200.0,
+        "gain_db": 2.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 4600.0,
+        "gain_db": 4.5,
+        "quality_factor": 1.4,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 7500.0,
+        "gain_db": -2.1,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 9000.0,
+        "gain_db": -1.0,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

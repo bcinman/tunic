@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/akg/k267-standard-harman-target-over-ear-0473682b2cbbc071",
+    "revision": "2024-06-02.1",
+    "brand": "AKG",
+    "model": "K267",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/uwdrsydcbdgjnh7qc40e8/AKG-K267.pdf?rlkey=hoymmdiefqlo9ietor02qxadf&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 30.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 42.0,
+        "gain_db": -3.5,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 70.0,
+        "gain_db": 5.5,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 180.0,
+        "gain_db": -2.8,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 340.0,
+        "gain_db": 2.8,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -3.6,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2200.0,
+        "gain_db": 3.1,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 3300.0,
+        "gain_db": -2.1,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -5.2,
+        "quality_factor": 4.0
+      }
+    ]
+  }
+}

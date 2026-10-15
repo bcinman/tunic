@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "id": "oratory1990/focal/utopia-2022-standard-harman-target-over-ear-1cb08ac423c53c4e",
+    "revision": "2024-06-05.1",
+    "brand": "Focal",
+    "model": "Utopia 2022",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/5d9fnq2g3ltnr7tlkuohg/Focal-Utopia-2022.pdf?rlkey=63iqkatkguydvddfs46q4drce&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 80.0,
+        "gain_db": -2.6,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 210.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.0,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1270.0,
+        "gain_db": -3.3,
+        "quality_factor": 1.7,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": 3.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2900.0,
+        "gain_db": -2.3,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": -5.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7700.0,
+        "gain_db": -2.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 9500.0,
+        "gain_db": 6.5,
+        "quality_factor": 0.7,
+        "control_name": "Treble detail"
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 13000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

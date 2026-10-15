@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/akg/k872-standard-harman-target-over-ear-161f46e1082751bc",
+    "revision": "2026-09-24.1",
+    "brand": "AKG",
+    "model": "K872",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/cuzoyj93ymm0bmg/AKG%20K872.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 27.0,
+        "gain_db": -12.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 87.0,
+        "gain_db": -9.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1780.0,
+        "gain_db": -3.2,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 2500.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2550.0,
+        "gain_db": 7.0,
+        "quality_factor": 1.4,
+        "control_name": "Presence"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3950.0,
+        "gain_db": -5.3,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4900.0,
+        "gain_db": -4.8,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7000.0,
+        "gain_db": -2.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.9,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

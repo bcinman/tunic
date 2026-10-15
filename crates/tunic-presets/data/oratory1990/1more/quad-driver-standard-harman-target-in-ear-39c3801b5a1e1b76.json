@@ -1,0 +1,61 @@
+{
+  "summary": {
+    "id": "oratory1990/1more/quad-driver-standard-harman-target-in-ear-39c3801b5a1e1b76",
+    "revision": "2020-03-04.1",
+    "brand": "1More",
+    "model": "Quad Driver",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/9csoabqobx7qqb0/1More%20Quad%20Driver.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.6,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 26.0,
+        "gain_db": 5.4,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 210.0,
+        "gain_db": -9.2,
+        "quality_factor": 0.41
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 915.0,
+        "gain_db": 1.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2600.0,
+        "gain_db": -1.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 4450.0,
+        "gain_db": -1.8,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 13000.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.7
+      }
+    ]
+  }
+}

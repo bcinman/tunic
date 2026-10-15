@@ -1,0 +1,80 @@
+{
+  "summary": {
+    "id": "oratory1990/koss/ksc75x-yaxi-earpads-harman-target-over-ear-daca00c0c646d07f",
+    "revision": "2021-03-28.1",
+    "brand": "Koss",
+    "model": "KSC75X",
+    "target": "Harman AE/OE 2018",
+    "variant": "Yaxi earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/3yu1k656cjkwdyq/Koss%20KSC75X%20%28Yaxi%20earpads%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 160.0,
+        "gain_db": -5.7,
+        "quality_factor": 0.5,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 2500.0,
+        "gain_db": -3.1,
+        "quality_factor": 1.2,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3400.0,
+        "gain_db": -1.1,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 4700.0,
+        "gain_db": -3.8,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -2.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8250.0,
+        "gain_db": -4.4,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 12000.0,
+        "gain_db": -9.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

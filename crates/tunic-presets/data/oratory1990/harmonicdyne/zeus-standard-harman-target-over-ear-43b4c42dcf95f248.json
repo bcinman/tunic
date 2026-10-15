@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/harmonicdyne/zeus-standard-harman-target-over-ear-43b4c42dcf95f248",
+    "revision": "2021-10-22.1",
+    "brand": "HarmonicDyne",
+    "model": "Zeus",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/fz609jfcyseaxo5/Harmonicdyne%20Zeus.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 90.0,
+        "gain_db": -3.6,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 220.0,
+        "gain_db": -4.4,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1450.0,
+        "gain_db": 4.5,
+        "quality_factor": 1.3,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2100.0,
+        "gain_db": -0.7,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2850.0,
+        "gain_db": -1.1,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3600.0,
+        "gain_db": 3.4,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7400.0,
+        "gain_db": -1.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 0.5,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

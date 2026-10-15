@@ -1,0 +1,76 @@
+{
+  "summary": {
+    "id": "oratory1990/mark-levinson/5909-standard-harman-target-over-ear-c5b82e819f90ec12",
+    "revision": "2022-11-30.1",
+    "brand": "Mark Levinson",
+    "model": "5909",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/6pnl0k5his5rzdk/Mark%20Levinson%205909.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 68.0,
+        "gain_db": 2.6,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 104.0,
+        "gain_db": -2.2,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 350.0,
+        "gain_db": 0.5,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1050.0,
+        "gain_db": -1.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2300.0,
+        "gain_db": 1.2,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 6800.0,
+        "gain_db": -2.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 10400.0,
+        "gain_db": -5.0,
+        "quality_factor": 4.0
+      }
+    ]
+  }
+}

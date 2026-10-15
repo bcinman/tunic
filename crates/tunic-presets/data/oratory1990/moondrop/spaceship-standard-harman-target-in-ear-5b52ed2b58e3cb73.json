@@ -1,0 +1,54 @@
+{
+  "summary": {
+    "id": "oratory1990/moondrop/spaceship-standard-harman-target-in-ear-5b52ed2b58e3cb73",
+    "revision": "2019-07-24.1",
+    "brand": "Moondrop",
+    "model": "Spaceship",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/ft2wb3m52ywxcvs/Moondrop%20Spaceship.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 53.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 220.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 1.4,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -1.6,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3050.0,
+        "gain_db": -2.8,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "summary": {
+    "id": "oratory1990/v-moda/zn-standard-harman-target-in-ear-6790b0705483f311",
+    "revision": "2022-03-03.1",
+    "brand": "V Moda",
+    "model": "Zn",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/08f8mv4yr3z931b/V%20Moda%20Zn.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 75.0,
+        "gain_db": -12.6,
+        "quality_factor": 0.32
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 10.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 300.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 700.0,
+        "gain_db": 2.5,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2200.0,
+        "gain_db": 2.4,
+        "quality_factor": 1.9,
+        "control_name": "Timbral accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -2.3,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5800.0,
+        "gain_db": -10.3,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

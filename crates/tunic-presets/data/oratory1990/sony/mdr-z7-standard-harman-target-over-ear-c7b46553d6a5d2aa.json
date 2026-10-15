@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/mdr-z7-standard-harman-target-over-ear-c7b46553d6a5d2aa",
+    "revision": "2024-05-27.1",
+    "brand": "Sony",
+    "model": "MDR-Z7",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/nx0zaac3vftc0ceqynbvu/Sony-MDR-Z7.pdf?rlkey=w1tjkh9p7brsgidujtduk8p35&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 180.0,
+        "gain_db": -4.3,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 530.0,
+        "gain_db": 1.4,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 920.0,
+        "gain_db": -4.2,
+        "quality_factor": 1.9
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1420.0,
+        "gain_db": 7.4,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2450.0,
+        "gain_db": -3.9,
+        "quality_factor": 1.5,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 2500.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5900.0,
+        "gain_db": -3.5,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -2.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/mee-audio/pinnacle-px-oratory1990-target-e09fd735137e5fac",
+    "revision": "2019-02-08.1",
+    "brand": "Mee Audio",
+    "model": "Pinnacle PX",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/vhn7g9jc8l3md9k/Mee%20Audio%20Pinnacle%20PX%20%28oratory1990%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 140.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 220.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 870.0,
+        "gain_db": 1.8,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -0.8,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1900.0,
+        "gain_db": 2.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2900.0,
+        "gain_db": -2.9,
+        "quality_factor": 3.3
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5050.0,
+        "gain_db": -5.1,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6700.0,
+        "gain_db": 3.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8300.0,
+        "gain_db": -5.5,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 15000.0,
+        "gain_db": -5.0,
+        "quality_factor": 1.5
+      }
+    ]
+  }
+}

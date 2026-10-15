@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/audio-technica/ath-r70x-standard-harman-target-over-ear-2cadd937db7d6358",
+    "revision": "2025-06-21.1",
+    "brand": "Audio Technica",
+    "model": "ATH-R70x",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/rkv8bgy11pzdy810531w9/Audio-Technica-ATH-R70x.pdf?rlkey=0248fjdrg4soj3tgymk734m38&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 70.0,
+        "gain_db": -2.1,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 176.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1450.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2550.0,
+        "gain_db": -1.8,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3600.0,
+        "gain_db": -3.5,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": 3.5,
+        "quality_factor": 1.4,
+        "control_name": "Sharpness"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7400.0,
+        "gain_db": -5.1,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

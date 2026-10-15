@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/huawei/freebuds-pro-2-oratory1990-target-e038448f9756f49b",
+    "revision": "2022-12-31.1",
+    "brand": "Huawei",
+    "model": "Freebuds Pro 2",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/vek4uspl8viv85x/Huawei%20Freebuds%20Pro%202%20%28oratory1990%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.6,
+    "filters": [
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 130.0,
+        "gain_db": 5.7,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -0.6,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -4.2,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -1.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5400.0,
+        "gain_db": -2.3,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 14000.0,
+        "gain_db": -7.0,
+        "quality_factor": 1.4
+      }
+    ]
+  }
+}

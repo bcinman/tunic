@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "id": "oratory1990/shure/srh1840-standard-harman-target-over-ear-4644bfac58ee4f7e",
+    "revision": "2024-05-27.1",
+    "brand": "Shure",
+    "model": "SRH1840",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/1bwmux2xu8dy6alb6olp1/Shure-SRH1840.pdf?rlkey=g0mkgb5sqnlaz98cr40la8r7c&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -11.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 33.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Subbass"
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 210.0,
+        "gain_db": -1.8,
+        "quality_factor": 1.0,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 650.0,
+        "gain_db": 2.4,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3300.0,
+        "gain_db": -7.8,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4600.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6200.0,
+        "gain_db": -4.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8600.0,
+        "gain_db": -5.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

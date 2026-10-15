@@ -1,0 +1,77 @@
+{
+  "summary": {
+    "id": "oratory1990/moondrop/venus-standard-harman-target-over-ear-209f75b53f56e93d",
+    "revision": "2023-03-26.1",
+    "brand": "Moondrop",
+    "model": "Venus",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/hkgivlk55d72bv2/Moondrop%20Venus.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 45.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 120.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 600.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1170.0,
+        "gain_db": -1.4,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2100.0,
+        "gain_db": 3.4,
+        "quality_factor": 1.1,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2700.0,
+        "gain_db": -1.5,
+        "quality_factor": 2.2
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8050.0,
+        "gain_db": -1.3,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 9000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

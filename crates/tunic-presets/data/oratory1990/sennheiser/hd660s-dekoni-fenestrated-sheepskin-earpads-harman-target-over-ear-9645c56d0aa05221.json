@@ -1,0 +1,88 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/hd660s-dekoni-fenestrated-sheepskin-earpads-harman-target-over-ear-9645c56d0aa05221",
+    "revision": "2021-12-20.1",
+    "brand": "Sennheiser",
+    "model": "HD660S",
+    "target": "Harman AE/OE 2018",
+    "variant": "Dekoni Fenestrated Sheepskin Earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/56ob2pa2ei58tlg/Sennheiser%20HD660S%20%28Dekoni%20Fenestrated%20Sheepskin%20Earpads%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -10.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 37.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 190.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.7,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1100.0,
+        "gain_db": -0.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 1500.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71,
+        "control_name": "Balance / treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -1.2,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5500.0,
+        "gain_db": -7.8,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7000.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.0,
+        "control_name": "Detail / brittleness"
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

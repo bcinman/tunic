@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/light-harmonic/mera-standard-harman-target-in-ear-5d1f2d18f3b20fd1",
+    "revision": "2020-07-31.1",
+    "brand": "Light Harmonic",
+    "model": "Mera",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/pm9tjh1wmnumrq4/Light%20Harmonic%20Mera.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 16.0,
+        "gain_db": -4.5,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 55.0,
+        "gain_db": -13.0,
+        "quality_factor": 0.3
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 10.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 650.0,
+        "gain_db": 2.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2550.0,
+        "gain_db": -1.6,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3550.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5130.0,
+        "gain_db": -6.8,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -5.8,
+        "quality_factor": 4.5,
+        "control_name": "Entirely optional"
+      }
+    ]
+  }
+}

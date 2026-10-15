@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/pentaconn/scyne-alpha-01-standard-harman-target-in-ear-10092e9eafcee763",
+    "revision": "2024-09-22.1",
+    "brand": "Pentaconn",
+    "model": "Scyne Alpha 01",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/e6xjlpo7rmw975ickghc6/Pentaconn-Scyne-Alpha-01.pdf?rlkey=fkyrg23uzf3i6ngj8hoxku7xp&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -9.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 68.0,
+        "gain_db": -7.2,
+        "quality_factor": 0.4
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 10.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 265.0,
+        "gain_db": -1.2,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 780.0,
+        "gain_db": 2.1,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2200.0,
+        "gain_db": 0.0,
+        "quality_factor": 1.0,
+        "control_name": "Harshness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2280.0,
+        "gain_db": -4.0,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4700.0,
+        "gain_db": 6.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6350.0,
+        "gain_db": -5.1,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

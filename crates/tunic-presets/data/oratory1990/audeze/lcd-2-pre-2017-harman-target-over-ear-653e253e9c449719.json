@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/audeze/lcd-2-pre-2017-harman-target-over-ear-653e253e9c449719",
+    "revision": "2022-04-14.1",
+    "brand": "Audeze",
+    "model": "LCD-2",
+    "target": "Harman AE/OE 2018",
+    "variant": "pre 2017"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/mdbszlt847j07he/Audeze%20LCD-2%20%28pre-2017%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 28.0,
+        "gain_db": 1.8,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 5.9,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 450.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1500.0,
+        "gain_db": -1.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 1600.0,
+        "gain_db": 7.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2580.0,
+        "gain_db": -2.2,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -2.3,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4200.0,
+        "gain_db": 2.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5450.0,
+        "gain_db": -4.6,
+        "quality_factor": 4.5
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -6.5,
+        "quality_factor": 0.7
+      }
+    ]
+  }
+}

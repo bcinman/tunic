@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/superlux/hd-662f-brainwavz-round-xl-pleather-earpads-harman-target-over-ear-25e639158f4e2b0f",
+    "revision": "2020-11-12.1",
+    "brand": "Superlux",
+    "model": "HD-662F",
+    "target": "Harman AE/OE 2018",
+    "variant": "Brainwavz round XL pleather earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/nodwe4fah6m6hr8/Superlux%20HD-662F%20%28Brainwavz%20round%20XL%20pleather%20earpads%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 70.0,
+        "gain_db": -8.5,
+        "quality_factor": 0.55
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 228.0,
+        "gain_db": 3.9,
+        "quality_factor": 1.0,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -0.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2450.0,
+        "gain_db": -2.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 2500.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -1.3,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5800.0,
+        "gain_db": -13.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7150.0,
+        "gain_db": -5.0,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -10.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

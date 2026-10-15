@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/stax/sr-l700-standard-harman-target-over-ear-2e2de264da92b868",
+    "revision": "2023-09-23.1",
+    "brand": "Stax",
+    "model": "SR-L700",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/f92g9chd8if1qjz/Stax%20SR-L700.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 80.0,
+        "gain_db": -2.8,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1180.0,
+        "gain_db": -5.7,
+        "quality_factor": 1.5,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2200.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2800.0,
+        "gain_db": -1.5,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3900.0,
+        "gain_db": 3.7,
+        "quality_factor": 1.5,
+        "control_name": "Presence"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -5.0,
+        "quality_factor": 3.2
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 9000.0,
+        "gain_db": 2.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 11400.0,
+        "gain_db": -2.0,
+        "quality_factor": 6.0
+      }
+    ]
+  }
+}

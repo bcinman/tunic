@@ -1,0 +1,61 @@
+{
+  "summary": {
+    "id": "oratory1990/moondrop/blessing-2-oratory1990-target-4b9cdbb9fead18d1",
+    "revision": "2022-07-20.1",
+    "brand": "Moondrop",
+    "model": "Blessing 2",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/agalmk0bqnoq3qb/Moondrop%20Blessing%202%20%28oratory1990%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 150.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 960.0,
+        "gain_db": 1.9,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1360.0,
+        "gain_db": -4.1,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2650.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.9
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 4200.0,
+        "gain_db": 1.8,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

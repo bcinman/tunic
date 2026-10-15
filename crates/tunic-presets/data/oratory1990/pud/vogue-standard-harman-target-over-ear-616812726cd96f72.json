@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/pud/vogue-standard-harman-target-over-ear-616812726cd96f72",
+    "revision": "2025-06-15.1",
+    "brand": "Pud",
+    "model": "Vogue",
+    "target": "Harman 2018 (45BC-10 Kemar)"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/umz3igcua8fzqol866pkh/Pud-s-Vogue.pdf?rlkey=x1fwsxlstvmiin2xajfkc6nee&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -7.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 330.0,
+        "gain_db": -6.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 490.0,
+        "gain_db": -4.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 602.0,
+        "gain_db": -2.6,
+        "quality_factor": 12.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 790.0,
+        "gain_db": -19.0,
+        "quality_factor": 2.8
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1150.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2530.0,
+        "gain_db": -2.7,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 3900.0,
+        "gain_db": -15.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5400.0,
+        "gain_db": -9.1,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 7000.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.6
+      }
+    ]
+  }
+}

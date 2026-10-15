@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "id": "oratory1990/audio-technica/ath-m50x-standard-harman-target-over-ear-ef8356bfc4374937",
+    "revision": "2023-06-28.1",
+    "brand": "Audio Technica",
+    "model": "ATH-M50x",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/r7wa83eb53da6fh/Audio%20Technica%20ATH-M50x.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 40.0,
+        "gain_db": -4.6,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 150.0,
+        "gain_db": -4.3,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 335.0,
+        "gain_db": 5.7,
+        "quality_factor": 1.3,
+        "control_name": "Warmth / muddiness"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1600.0,
+        "gain_db": 1.6,
+        "quality_factor": 1.2,
+        "control_name": "Shoutiness / midrange accuracy"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2600.0,
+        "gain_db": -1.1,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4300.0,
+        "gain_db": -4.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5300.0,
+        "gain_db": 5.5,
+        "quality_factor": 1.0,
+        "control_name": "Treble / detail"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -3.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

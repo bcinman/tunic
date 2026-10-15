@@ -1,0 +1,61 @@
+{
+  "summary": {
+    "id": "oratory1990/anker/soundcore-liberty-air-2-oratory1990-target-c46dc1ffbb1d2656",
+    "revision": "2020-02-28.1",
+    "brand": "Anker",
+    "model": "Soundcore Liberty Air 2",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/o4qqo0zno7m9m33/Anker%20Soundcore%20Liberty%20Air%202%20%28oratory1990%20target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -0.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 180.0,
+        "gain_db": -5.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 2100.0,
+        "gain_db": 1.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -1.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 4100.0,
+        "gain_db": -4.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 6100.0,
+        "gain_db": -1.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

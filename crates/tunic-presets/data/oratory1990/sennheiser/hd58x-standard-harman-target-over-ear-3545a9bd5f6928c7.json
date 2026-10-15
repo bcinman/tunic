@@ -1,0 +1,81 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/hd58x-standard-harman-target-over-ear-3545a9bd5f6928c7",
+    "revision": "2023-06-19.1",
+    "brand": "Sennheiser",
+    "model": "HD58X",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/lr0t5bm0g9h167t/Sennheiser%20HD58X.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -10.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 25.0,
+        "gain_db": 6.0,
+        "quality_factor": 0.71,
+        "control_name": "Subbass extension"
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 4.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 160.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.55,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -2.2,
+        "quality_factor": 1.5,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 1900.0,
+        "gain_db": 4.5,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3250.0,
+        "gain_db": -3.8,
+        "quality_factor": 2.1
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5400.0,
+        "gain_db": -7.0,
+        "quality_factor": 3.5,
+        "control_name": "Harshness"
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "id": "oratory1990/meze/liric-standard-harman-target-over-ear-88665796e7903bc0",
+    "revision": "2024-01-27.1",
+    "brand": "Meze",
+    "model": "Liric",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/surbv6qea6ue51x/Meze%20Liric.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 104.0,
+        "gain_db": -3.6,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 280.0,
+        "gain_db": 1.1,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1020.0,
+        "gain_db": -3.3,
+        "quality_factor": 1.4,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 1500.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1550.0,
+        "gain_db": -0.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2600.0,
+        "gain_db": -1.4,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 12000.0,
+        "gain_db": -5.0,
+        "quality_factor": 4.5
+      }
+    ]
+  }
+}

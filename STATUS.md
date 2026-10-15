@@ -36,8 +36,13 @@ This file is the source of truth for implemented product capabilities.
   state do not survive relaunch. Failed adjustment saves preserve prior saved state
   and base drafts and restore audio to the committed adjustment.
 - An offline `tunic-presets` catalog with build-validated JSON, static brand/model
-  indexes, and on-demand payload decoding. Initial oratory1990 presets cover
-  Sennheiser HD650 and Sony MDR-7506.
+  indexes, and on-demand payload decoding. The oratory1990 full-list import bundles
+  1,062 of 1,070 index entries; eight unsupported/ambiguous sources are blocked.
+  `crates/tunic-presets/ISSUES.md` tracks blockers and 138 imported entries needing
+  review. A repeatable macOS PDFKit/Python importer preserves source hashes and
+  full extracted text in a manifest. Clear single-band gain recommendations become
+  controls; other guidance remains source metadata, not in-app instructions.
+  Multi-band, frequency/Q, and conditional recommendations are not yet modeled.
 - Profiles own an editable base chain plus named controls targeting stable filter
   identities. Each control holds a relative gain adjustment; effective DSP chains
   add those adjustments without changing base values.
@@ -52,7 +57,7 @@ This file is the source of truth for implemented product capabilities.
 - Demand-driven, allocation-free post-output telemetry with a lock-free history
   of sequenced raw stereo peak/RMS measurements and 256-point spectra.
 - A minimal GPUI-CE application split into shared `tunic-ui` presentation and
-  `tunic-app` lifecycle/platform composition. It browses both bundled presets,
+  `tunic-app` lifecycle/platform composition. It browses bundled presets,
   creates and selects real core profiles, and clears selection.
 - A `tunic-macos` route for the current default output using a Core Audio process
   tap, private aggregate device, callback-owned core `Processor`, native-buffer

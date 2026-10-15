@@ -1,0 +1,78 @@
+{
+  "summary": {
+    "id": "oratory1990/akg/n700nc-m2-standard-harman-target-over-ear-7178f0fe6828e2a0",
+    "revision": "2024-06-05.1",
+    "brand": "AKG",
+    "model": "N700NC M2",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/pjicqr1lgirkwom0y8k0c/AKG-N700NC-M2.pdf?rlkey=kt8bph93pr9wbyuku7eajpnat&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 175.0,
+        "gain_db": 1.1,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 380.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1500.0,
+        "gain_db": -1.2,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2100.0,
+        "gain_db": 1.9,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.5,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3050.0,
+        "gain_db": -2.9,
+        "quality_factor": 2.3
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

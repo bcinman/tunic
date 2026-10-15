@@ -1,0 +1,73 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/pc38x-default-earpads-harman-target-over-ear-9cb447402c353d28",
+    "revision": "2022-08-30.1",
+    "brand": "Sennheiser",
+    "model": "PC38X",
+    "target": "Harman AE/OE 2018",
+    "variant": "Default earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/z0i0l5osd7ot0me/Sennheiser%20PC38X.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 65.0,
+        "gain_db": -3.4,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.4,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1400.0,
+        "gain_db": -2.2,
+        "quality_factor": 1.4,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2300.0,
+        "gain_db": -1.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5150.0,
+        "gain_db": -2.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 10500.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.0,
+        "control_name": "Detail / sharpness"
+      }
+    ]
+  }
+}

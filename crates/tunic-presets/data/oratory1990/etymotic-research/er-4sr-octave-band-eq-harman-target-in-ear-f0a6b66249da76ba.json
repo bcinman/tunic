@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/etymotic-research/er-4sr-octave-band-eq-harman-target-in-ear-f0a6b66249da76ba",
+    "revision": "2021-12-19.1",
+    "brand": "Etymotic Research",
+    "model": "ER-4SR",
+    "target": "Harman AE/OE 2018",
+    "variant": "octave band EQ"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/y3b4uzh5p55pll8/Etymotic%20ER-4SR%20%28octave%20band%20EQ%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.3,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 31.5,
+        "gain_db": 6.7,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 63.0,
+        "gain_db": 3.1,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 125.0,
+        "gain_db": 0.1,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -1.4,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 500.0,
+        "gain_db": 0.7,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -0.7,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": -4.8,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 0.5,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": 5.8,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 16000.0,
+        "gain_db": 0.0,
+        "quality_factor": 1.41
+      }
+    ]
+  }
+}

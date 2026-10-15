@@ -1,0 +1,54 @@
+{
+  "summary": {
+    "id": "oratory1990/tripowin/olina-oratory1990-target-fb04694d3e91382d",
+    "revision": "2022-11-01.1",
+    "brand": "Tripowin",
+    "model": "Olina",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/7ueijemt2uq6k1y/Tripowin%20Olina%20%28oratory1990%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.6,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 160.0,
+        "gain_db": 2.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 790.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1400.0,
+        "gain_db": -2.7,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2450.0,
+        "gain_db": -2.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5200.0,
+        "gain_db": -2.0,
+        "quality_factor": 4.0
+      }
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/qkz/vk4-standard-harman-target-in-ear-c38569523e1aeede",
+    "revision": "2021-02-08.1",
+    "brand": "QKZ",
+    "model": "VK4",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/6hnswr3kss2ki8w/QKZ%20VK4.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 400.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 800.0,
+        "gain_db": 0.8,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 3,
+        "kind": "high_shelf",
+        "frequency_hz": 1400.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1410.0,
+        "gain_db": -1.7,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2700.0,
+        "gain_db": 1.3,
+        "quality_factor": 2.1
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4330.0,
+        "gain_db": -2.5,
+        "quality_factor": 2.6
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -3.0,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

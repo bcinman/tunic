@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/meze/liric-2-standard-harman-target-over-ear-a59b7dab8cb75925",
+    "revision": "2024-05-13.1",
+    "brand": "Meze",
+    "model": "Liric 2",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/foy7hqxujndwbi4dlqqbp/Meze-Liric-2.pdf?rlkey=vkq41lgbmgnnnfcefod6j0h4e&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.3,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 98.0,
+        "gain_db": -2.5,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 410.0,
+        "gain_db": -1.2,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 500.0,
+        "gain_db": 1.5,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1070.0,
+        "gain_db": -1.8,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1650.0,
+        "gain_db": 3.5,
+        "quality_factor": 1.0,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 6100.0,
+        "gain_db": -4.8,
+        "quality_factor": 3.7
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7700.0,
+        "gain_db": 6.0,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 16500.0,
+        "gain_db": -6.0,
+        "quality_factor": 4.0
+      }
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/momentum-true-wireless-oratory1990-target-77d7b5991ebc3026",
+    "revision": "2019-02-17.1",
+    "brand": "Sennheiser",
+    "model": "Momentum True Wireless",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/pwr5stgh3g38fmq/Sennheiser%20Momentum%20True%20Wireless%20%28oratory1990%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 830.0,
+        "gain_db": 0.9,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1550.0,
+        "gain_db": -4.1,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2900.0,
+        "gain_db": 0.9,
+        "quality_factor": 2.3
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 9.2,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5200.0,
+        "gain_db": 1.3,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 7000.0,
+        "gain_db": -7.6,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 10100.0,
+        "gain_db": -7.3,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

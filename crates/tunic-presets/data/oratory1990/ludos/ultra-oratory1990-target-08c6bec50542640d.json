@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/ludos/ultra-oratory1990-target-08c6bec50542640d",
+    "revision": "2026-02-11.1",
+    "brand": "Ludos",
+    "model": "Ultra",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/vu955avxg4681pazzom6s/Ludos-Ultra-USound-Target.pdf?rlkey=wj6wk2t02w6ay3d8jx0wt2enp&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 20.0,
+        "gain_db": -2.9,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 440.0,
+        "gain_db": -7.0,
+        "quality_factor": 0.68
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1700.0,
+        "gain_db": -3.6,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2450.0,
+        "gain_db": -2.8,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 2500.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3850.0,
+        "gain_db": 3.1,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -7.7,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/campfire-audio/clara-oratory1990-target-05653dc10e0d85bb",
+    "revision": "2025-04-05.1",
+    "brand": "Campfire Audio",
+    "model": "Clara",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/sam2omf6m50sqge1638gh/Campfire-Audio-Clara-oratory1990.pdf?rlkey=72apvw51uf8kt1do15mce8oxh&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 700.0,
+        "gain_db": 1.2,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 2,
+        "kind": "high_shelf",
+        "frequency_hz": 1100.0,
+        "gain_db": 4.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1370.0,
+        "gain_db": -9.0,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2300.0,
+        "gain_db": 3.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3100.0,
+        "gain_db": -2.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": -1.6,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -5.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -6.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

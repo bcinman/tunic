@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/audio-zenith/pmx2-v1-standard-harman-target-over-ear-74d1f386587f96b8",
+    "revision": "2020-06-01.2",
+    "brand": "Audio Zenith",
+    "model": "PMx2 v1",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/vi2bq5nzx3s2smp/Audio%20Zenith%20PMx2%20v1.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 180.0,
+        "gain_db": -4.6,
+        "quality_factor": 0.3,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 310.0,
+        "gain_db": -1.2,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 365.0,
+        "gain_db": 2.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 960.0,
+        "gain_db": -3.8,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2350.0,
+        "gain_db": 2.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 0.9,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -3.4,
+        "quality_factor": 3.7
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 13000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      }
+    ]
+  }
+}

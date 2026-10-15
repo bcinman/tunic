@@ -1,0 +1,79 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/hd490-pro-mixing-earpads-harman-target-over-ear-83c2251158c19b71",
+    "revision": "2024-07-06.1",
+    "brand": "Sennheiser",
+    "model": "HD490 Pro",
+    "target": "Harman AE/OE 2018",
+    "variant": "mixing earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/u6xe9xlrtdzpxjd29o8zm/Sennheiser-HD490-Pro-Mixing-Pads.pdf?rlkey=the33vjrzyb6d646r05zukchw&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 63.0,
+        "gain_db": -1.2,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -3.0,
+        "quality_factor": 1.3,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2050.0,
+        "gain_db": 2.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4250.0,
+        "gain_db": -1.2,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 6300.0,
+        "gain_db": -2.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

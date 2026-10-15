@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/wf-c500-standard-harman-target-in-ear-1e1afc1de5c4084f",
+    "revision": "2022-05-09.1",
+    "brand": "Sony",
+    "model": "WF-C500",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/xqwukxzaztmvfxc/Sony%20WF-C500.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 23.0,
+        "gain_db": -2.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 140.0,
+        "gain_db": 1.5,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 820.0,
+        "gain_db": 2.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1400.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2850.0,
+        "gain_db": -5.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5100.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.2,
+        "control_name": "Sibilance / detail"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7000.0,
+        "gain_db": -2.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness / detail"
+      }
+    ]
+  }
+}

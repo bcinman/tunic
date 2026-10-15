@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/monoprice/m1570c-velours-earpads-harman-target-over-ear-d0f5ee65266dc52e",
+    "revision": "2023-10-15.1",
+    "brand": "Monoprice",
+    "model": "M1570C",
+    "target": "Harman AE/OE 2018",
+    "variant": "velours earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/m7ie464i66kz1mp0dsw2u/Monoprice-M1570C-velours-earpads.pdf?rlkey=x54bofa5ye4sf6law4wmwulq2&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.6,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 30.0,
+        "gain_db": 2.1,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 210.0,
+        "gain_db": -0.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 420.0,
+        "gain_db": 0.9,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1250.0,
+        "gain_db": -3.2,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 2500.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.7,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2850.0,
+        "gain_db": -2.8,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4700.0,
+        "gain_db": -0.5,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 6200.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

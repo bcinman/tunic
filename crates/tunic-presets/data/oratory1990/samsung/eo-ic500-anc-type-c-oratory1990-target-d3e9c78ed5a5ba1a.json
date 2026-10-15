@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/samsung/eo-ic500-anc-type-c-oratory1990-target-d3e9c78ed5a5ba1a",
+    "revision": "2020-08-11.1",
+    "brand": "Samsung",
+    "model": "EO-IC500 \"ANC Type-C\"",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/23atm5n2gcrd0lr/Samsung%20EO-IC500%20ANC%20Type-C%20%28oratory1990%20target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 25.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 160.0,
+        "gain_db": 1.9,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1200.0,
+        "gain_db": -4.2,
+        "quality_factor": 1.9
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1700.0,
+        "gain_db": -6.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 1800.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4800.0,
+        "gain_db": -5.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -7.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

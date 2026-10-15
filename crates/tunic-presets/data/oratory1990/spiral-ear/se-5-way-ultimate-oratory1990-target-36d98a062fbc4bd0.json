@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/spiral-ear/se-5-way-ultimate-oratory1990-target-36d98a062fbc4bd0",
+    "revision": "2019-04-05.1",
+    "brand": "Spiral Ear",
+    "model": "SE 5-Way Ultimate",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/zf2tko7vzmdfmax/Spiral%20Ear%20SE%205-Way%20Ultimate%20%28oratory1990%20target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.6,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 6500.0,
+        "gain_db": 6.6,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 260.0,
+        "gain_db": -6.3,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 2.5,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1700.0,
+        "gain_db": -11.9,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 1.3,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -4.3,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3900.0,
+        "gain_db": -1.1,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -1.3,
+        "quality_factor": 6.0
+      }
+    ]
+  }
+}

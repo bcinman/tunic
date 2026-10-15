@@ -1,0 +1,82 @@
+{
+  "summary": {
+    "id": "oratory1990/akg/k3003-oratory1990-target-fe2dc9d15c1d169a",
+    "revision": "2020-04-25.1",
+    "brand": "AKG",
+    "model": "K3003",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/zdwva4ixmpps7b6/AKG%20K3003%20%28USound%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 260.0,
+        "gain_db": -4.4,
+        "quality_factor": 0.65
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 840.0,
+        "gain_db": 0.6,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1400.0,
+        "gain_db": -1.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3050.0,
+        "gain_db": -1.5,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3300.0,
+        "gain_db": 4.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5100.0,
+        "gain_db": -1.5,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5900.0,
+        "gain_db": -2.2,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7300.0,
+        "gain_db": -2.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8500.0,
+        "gain_db": -2.5,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

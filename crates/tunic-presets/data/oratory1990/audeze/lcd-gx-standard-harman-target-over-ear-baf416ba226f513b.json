@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/audeze/lcd-gx-standard-harman-target-over-ear-baf416ba226f513b",
+    "revision": "2024-05-12.1",
+    "brand": "Audeze",
+    "model": "LCD-GX",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/34snspl7yv12dx4ni81eu/Audeze-LCD-GX.pdf?rlkey=l1ptn6rzs8qxwbytcco5yf1e0&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -10.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 30.0,
+        "gain_db": 4.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 530.0,
+        "gain_db": 1.2,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 780.0,
+        "gain_db": -2.1,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -1.5,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2600.0,
+        "gain_db": -2.2,
+        "quality_factor": 3.5,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3150.0,
+        "gain_db": -4.5,
+        "quality_factor": 2.2
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 12.0,
+        "quality_factor": 0.8,
+        "control_name": "Treble"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -2.1,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 12000.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

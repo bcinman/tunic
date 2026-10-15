@@ -1,0 +1,76 @@
+{
+  "summary": {
+    "id": "oratory1990/1more/quad-driver-oratory1990-target-320ca625d1b537f1",
+    "revision": "2020-03-04.2",
+    "brand": "1More",
+    "model": "Quad Driver",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/bfxz4a769bwvol0/1More%20Quad%20Driver%20%28oratory1990%20setting%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 28.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 260.0,
+        "gain_db": -5.8,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 950.0,
+        "gain_db": 1.4,
+        "quality_factor": 1.9
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1400.0,
+        "gain_db": -1.1,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2700.0,
+        "gain_db": -1.2,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4400.0,
+        "gain_db": -2.2,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 7000.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 13000.0,
+        "gain_db": -7.0,
+        "quality_factor": 0.71,
+        "control_name": "Air / treble"
+      }
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "b592aae43b223936": {
+    "sha256": "9b086590bf3623448a57f4dc6588f28a37d0a41fa6f2af8b1e3632990f65b7c9",
+    "preamp_gain_db": -10.0,
+    "reason": "Jabra Evolve 40: PDFKit omits the preamp text. Visually verified -10,0 dB in the original PDF."
+  }
+}

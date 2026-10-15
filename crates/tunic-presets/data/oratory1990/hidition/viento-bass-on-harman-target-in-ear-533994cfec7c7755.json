@@ -1,0 +1,95 @@
+{
+  "summary": {
+    "id": "oratory1990/hidition/viento-bass-on-harman-target-in-ear-533994cfec7c7755",
+    "revision": "2020-10-21.1",
+    "brand": "Hidition",
+    "model": "Viento",
+    "target": "Harman In-Ear LI",
+    "variant": "Bass on"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/6ulrs37r7im3gpw/Hidition%20Viento%20%28Bass%20on%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 23.0,
+        "gain_db": -8.5,
+        "quality_factor": 0.2
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 10.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 360.0,
+        "gain_db": -1.2,
+        "quality_factor": 1.1,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 950.0,
+        "gain_db": 1.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1400.0,
+        "gain_db": -1.4,
+        "quality_factor": 1.4,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2900.0,
+        "gain_db": -1.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5500.0,
+        "gain_db": 3.5,
+        "quality_factor": 1.4,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6800.0,
+        "gain_db": -1.3,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8800.0,
+        "gain_db": -5.3,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

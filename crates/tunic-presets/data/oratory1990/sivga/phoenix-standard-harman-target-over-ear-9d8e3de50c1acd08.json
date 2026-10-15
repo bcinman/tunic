@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/sivga/phoenix-standard-harman-target-over-ear-9d8e3de50c1acd08",
+    "revision": "2021-05-20.1",
+    "brand": "Sivga",
+    "model": "Phoenix",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/lpx22nmube2kji3/Sivga%20Phoenix.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 45.0,
+        "gain_db": -5.5,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 280.0,
+        "gain_db": -5.1,
+        "quality_factor": 0.4,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1200.0,
+        "gain_db": 0.9,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2550.0,
+        "gain_db": -3.5,
+        "quality_factor": 3.3
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3150.0,
+        "gain_db": 4.5,
+        "quality_factor": 1.4,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": -1.0,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": -5.2,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8900.0,
+        "gain_db": -3.5,
+        "quality_factor": 7.0
+      }
+    ]
+  }
+}

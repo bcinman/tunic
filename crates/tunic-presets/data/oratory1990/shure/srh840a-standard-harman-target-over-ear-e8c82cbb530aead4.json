@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/shure/srh840a-standard-harman-target-over-ear-e8c82cbb530aead4",
+    "revision": "2022-06-18.1",
+    "brand": "Shure",
+    "model": "SRH840A",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/z4kfrvxw92hlz7t/Shure%20SRH840A.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 53.0,
+        "gain_db": -7.4,
+        "quality_factor": 0.35
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": 2.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 740.0,
+        "gain_db": 2.2,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1650.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.0,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -2.8,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4300.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.0,
+        "control_name": "Treble"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5150.0,
+        "gain_db": -3.8,
+        "quality_factor": 4.5
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 6100.0,
+        "gain_db": -2.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

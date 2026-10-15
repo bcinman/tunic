@@ -1,0 +1,83 @@
+{
+  "summary": {
+    "id": "oratory1990/bose/quietcomfort-ultra-standard-harman-target-over-ear-4b7f914906555687",
+    "revision": "2025-08-08.1",
+    "brand": "Bose",
+    "model": "QuietComfort Ultra",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/hmz9gqkix6nqywlxt99se/Bose-QuietComfort-Ultra.pdf?rlkey=x1a3ayo34f51gm9lc8rkw39tt&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 32.0,
+        "gain_db": -3.9,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 130.0,
+        "gain_db": -2.8,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 350.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": -1.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1550.0,
+        "gain_db": 2.2,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2430.0,
+        "gain_db": -3.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5200.0,
+        "gain_db": 7.0,
+        "quality_factor": 1.1
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": -6.5,
+        "quality_factor": 5.0
+      }
+    ]
+  }
+}

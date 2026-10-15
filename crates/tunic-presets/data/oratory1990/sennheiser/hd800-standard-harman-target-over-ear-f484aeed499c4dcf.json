@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/hd800-standard-harman-target-over-ear-f484aeed499c4dcf",
+    "revision": "2024-06-10.1",
+    "brand": "Sennheiser",
+    "model": "HD800",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/md5ffora1mvp00laojqce/Sennheiser-HD800.pdf?rlkey=mp6l86v48jrawmfseosjyw6j3&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 32.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 100.0,
+        "gain_db": 4.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 210.0,
+        "gain_db": -2.3,
+        "quality_factor": 0.9,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -0.9,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2100.0,
+        "gain_db": 4.2,
+        "quality_factor": 0.9,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2600.0,
+        "gain_db": -1.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5800.0,
+        "gain_db": -7.2,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 9000.0,
+        "gain_db": -0.5,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 11000.0,
+        "gain_db": -2.0,
+        "quality_factor": 6.0
+      }
+    ]
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/etymotic-research/hf5-standard-harman-target-in-ear-3ba9de222a2bdea6",
+    "revision": "2018-07-21.1",
+    "brand": "Etymotic Research",
+    "model": "hf5",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/txdrbl4kjss8ulm/Etymotic%20Research%20hf5.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -12.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 96.0,
+        "gain_db": 9.9,
+        "quality_factor": 0.65
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 240.0,
+        "gain_db": -0.8,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 840.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1250.0,
+        "gain_db": -1.6,
+        "quality_factor": 2.2
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1750.0,
+        "gain_db": -1.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 2300.0,
+        "gain_db": 4.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": -2.3,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6150.0,
+        "gain_db": 0.6,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7200.0,
+        "gain_db": 10.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.7
+      }
+    ]
+  }
+}

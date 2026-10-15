@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/mdr-1000x-standard-harman-target-over-ear-1dc109922b320386",
+    "revision": "2022-05-05.1",
+    "brand": "Sony",
+    "model": "MDR-1000X",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/ovnvdamvf7t6a0b/Sony%20MDR-1000X.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 170.0,
+        "gain_db": -4.2,
+        "quality_factor": 0.7,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 730.0,
+        "gain_db": -2.4,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1200.0,
+        "gain_db": 4.5,
+        "quality_factor": 1.4,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1800.0,
+        "gain_db": -4.6,
+        "quality_factor": 2.2
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3700.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4200.0,
+        "gain_db": -3.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5800.0,
+        "gain_db": -5.5,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 8400.0,
+        "gain_db": -3.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

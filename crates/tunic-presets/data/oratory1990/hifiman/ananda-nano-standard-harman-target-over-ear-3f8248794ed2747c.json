@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "id": "oratory1990/hifiman/ananda-nano-standard-harman-target-over-ear-3f8248794ed2747c",
+    "revision": "2024-04-05.1",
+    "brand": "Hifiman",
+    "model": "Ananda Nano",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/x8gul94n7nxzbbsip9xik/Hifiman-Ananda-Nano.pdf?rlkey=1ktv3frohbxcxnsikryr9iylp&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 80.0,
+        "gain_db": -2.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 175.0,
+        "gain_db": 1.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 980.0,
+        "gain_db": -1.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": 3.4,
+        "quality_factor": 1.0,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2800.0,
+        "gain_db": -2.5,
+        "quality_factor": 2.5,
+        "control_name": "Presence"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": -1.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6600.0,
+        "gain_db": -1.6,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 9000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

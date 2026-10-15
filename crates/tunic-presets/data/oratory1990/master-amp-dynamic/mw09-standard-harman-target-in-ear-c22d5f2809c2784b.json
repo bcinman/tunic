@@ -1,0 +1,78 @@
+{
+  "summary": {
+    "id": "oratory1990/master-amp-dynamic/mw09-standard-harman-target-in-ear-c22d5f2809c2784b",
+    "revision": "2025-09-28.1",
+    "brand": "Master & Dynamic",
+    "model": "MW09",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/3iifwvpirixshox3bxp12/Master-Dynamic-MW09-ANC-Max.pdf?rlkey=a2tpujimls28ylpe01u7ankea&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -11.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 20.0,
+        "gain_db": -7.5,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.48
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 700.0,
+        "gain_db": 1.5,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2280.0,
+        "gain_db": 6.8,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 2500.0,
+        "gain_db": 3.8,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5150.0,
+        "gain_db": -6.4,
+        "quality_factor": 3.3
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 8.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

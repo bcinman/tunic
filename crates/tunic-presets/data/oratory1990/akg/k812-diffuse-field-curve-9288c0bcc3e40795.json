@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/akg/k812-diffuse-field-curve-9288c0bcc3e40795",
+    "revision": "2025-10-26.1",
+    "brand": "AKG",
+    "model": "K812",
+    "target": "HRTF (hp.com)"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/zdejrmmqyv2z5guir9n0a/AKG-K812-diffuse-field.pdf?rlkey=vrgbdlem1lar3kzzxl947hx0t&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 130.0,
+        "gain_db": -6.9,
+        "quality_factor": 0.25
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 23.0,
+        "gain_db": -3.4,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 2200.0,
+        "gain_db": 3.8,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2900.0,
+        "gain_db": -1.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 3900.0,
+        "gain_db": -2.3,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5800.0,
+        "gain_db": -5.7,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 9600.0,
+        "gain_db": -8.0,
+        "quality_factor": 6.0
+      }
+    ]
+  }
+}

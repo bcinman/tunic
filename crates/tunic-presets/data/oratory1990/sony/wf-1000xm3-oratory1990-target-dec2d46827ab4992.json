@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/wf-1000xm3-oratory1990-target-dec2d46827ab4992",
+    "revision": "2019-07-28.1",
+    "brand": "Sony",
+    "model": "WF-1000XM3",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/4gbxpw6meoze2um/Sony%20WF-1000XM3%20%28USound%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 115.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 1.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1320.0,
+        "gain_db": -1.4,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 1900.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2650.0,
+        "gain_db": -2.7,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -1.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 9000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/neumann/ndh30-standard-harman-target-over-ear-4173428891d537e2",
+    "revision": "2025-03-13.1",
+    "brand": "Neumann",
+    "model": "NDH30",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/int3km7qs4uyt0569azqo/Neumann-NDH-30.pdf?rlkey=srzrh9jd8j74nzwetfxam33qd&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 55.0,
+        "gain_db": -2.9,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1050.0,
+        "gain_db": -1.0,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2200.0,
+        "gain_db": 4.3,
+        "quality_factor": 1.4,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3650.0,
+        "gain_db": -5.2,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5200.0,
+        "gain_db": -1.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7400.0,
+        "gain_db": -3.3,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 10500.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.4
+      }
+    ]
+  }
+}

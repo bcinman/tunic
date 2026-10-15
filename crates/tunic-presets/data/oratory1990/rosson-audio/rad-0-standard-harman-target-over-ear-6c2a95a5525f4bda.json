@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "id": "oratory1990/rosson-audio/rad-0-standard-harman-target-over-ear-6c2a95a5525f4bda",
+    "revision": "2021-02-16.1",
+    "brand": "Rosson Audio",
+    "model": "RAD-0",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/f972x6s5xwyn30p/Rosson%20Audio%20RAD-0.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 40.0,
+        "gain_db": 2.2,
+        "quality_factor": 0.71,
+        "control_name": "Subbass"
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 470.0,
+        "gain_db": 1.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 950.0,
+        "gain_db": -0.8,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 1600.0,
+        "gain_db": 9.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2100.0,
+        "gain_db": 0.9,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5900.0,
+        "gain_db": -4.2,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -9.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 10800.0,
+        "gain_db": -3.0,
+        "quality_factor": 5.0
+      }
+    ]
+  }
+}

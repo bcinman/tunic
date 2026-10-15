@@ -1,0 +1,82 @@
+{
+  "summary": {
+    "id": "oratory1990/ritmix/rh-508-standard-harman-target-over-ear-98448ba38672882a",
+    "revision": "2019-12-10.1",
+    "brand": "Ritmix",
+    "model": "RH-508",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/hdaphicd42aq9bj/Ritmix%20RH-508.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -0.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 290.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 450.0,
+        "gain_db": -1.7,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -6.3,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1500.0,
+        "gain_db": -1.3,
+        "quality_factor": 2.2
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": 3.5,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3030.0,
+        "gain_db": -4.8,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4750.0,
+        "gain_db": -7.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5550.0,
+        "gain_db": -3.1,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8100.0,
+        "gain_db": -5.0,
+        "quality_factor": 5.0
+      }
+    ]
+  }
+}

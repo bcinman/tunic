@@ -1,0 +1,82 @@
+{
+  "summary": {
+    "id": "oratory1990/tin-audio/t3-oratory1990-target-c0f703775b74d9de",
+    "revision": "2019-04-27.1",
+    "brand": "Tin Audio",
+    "model": "T3",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/h8mhzv7i58g49xv/Tin%20Audio%20T3%20%28USound%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 20.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 290.0,
+        "gain_db": -7.5,
+        "quality_factor": 0.45
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 550.0,
+        "gain_db": -0.8,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1480.0,
+        "gain_db": -4.7,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2400.0,
+        "gain_db": -3.8,
+        "quality_factor": 2.6
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3300.0,
+        "gain_db": 1.6,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5400.0,
+        "gain_db": -3.8,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7900.0,
+        "gain_db": -11.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 12500.0,
+        "gain_db": -4.0,
+        "quality_factor": 2.0
+      }
+    ]
+  }
+}

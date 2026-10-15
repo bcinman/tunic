@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/ie900-standard-harman-target-in-ear-62c4cca43d93a39f",
+    "revision": "2021-10-02.1",
+    "brand": "Sennheiser",
+    "model": "IE900",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/2ja5zy4axspxki4/Sennheiser%20IE900.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -9.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -1.4,
+        "quality_factor": 1.1
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 770.0,
+        "gain_db": 1.1,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1600.0,
+        "gain_db": -5.5,
+        "quality_factor": 1.1
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3600.0,
+        "gain_db": 11.0,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 5400.0,
+        "gain_db": -3.8,
+        "quality_factor": 3.3
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 7100.0,
+        "gain_db": -3.3,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8300.0,
+        "gain_db": -3.1,
+        "quality_factor": 3.5
+      }
+    ]
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "summary": {
+    "id": "oratory1990/audeze/sine-cipher-cable-harman-target-over-ear-47d608099bf5ad8a",
+    "revision": "2021-10-18.1",
+    "brand": "Audeze",
+    "model": "Sine",
+    "target": "Harman AE/OE 2018",
+    "variant": "Cipher Cable"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/s8sm9j8fp0ox344/Audeze%20Sine%20%28Cipher%20Cable%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 75.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 720.0,
+        "gain_db": 1.7,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3200.0,
+        "gain_db": -4.4,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 7700.0,
+        "gain_db": -3.9,
+        "quality_factor": 5.5
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -9.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

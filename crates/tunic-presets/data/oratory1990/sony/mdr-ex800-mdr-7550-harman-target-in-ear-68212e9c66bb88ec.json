@@ -1,0 +1,83 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/mdr-ex800-mdr-7550-harman-target-in-ear-68212e9c66bb88ec",
+    "revision": "2024-01-11.1",
+    "brand": "Sony",
+    "model": "MDR-EX800",
+    "target": "USOUND 1V1 In-Ear",
+    "variant": "MDR-7550"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/pufe6ud7dwsqh07en1u9n/Sony-MDR-EX800-oratory1990.pdf?rlkey=7crur0irqwc7me4gm89lzrtvj&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -9.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 30.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 145.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 380.0,
+        "gain_db": -0.7,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 950.0,
+        "gain_db": 2.8,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1600.0,
+        "gain_db": -4.9,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3700.0,
+        "gain_db": 10.5,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5400.0,
+        "gain_db": -7.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 8200.0,
+        "gain_db": -2.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 6.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

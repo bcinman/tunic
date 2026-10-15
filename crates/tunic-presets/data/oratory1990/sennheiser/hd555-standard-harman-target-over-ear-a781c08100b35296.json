@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/hd555-standard-harman-target-over-ear-a781c08100b35296",
+    "revision": "2019-02-17.1",
+    "brand": "Sennheiser",
+    "model": "HD555",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/8ddyugnnw8olk37/Sennheiser%20HD555.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -9.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 89.0,
+        "gain_db": 9.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 1240.0,
+        "gain_db": -1.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1820.0,
+        "gain_db": 3.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3400.0,
+        "gain_db": -5.0,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3600.0,
+        "gain_db": -1.5,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 4000.0,
+        "gain_db": 6.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4300.0,
+        "gain_db": 3.0,
+        "quality_factor": 2.7
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5400.0,
+        "gain_db": -1.7,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8600.0,
+        "gain_db": -2.7,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.7
+      }
+    ]
+  }
+}

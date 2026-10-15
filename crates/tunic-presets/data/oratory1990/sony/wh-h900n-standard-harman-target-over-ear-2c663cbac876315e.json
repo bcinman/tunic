@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/wh-h900n-standard-harman-target-over-ear-2c663cbac876315e",
+    "revision": "2020-07-31.1",
+    "brand": "Sony",
+    "model": "WH-H900N",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/wts1l78fkv9dzzg/Sony%20WH-H900N.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 175.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.7,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 2,
+        "kind": "high_shelf",
+        "frequency_hz": 1500.0,
+        "gain_db": 3.5,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1650.0,
+        "gain_db": -2.4,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2500.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3200.0,
+        "gain_db": -1.5,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4150.0,
+        "gain_db": -4.8,
+        "quality_factor": 6.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 6700.0,
+        "gain_db": -4.9,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 9000.0,
+        "gain_db": -3.9,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": -1.5,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/ie600-standard-harman-target-in-ear-8da4daddfa1b75e6",
+    "revision": "2022-08-01.1",
+    "brand": "Sennheiser",
+    "model": "IE600",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/ex312mhg6soj7wh/Sennheiser%20IE600.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 220.0,
+        "gain_db": -0.7,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 860.0,
+        "gain_db": 3.2,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1390.0,
+        "gain_db": -1.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 2000.0,
+        "gain_db": 8.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2200.0,
+        "gain_db": -3.9,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 8500.0,
+        "gain_db": -14.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

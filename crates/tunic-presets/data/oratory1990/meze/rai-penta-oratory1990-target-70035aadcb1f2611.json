@@ -1,0 +1,54 @@
+{
+  "summary": {
+    "id": "oratory1990/meze/rai-penta-oratory1990-target-70035aadcb1f2611",
+    "revision": "2019-06-19.1",
+    "brand": "Meze",
+    "model": "Rai Penta",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/99v43njsl9d5ss0/Meze%20Rai%20Penta%20%28oratory1990%20target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": 0.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 300.0,
+        "gain_db": -3.3,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 800.0,
+        "gain_db": 1.1,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -2.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1700.0,
+        "gain_db": -7.0,
+        "quality_factor": 1.9
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -1.3,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

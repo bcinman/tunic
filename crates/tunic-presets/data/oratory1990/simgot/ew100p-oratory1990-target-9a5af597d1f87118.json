@@ -1,0 +1,82 @@
+{
+  "summary": {
+    "id": "oratory1990/simgot/ew100p-oratory1990-target-9a5af597d1f87118",
+    "revision": "2023-11-30.1",
+    "brand": "Simgot",
+    "model": "EW100P",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/zdrd1wbubauhml1utu7vb/Simgot-EW100P-USound-Target.pdf?rlkey=ulem46d0vrgmnt736oq9n0grl&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 170.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 260.0,
+        "gain_db": -0.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 830.0,
+        "gain_db": 0.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 1200.0,
+        "gain_db": -1.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -1.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5450.0,
+        "gain_db": -1.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 5500.0,
+        "gain_db": 1.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 16700.0,
+        "gain_db": -4.0,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

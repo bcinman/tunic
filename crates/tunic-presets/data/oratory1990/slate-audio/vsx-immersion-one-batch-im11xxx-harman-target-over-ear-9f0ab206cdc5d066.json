@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/slate-audio/vsx-immersion-one-batch-im11xxx-harman-target-over-ear-9f0ab206cdc5d066",
+    "revision": "2026-04-15.1",
+    "brand": "Slate Audio",
+    "model": "VSX Immersion One",
+    "target": "Harman AE/OE 2018",
+    "variant": "batch IM11xxx"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/nz4f3hl8pyusfklz3nlsz/Slate-Audio-VSX-Immersion-One-batch-11.pdf?rlkey=tkcbrrlxaywbuyryyl23grnbo&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -10.3,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 260.0,
+        "gain_db": -1.1,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 435.0,
+        "gain_db": 2.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 670.0,
+        "gain_db": -1.8,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1160.0,
+        "gain_db": -5.3,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 1800.0,
+        "gain_db": 10.5,
+        "quality_factor": 1.2,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 2800.0,
+        "gain_db": -1.5,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 3700.0,
+        "gain_db": -2.9,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": 8.0,
+        "quality_factor": 1.4
+      }
+    ]
+  }
+}

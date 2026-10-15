@@ -1,0 +1,61 @@
+{
+  "summary": {
+    "id": "oratory1990/kz/ate-oratory1990-target-1a7c601909347df9",
+    "revision": "2019-07-12.1",
+    "brand": "KZ",
+    "model": "ATE",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/8i7epiuk0j3ephv/KZ%20ATE%20%28USound%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 230.0,
+        "gain_db": -1.8,
+        "quality_factor": 0.95
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 850.0,
+        "gain_db": 3.8,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": 1.3,
+        "quality_factor": 2.2
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2800.0,
+        "gain_db": -0.7,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 4651.0,
+        "gain_db": -3.6,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 10150.0,
+        "gain_db": -5.3,
+        "quality_factor": 5.0
+      }
+    ]
+  }
+}

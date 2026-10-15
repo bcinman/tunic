@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/ollo/s4r-1-1-standard-harman-target-over-ear-95bdba9cef5e9bff",
+    "revision": "2022-06-06.1",
+    "brand": "Ollo",
+    "model": "S4R 1.1",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/vvifvceeus28ns0/Ollo%20S4R%201.1.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.2,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 53.0,
+        "gain_db": 2.4,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 93.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 950.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": -2.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": -3.0,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5680.0,
+        "gain_db": -7.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 12000.0,
+        "gain_db": -8.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

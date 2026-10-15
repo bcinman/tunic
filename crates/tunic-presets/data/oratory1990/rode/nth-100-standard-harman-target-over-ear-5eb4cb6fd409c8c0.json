@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/rode/nth-100-standard-harman-target-over-ear-5eb4cb6fd409c8c0",
+    "revision": "2024-05-12.1",
+    "brand": "Rode",
+    "model": "NTH-100",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/90i98lo8g24l7my/Rode%20NTH-100.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 90.0,
+        "gain_db": -2.8,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 390.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 780.0,
+        "gain_db": 0.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2200.0,
+        "gain_db": 3.8,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -4.2,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5400.0,
+        "gain_db": -2.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 13000.0,
+        "gain_db": -3.0,
+        "quality_factor": 2.0
+      }
+    ]
+  }
+}

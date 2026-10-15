@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/dunu/dk-3001-pro-standard-harman-target-in-ear-7eab88944c09b44b",
+    "revision": "2019-11-08.1",
+    "brand": "Dunu",
+    "model": "DK-3001 Pro",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/cn9c1popa132bhm/Dunu%20DK-3001%20Pro.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 62.0,
+        "gain_db": 4.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -2.5,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 3,
+        "kind": "high_shelf",
+        "frequency_hz": 1500.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1600.0,
+        "gain_db": -3.2,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": 1.2,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3100.0,
+        "gain_db": -4.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5500.0,
+        "gain_db": -5.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": -5.5,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

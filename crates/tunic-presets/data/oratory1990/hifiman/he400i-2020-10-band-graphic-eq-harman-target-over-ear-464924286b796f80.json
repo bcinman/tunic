@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/hifiman/he400i-2020-10-band-graphic-eq-harman-target-over-ear-464924286b796f80",
+    "revision": "2020-11-08.1",
+    "brand": "Hifiman",
+    "model": "HE400i",
+    "target": "Harman AE/OE 2018",
+    "variant": "2020, 10-band graphic EQ"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/x7x6o7hc16tj57w/Hifiman%20HE400i%20%282020%29%20%2810-band%20graphic%20EQ%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 31.5,
+        "gain_db": 5.9,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 63.0,
+        "gain_db": 1.2,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 125.0,
+        "gain_db": -0.8,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -2.9,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 500.0,
+        "gain_db": 0.1,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -2.2,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": -0.3,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -3.8,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 16000.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.41
+      }
+    ]
+  }
+}

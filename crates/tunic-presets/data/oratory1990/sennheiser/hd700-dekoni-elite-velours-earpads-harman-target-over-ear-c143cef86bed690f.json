@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/hd700-dekoni-elite-velours-earpads-harman-target-over-ear-c143cef86bed690f",
+    "revision": "2022-01-17.1",
+    "brand": "Sennheiser",
+    "model": "HD700",
+    "target": "Harman AE/OE 2018",
+    "variant": "Dekoni Elite Velours Earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/3g7dxle3wb2ifg4/Sennheiser%20HD700%20%28Dekoni%20Elite%20Velours%20Earpads%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 23.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 190.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.3,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -1.1,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1920.0,
+        "gain_db": 2.7,
+        "quality_factor": 1.4,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2870.0,
+        "gain_db": -0.5,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5250.0,
+        "gain_db": -5.3,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5850.0,
+        "gain_db": -9.2,
+        "quality_factor": 4.8
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 10700.0,
+        "gain_db": -3.8,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 14000.0,
+        "gain_db": -5.9,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

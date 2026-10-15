@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/vision-ears/elysium-standard-harman-target-in-ear-c75546727ffe6437",
+    "revision": "2019-11-08.1",
+    "brand": "Vision Ears",
+    "model": "Elysium",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/1p7fai7ad9ie6j7/Vision%20Ears%20Elysium.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 130.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 300.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 820.0,
+        "gain_db": 1.4,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1400.0,
+        "gain_db": -1.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2550.0,
+        "gain_db": 2.8,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4200.0,
+        "gain_db": -0.9,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 7150.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 15500.0,
+        "gain_db": -4.0,
+        "quality_factor": 1.4
+      }
+    ]
+  }
+}

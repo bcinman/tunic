@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/jbl/duet-nc-anc-on-harman-target-over-ear-d56bdbf6c562684d",
+    "revision": "2018-07-20.1",
+    "brand": "JBL",
+    "model": "Duet NC",
+    "target": "Harman AE/OE 2018",
+    "variant": "ANC On"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/h4j01l49mvzzlw0/JBL%20Duet%20NC%20%28ANC%20On%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 20.0,
+        "gain_db": -4.6,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 180.0,
+        "gain_db": -1.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 540.0,
+        "gain_db": 4.8,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -4.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2500.0,
+        "gain_db": 2.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4600.0,
+        "gain_db": -1.4,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5340.0,
+        "gain_db": 6.0,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5900.0,
+        "gain_db": -2.5,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7700.0,
+        "gain_db": -3.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 12900.0,
+        "gain_db": -7.0,
+        "quality_factor": 9.0
+      }
+    ]
+  }
+}

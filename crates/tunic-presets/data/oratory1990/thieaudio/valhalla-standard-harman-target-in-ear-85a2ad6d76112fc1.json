@@ -1,0 +1,78 @@
+{
+  "summary": {
+    "id": "oratory1990/thieaudio/valhalla-standard-harman-target-in-ear-85a2ad6d76112fc1",
+    "revision": "2026-01-13.1",
+    "brand": "Thieaudio",
+    "model": "Valhalla",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/qb0fgml9rmldao6ktshl7/Thieaudio-Valhalla.pdf?rlkey=jqyseg2rmfvl3ul270n8htu27&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 120.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 830.0,
+        "gain_db": 2.4,
+        "quality_factor": 1.1
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1250.0,
+        "gain_db": -0.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 2100.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3500.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5000.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5050.0,
+        "gain_db": -2.5,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 9000.0,
+        "gain_db": -10.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

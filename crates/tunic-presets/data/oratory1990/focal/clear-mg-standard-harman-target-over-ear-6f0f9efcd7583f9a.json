@@ -1,0 +1,95 @@
+{
+  "summary": {
+    "id": "oratory1990/focal/clear-mg-standard-harman-target-over-ear-6f0f9efcd7583f9a",
+    "revision": "2022-11-13.1",
+    "brand": "Focal",
+    "model": "Clear Mg",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/6sfe2fgg4p9q996/Focal%20Clear%20Mg.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -11.2,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 31.0,
+        "gain_db": 3.8,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 550.0,
+        "gain_db": 2.7,
+        "quality_factor": 0.8,
+        "control_name": "Tonality"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -2.9,
+        "quality_factor": 1.8,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 1800.0,
+        "gain_db": 9.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2960.0,
+        "gain_db": -4.3,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3550.0,
+        "gain_db": -2.1,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6050.0,
+        "gain_db": -6.1,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7000.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.0,
+        "control_name": "Sibilance / detail"
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -8.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

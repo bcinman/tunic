@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/hifiman/he4xx-standard-harman-target-over-ear-bbf5c995950bb1c2",
+    "revision": "2021-02-18.1",
+    "brand": "Hifiman",
+    "model": "HE4XX",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/rp71fprbe1lmz7u/Hifiman%20HE4XX.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -9.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 38.0,
+        "gain_db": 3.5,
+        "quality_factor": 0.71,
+        "control_name": "Subbass"
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 570.0,
+        "gain_db": 1.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1020.0,
+        "gain_db": -2.2,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1950.0,
+        "gain_db": 4.8,
+        "quality_factor": 1.3,
+        "control_name": "Upper mid accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2850.0,
+        "gain_db": -3.0,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4300.0,
+        "gain_db": -1.4,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5200.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.4,
+        "control_name": "Sibilance / detail"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 6400.0,
+        "gain_db": -1.7,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 8150.0,
+        "gain_db": -3.2,
+        "quality_factor": 6.0
+      }
+    ]
+  }
+}

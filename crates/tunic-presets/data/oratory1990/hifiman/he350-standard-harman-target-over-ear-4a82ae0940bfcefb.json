@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/hifiman/he350-standard-harman-target-over-ear-4a82ae0940bfcefb",
+    "revision": "2019-03-20.1",
+    "brand": "Hifiman",
+    "model": "HE350",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/sf3grrzb862albh/Hifiman%20HE350.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.2,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 30.0,
+        "gain_db": 1.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 64.0,
+        "gain_db": 6.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -1.5,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": -1.7,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2150.0,
+        "gain_db": 5.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": 2.0,
+        "quality_factor": 2.8
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5400.0,
+        "gain_db": -9.0,
+        "quality_factor": 1.85
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7675.0,
+        "gain_db": 3.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 10000.0,
+        "gain_db": -2.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 13650.0,
+        "gain_db": -4.0,
+        "quality_factor": 1.5
+      }
+    ]
+  }
+}

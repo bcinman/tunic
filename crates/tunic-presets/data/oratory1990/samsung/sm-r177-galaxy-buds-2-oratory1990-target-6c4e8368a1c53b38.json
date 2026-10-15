@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/samsung/sm-r177-galaxy-buds-2-oratory1990-target-6c4e8368a1c53b38",
+    "revision": "2022-12-21.1",
+    "brand": "Samsung",
+    "model": "SM-R177 Galaxy Buds 2",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/9vw6o7mkcf2389n/Samsung%20SM-R177%20Galaxy%20Buds%202%20%28USound%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 100.0,
+        "gain_db": 1.2,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 140.0,
+        "gain_db": 2.4,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 400.0,
+        "gain_db": -0.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 850.0,
+        "gain_db": 0.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1500.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.9
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4800.0,
+        "gain_db": 3.9,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -7.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

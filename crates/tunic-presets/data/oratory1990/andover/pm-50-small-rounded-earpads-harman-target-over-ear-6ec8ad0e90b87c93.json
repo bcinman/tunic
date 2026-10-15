@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "id": "oratory1990/andover/pm-50-small-rounded-earpads-harman-target-over-ear-6ec8ad0e90b87c93",
+    "revision": "2020-07-16.1",
+    "brand": "Andover",
+    "model": "PM-50",
+    "target": "Harman AE/OE 2018",
+    "variant": "small rounded earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/so1hb4e3ngkz8hc/Andover%20PM-50%20%28small%20rounded%20earpads%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -10.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 45.0,
+        "gain_db": 2.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1200.0,
+        "gain_db": -3.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 1650.0,
+        "gain_db": 9.5,
+        "quality_factor": 0.71,
+        "control_name": "Overall treble"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1680.0,
+        "gain_db": -3.0,
+        "quality_factor": 2.8
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3150.0,
+        "gain_db": -1.7,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": 2.5,
+        "quality_factor": 1.0,
+        "control_name": "Treble clarity"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6150.0,
+        "gain_db": -4.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8400.0,
+        "gain_db": -3.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 13000.0,
+        "gain_db": -9.5,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/beyerdynamic/dt990-pro-x-standard-harman-target-over-ear-9eb4b9ab97f6acdc",
+    "revision": "2025-07-05.1",
+    "brand": "Beyerdynamic",
+    "model": "DT990 Pro X",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/trhf6n20s4h0eht4us5di/Beyerdynamic-DT990-Pro-X.pdf?rlkey=gi19j6qsiy0k909921abehiny&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 220.0,
+        "gain_db": -2.3,
+        "quality_factor": 0.45,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1150.0,
+        "gain_db": -2.2,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1600.0,
+        "gain_db": 1.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2600.0,
+        "gain_db": -2.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3600.0,
+        "gain_db": -2.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6350.0,
+        "gain_db": -7.2,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 11000.0,
+        "gain_db": -7.0,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

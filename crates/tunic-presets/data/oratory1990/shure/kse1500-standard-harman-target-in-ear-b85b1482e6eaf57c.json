@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/shure/kse1500-standard-harman-target-in-ear-b85b1482e6eaf57c",
+    "revision": "2018-11-10.1",
+    "brand": "Shure",
+    "model": "KSE1500",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/pg6rsh6w2ollj4l/Shure%20KSE1500.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -9.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 55.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -2.2,
+        "quality_factor": 0.75
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 650.0,
+        "gain_db": 1.9,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1950.0,
+        "gain_db": -10.0,
+        "quality_factor": 0.85
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 12.0,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": 2.4,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 9500.0,
+        "gain_db": -12.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 11000.0,
+        "gain_db": -6.0,
+        "quality_factor": 4.0
+      }
+    ]
+  }
+}

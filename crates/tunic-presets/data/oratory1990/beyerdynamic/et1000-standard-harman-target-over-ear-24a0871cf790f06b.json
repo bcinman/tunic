@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/beyerdynamic/et1000-standard-harman-target-over-ear-24a0871cf790f06b",
+    "revision": "2018-12-09.1",
+    "brand": "Beyerdynamic",
+    "model": "ET1000",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/bd8wdq2zk2raqg9/Beyerdynamic%20ET1000.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 100.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 180.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 600.0,
+        "gain_db": 0.9,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 770.0,
+        "gain_db": 1.2,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -1.8,
+        "quality_factor": 2.2
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1900.0,
+        "gain_db": -2.7,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3150.0,
+        "gain_db": -2.6,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4950.0,
+        "gain_db": -2.9,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 8200.0,
+        "gain_db": -3.5,
+        "quality_factor": 8.0
+      }
+    ]
+  }
+}

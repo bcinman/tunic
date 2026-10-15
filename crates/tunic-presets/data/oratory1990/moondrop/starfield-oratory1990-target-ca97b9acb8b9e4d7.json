@@ -1,0 +1,61 @@
+{
+  "summary": {
+    "id": "oratory1990/moondrop/starfield-oratory1990-target-ca97b9acb8b9e4d7",
+    "revision": "2020-04-21.1",
+    "brand": "Moondrop",
+    "model": "Starfield",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/73k54n642lerrjf/Moondrop%20Starfield%20%28oratory1990%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.2,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 140.0,
+        "gain_db": 1.6,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 300.0,
+        "gain_db": -0.7,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 880.0,
+        "gain_db": 1.6,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -3.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2300.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 6000.0,
+        "gain_db": 2.2,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

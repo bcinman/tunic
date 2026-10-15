@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "id": "oratory1990/dan-clark-audio/ether-c-flow-1-1-standard-harman-target-over-ear-1f6fdc8275439453",
+    "revision": "2021-04-02.1",
+    "brand": "Dan Clark Audio",
+    "model": "Ether C Flow 1.1",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/4c6vnhc1p1pitxy/Dan%20Clark%20Audio%20Ether%20C%20Flow%201.1.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.2,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 20.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.4,
+        "control_name": "Subbass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 102.0,
+        "gain_db": -2.0,
+        "quality_factor": 2.4
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 170.0,
+        "gain_db": 1.7,
+        "quality_factor": 2.4
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 1200.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1250.0,
+        "gain_db": -3.3,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2950.0,
+        "gain_db": -3.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 3570.0,
+        "gain_db": -3.3,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5800.0,
+        "gain_db": -7.6,
+        "quality_factor": 3.0,
+        "control_name": "Shrillness / detail"
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -7.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

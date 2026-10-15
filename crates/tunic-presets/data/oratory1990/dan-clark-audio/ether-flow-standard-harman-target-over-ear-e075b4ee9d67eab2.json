@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/dan-clark-audio/ether-flow-standard-harman-target-over-ear-e075b4ee9d67eab2",
+    "revision": "2018-09-21.1",
+    "brand": "Dan Clark Audio",
+    "model": "Ether Flow",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/xfu19w3x1fgny4w/MrSpeakers%20Ether%20Flow.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.3,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 50.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -6.0,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 480.0,
+        "gain_db": 3.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": -1.2,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2800.0,
+        "gain_db": -2.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": 9.0,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 6600.0,
+        "gain_db": -8.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 11000.0,
+        "gain_db": -6.0,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "id": "oratory1990/anker/soundcore-space-q45-anc-off-harman-target-over-ear-bcc37fd891c6037f",
+    "revision": "2023-07-22.1",
+    "brand": "Anker",
+    "model": "Soundcore Space Q45",
+    "target": "Harman AE/OE 2018",
+    "variant": "ANC off"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/ivbdus17bmohsbz/Anker%20Soundcore%20Space%20Q45%20%28ANC%20off%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 23.0,
+        "gain_db": -13.3,
+        "quality_factor": 0.3
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 120.0,
+        "gain_db": -4.3,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 280.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 535.0,
+        "gain_db": -2.7,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1080.0,
+        "gain_db": -2.6,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 1500.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": -1.5,
+        "quality_factor": 3.0,
+        "control_name": "Sharpness"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 9000.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

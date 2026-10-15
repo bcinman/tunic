@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/beyerdynamic/mmx300-standard-harman-target-over-ear-cdd080f7511333d1",
+    "revision": "2021-01-12.1",
+    "brand": "Beyerdynamic",
+    "model": "MMX300",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/dd23azesu23u65s/Beyerdynamic%20MMX300.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 40.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 85.0,
+        "gain_db": 4.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 125.0,
+        "gain_db": -4.0,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 350.0,
+        "gain_db": -0.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1800.0,
+        "gain_db": 1.4,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2370.0,
+        "gain_db": -2.7,
+        "quality_factor": 2.7
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3800.0,
+        "gain_db": 3.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5650.0,
+        "gain_db": -4.5,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8300.0,
+        "gain_db": -3.0,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

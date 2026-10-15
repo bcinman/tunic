@@ -1,0 +1,64 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/wf-1000xm4-standard-harman-target-in-ear-1827778a663a33b3",
+    "revision": "2021-11-26.1",
+    "brand": "Sony",
+    "model": "WF-1000XM4",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/6s6jyqkyggvsen5/Sony%20WF-1000XM4.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 55.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -3.3,
+        "quality_factor": 0.4,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1800.0,
+        "gain_db": 2.8,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 3500.0,
+        "gain_db": 8.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3900.0,
+        "gain_db": -1.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

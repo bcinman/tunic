@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/hd58x-brainwavz-microsuede-oval-earpads-harman-target-over-ear-83343d0d7278c7e1",
+    "revision": "2021-04-06.1",
+    "brand": "Sennheiser",
+    "model": "HD58X",
+    "target": "Harman AE/OE 2018",
+    "variant": "Brainwavz microsuede oval earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/s3w0kquycobkgfq/Sennheiser%20HD58X%20%28Brainwavz%20Microsuede%20oval%20earpads%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -11.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 60.0,
+        "gain_db": 6.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 400.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.3
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1800.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2340.0,
+        "gain_db": -3.2,
+        "quality_factor": 2.9
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": -6.0,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5250.0,
+        "gain_db": -1.5,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6500.0,
+        "gain_db": 9.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8100.0,
+        "gain_db": -2.6,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 10350.0,
+        "gain_db": -4.0,
+        "quality_factor": 7.0
+      }
+    ]
+  }
+}

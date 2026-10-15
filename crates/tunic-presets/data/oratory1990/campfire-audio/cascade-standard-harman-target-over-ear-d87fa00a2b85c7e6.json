@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "id": "oratory1990/campfire-audio/cascade-standard-harman-target-over-ear-d87fa00a2b85c7e6",
+    "revision": "2021-01-14.1",
+    "brand": "Campfire Audio",
+    "model": "Cascade",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/7r8gitl82vnavdc/Campfire%20Audio%20Cascade.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 94.0,
+        "gain_db": -11.0,
+        "quality_factor": 0.3
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 240.0,
+        "gain_db": -3.0,
+        "quality_factor": 1.4,
+        "control_name": "Warmth / boominess"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 340.0,
+        "gain_db": 6.3,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 5450.0,
+        "gain_db": -5.0,
+        "quality_factor": 5.0,
+        "control_name": "Presence / timbre / shrillness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5900.0,
+        "gain_db": -2.3,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 9500.0,
+        "gain_db": -1.0,
+        "quality_factor": 6.0,
+        "control_name": "Presence / sibilance"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 10400.0,
+        "gain_db": -2.7,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 11200.0,
+        "gain_db": -6.2,
+        "quality_factor": 5.0,
+        "control_name": "Detail / sizzle"
+      }
+    ]
+  }
+}

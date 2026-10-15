@@ -1,0 +1,83 @@
+{
+  "summary": {
+    "id": "oratory1990/drop/thx-panda-pre-production-review-version-harman-target-over-ear-addd0b96124af7f5",
+    "revision": "2020-01-22.1",
+    "brand": "Drop",
+    "model": "+ THX Panda",
+    "target": "Harman AE/OE 2018",
+    "variant": "pre-production / review version"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/97vjg9y7t4l8oic/Drop%20Panda%20%28preliminary%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 35.0,
+        "gain_db": 3.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 180.0,
+        "gain_db": -7.7,
+        "quality_factor": 0.35
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 370.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 730.0,
+        "gain_db": -3.3,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2100.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -1.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6600.0,
+        "gain_db": -2.8,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8200.0,
+        "gain_db": -2.6,
+        "quality_factor": 5.0
+      }
+    ]
+  }
+}

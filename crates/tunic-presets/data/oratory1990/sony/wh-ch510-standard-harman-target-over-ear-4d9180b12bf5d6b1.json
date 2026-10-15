@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/wh-ch510-standard-harman-target-over-ear-4d9180b12bf5d6b1",
+    "revision": "2023-07-06.1",
+    "brand": "Sony",
+    "model": "WH-CH510",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/r4jr441xpipdxmj/Sony%20WH-CH510.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 70.0,
+        "gain_db": -9.1,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 230.0,
+        "gain_db": 2.1,
+        "quality_factor": 1.0,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 600.0,
+        "gain_db": -1.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 830.0,
+        "gain_db": 1.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1400.0,
+        "gain_db": -1.7,
+        "quality_factor": 2.0,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3700.0,
+        "gain_db": -2.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5200.0,
+        "gain_db": 6.0,
+        "quality_factor": 1.0,
+        "control_name": "Treble"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7700.0,
+        "gain_db": -5.7,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

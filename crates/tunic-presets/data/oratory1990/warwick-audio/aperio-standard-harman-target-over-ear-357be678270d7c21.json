@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/warwick-audio/aperio-standard-harman-target-over-ear-357be678270d7c21",
+    "revision": "2024-06-24.1",
+    "brand": "Warwick Audio",
+    "model": "Aperio",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/40yes4bc1vqe89na9dukl/Warwick-Aperio.pdf?rlkey=g7qu00btk6lp0fl415dlxfit1&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 3.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 560.0,
+        "gain_db": 1.4,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 880.0,
+        "gain_db": -3.2,
+        "quality_factor": 1.9
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1280.0,
+        "gain_db": -2.1,
+        "quality_factor": 2.8
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1850.0,
+        "gain_db": 2.8,
+        "quality_factor": 2.0,
+        "control_name": "Timbre accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2850.0,
+        "gain_db": -1.8,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7800.0,
+        "gain_db": -3.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 10500.0,
+        "gain_db": -5.0,
+        "quality_factor": 6.0
+      }
+    ]
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/stax/sr-l700-blu-tac-mod-harman-target-over-ear-c9268734fb1ab14e",
+    "revision": "2019-10-22.1",
+    "brand": "Stax",
+    "model": "SR-L700",
+    "target": "Harman AE/OE 2018",
+    "variant": "blu-tac mod"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/k8105xoe99gvrbg/Stax%20SR-L700%20%28blu-tac%20mod%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 1230.0,
+        "gain_db": -8.0,
+        "quality_factor": 1.9
+      },
+      {
+        "id": 3,
+        "kind": "high_shelf",
+        "frequency_hz": 2000.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2300.0,
+        "gain_db": 3.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2700.0,
+        "gain_db": -1.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3100.0,
+        "gain_db": -1.1,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4100.0,
+        "gain_db": 1.7,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5530.0,
+        "gain_db": -7.2,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8350.0,
+        "gain_db": -3.5,
+        "quality_factor": 8.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "summary": {
+    "id": "oratory1990/campfire-audio/io-preliminary-harman-target-in-ear-3dc9bf35b1af2a7f",
+    "revision": "2019-05-13.1",
+    "brand": "Campfire Audio",
+    "model": "Io",
+    "target": "Harman In-Ear 2017_1",
+    "variant": "preliminary"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/4osvi3rb03nbxzg/Campfire%20Audio%20Io%20%28preliminary%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -16.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 2820.0,
+        "gain_db": 20.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 1570.0,
+        "gain_db": -16.0,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 3900.0,
+        "gain_db": -4.6,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 10200.0,
+        "gain_db": -11.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 245.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 1.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "low_shelf",
+        "frequency_hz": 70.0,
+        "gain_db": 6.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5600.0,
+        "gain_db": 3.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 2500.0,
+        "gain_db": 1.5,
+        "quality_factor": 2.0
+      }
+    ]
+  }
+}

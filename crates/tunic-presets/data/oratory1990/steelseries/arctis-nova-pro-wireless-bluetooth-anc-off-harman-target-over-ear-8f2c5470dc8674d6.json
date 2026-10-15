@@ -1,0 +1,78 @@
+{
+  "summary": {
+    "id": "oratory1990/steelseries/arctis-nova-pro-wireless-bluetooth-anc-off-harman-target-over-ear-8f2c5470dc8674d6",
+    "revision": "2023-08-30.1",
+    "brand": "Steelseries",
+    "model": "Arctis Nova Pro Wireless",
+    "target": "Harman AE/OE 2018",
+    "variant": "Bluetooth, ANC off"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/9othbagcb5rm1dqbvve36/Steelseries-Arctis-Nova-Pro-Wireless-Bluetooth-ANC-off.pdf?rlkey=0hld7goox52lipi64vvhums5e&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 130.0,
+        "gain_db": -9.2,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 380.0,
+        "gain_db": 1.8,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1450.0,
+        "gain_db": 3.1,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 2500.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2800.0,
+        "gain_db": -3.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4800.0,
+        "gain_db": -5.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8100.0,
+        "gain_db": -8.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

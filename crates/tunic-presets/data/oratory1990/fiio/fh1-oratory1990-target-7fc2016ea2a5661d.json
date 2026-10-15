@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/fiio/fh1-oratory1990-target-7fc2016ea2a5661d",
+    "revision": "2018-10-03.1",
+    "brand": "Fiio",
+    "model": "FH1",
+    "target": "USOUND 1V0 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/9vpptdxbat9ywgy/Fiio%20FH1%20%28USound%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.6,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -2.3,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 3.9,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1650.0,
+        "gain_db": -3.5,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": 2.5,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 6100.0,
+        "gain_db": 8.0,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 8400.0,
+        "gain_db": -10.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 13000.0,
+        "gain_db": 4.0,
+        "quality_factor": 2.0
+      }
+    ]
+  }
+}

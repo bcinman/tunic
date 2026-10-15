@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/ikko/oh1-oratory1990-target-cd24868a9472828d",
+    "revision": "2019-07-05.1",
+    "brand": "Ikko",
+    "model": "OH1",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/ddanamwyy57z21z/Ikko%20OH1%20%28USound%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 230.0,
+        "gain_db": -2.4,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 945.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1375.0,
+        "gain_db": -2.5,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 1500.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2450.0,
+        "gain_db": -1.5,
+        "quality_factor": 2.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5200.0,
+        "gain_db": -1.6,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.7
+      }
+    ]
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/sivga/sv021-robin-standard-harman-target-over-ear-a6b9c8276bf8f40a",
+    "revision": "2024-05-13.1",
+    "brand": "Sivga",
+    "model": "SV021 Robin",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/rpf5u7zbbo6ll8n8fnsfv/Sivga-SV021-Robin.pdf?rlkey=p8fosv0hfn77fbpwim819j7p7&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 170.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 240.0,
+        "gain_db": -8.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 470.0,
+        "gain_db": 7.2,
+        "quality_factor": 1.1
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1100.0,
+        "gain_db": -3.4,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2600.0,
+        "gain_db": -2.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3300.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.0,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5400.0,
+        "gain_db": -2.4,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

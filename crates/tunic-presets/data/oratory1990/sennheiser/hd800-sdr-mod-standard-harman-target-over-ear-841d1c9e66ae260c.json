@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/hd800-sdr-mod-standard-harman-target-over-ear-841d1c9e66ae260c",
+    "revision": "2022-04-05.1",
+    "brand": "Sennheiser",
+    "model": "HD800 SDR-Mod",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/w3dhvjx62l95qzz/Sennheiser%20HD800%20%28SDR%20Mod%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 48.0,
+        "gain_db": 2.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 210.0,
+        "gain_db": -1.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 520.0,
+        "gain_db": 0.4,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1050.0,
+        "gain_db": -1.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1900.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.7,
+        "control_name": "Timbral accuracy"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2900.0,
+        "gain_db": -2.5,
+        "quality_factor": 2.1
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 3900.0,
+        "gain_db": 3.8,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5600.0,
+        "gain_db": -5.5,
+        "quality_factor": 3.5,
+        "control_name": "Sibilance / sharpness"
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

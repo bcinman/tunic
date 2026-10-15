@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/jabra/evolve-75e-standard-harman-target-in-ear-460dedeea807effc",
+    "revision": "2019-04-22.1",
+    "brand": "Jabra",
+    "model": "Evolve 75e",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/lmq9gn27a48go9z/Jabra%20Evolve%2075e.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 1150.0,
+        "gain_db": 8.0,
+        "quality_factor": 0.45
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 700.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1950.0,
+        "gain_db": -4.3,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 2000.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 7000.0,
+        "gain_db": -5.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 10600.0,
+        "gain_db": -12.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 7050.0,
+        "gain_db": -4.0,
+        "quality_factor": 6.0
+      }
+    ]
+  }
+}

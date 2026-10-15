@@ -1,0 +1,61 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/ier-z1r-oratory1990-target-1e503e460ff8b577",
+    "revision": "2021-04-21.1",
+    "brand": "Sony",
+    "model": "IER-Z1R",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/6nl37vui61hgil2/Sony%20IER-Z1R%20%28USound%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 840.0,
+        "gain_db": 1.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 1430.0,
+        "gain_db": -3.6,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 2700.0,
+        "gain_db": 5.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3550.0,
+        "gain_db": -3.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 5100.0,
+        "gain_db": 2.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 6100.0,
+        "gain_db": -3.2,
+        "quality_factor": 6.0
+      }
+    ]
+  }
+}

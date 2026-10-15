@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/fiio/fh9-standard-harman-target-in-ear-44ff333f5efdb5d2",
+    "revision": "2024-05-16.1",
+    "brand": "Fiio",
+    "model": "FH9",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/43no9ztx9k04atzs6tj05/Fiio-FH9.pdf?rlkey=sgwzk8pycrjmpiwcfcdg2wavs&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 70.0,
+        "gain_db": -9.4,
+        "quality_factor": 0.35
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 10.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 380.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1400.0,
+        "gain_db": -1.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2750.0,
+        "gain_db": -2.6,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.7,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": -2.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8800.0,
+        "gain_db": -2.3,
+        "quality_factor": 4.0,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

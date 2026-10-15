@@ -1,0 +1,40 @@
+{
+  "summary": {
+    "id": "oratory1990/meze/rai-penta-standard-harman-target-in-ear-b088141386e98986",
+    "revision": "2019-06-19.1",
+    "brand": "Meze",
+    "model": "Rai Penta",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/flg43f8l5wooo5e/Meze%20Rai%20Penta.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": 0.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 240.0,
+        "gain_db": -8.0,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 1250.0,
+        "gain_db": -2.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1700.0,
+        "gain_db": -7.8,
+        "quality_factor": 1.9
+      }
+    ]
+  }
+}

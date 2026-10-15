@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/akg/k240-mk-ii-standard-harman-target-over-ear-a8c1e00c55db178c",
+    "revision": "2022-08-26.1",
+    "brand": "AKG",
+    "model": "K240 mk.II",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/tvfknspjhp1q9ub/AKG%20K240%20mk.II.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -9.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 75.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 167.0,
+        "gain_db": -4.7,
+        "quality_factor": 0.4,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1170.0,
+        "gain_db": -1.7,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1650.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2170.0,
+        "gain_db": -1.1,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2700.0,
+        "gain_db": -4.5,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -0.7,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 4100.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.4,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 6850.0,
+        "gain_db": -4.9,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

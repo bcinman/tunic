@@ -1,0 +1,78 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/ie200-standard-harman-target-in-ear-5785f97f196be33f",
+    "revision": "2023-09-26.1",
+    "brand": "Sennheiser",
+    "model": "IE200",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/n50lqsprrjycebk6my8pi/Sennheiser-IE200.pdf?rlkey=8vhywlxxbl34vss88mgnz0s0v&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 10.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 122.0,
+        "gain_db": -8.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 750.0,
+        "gain_db": 0.8,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1420.0,
+        "gain_db": -1.9,
+        "quality_factor": 1.3,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4300.0,
+        "gain_db": 5.8,
+        "quality_factor": 1.0,
+        "control_name": "Harshness"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8600.0,
+        "gain_db": -3.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

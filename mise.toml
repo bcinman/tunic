@@ -1,5 +1,6 @@
 [tools]
 rust = "nightly-2026-09-20"
+python = "3.14.7"
 "cargo:boltffi_cli" = "0.30.1"
 swiftlint = "0.65.1"
 
@@ -25,7 +26,15 @@ run = "cargo test --workspace --all-targets --all-features"
 
 [tasks.check]
 description = "Run all repository checks"
-depends = ["fmt", "lint", "test", "check-native"]
+depends = ["fmt", "lint", "test", "test-preset-import", "check-native"]
+
+[tasks.test-preset-import]
+description = "Test offline preset extraction without network access"
+run = "python -B -m unittest discover -s crates/tunic-presets -p 'test_*.py'"
+
+[tasks.import-oratory]
+description = "Import a saved Reddit wiki JSON using a PDF cache (macOS)"
+run = "python -B crates/tunic-presets/import_oratory.py"
 
 [tasks.check-native]
 description = "Build and test the native Swift menu-bar app"

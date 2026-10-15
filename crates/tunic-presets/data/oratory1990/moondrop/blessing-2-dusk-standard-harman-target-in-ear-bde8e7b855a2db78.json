@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/moondrop/blessing-2-dusk-standard-harman-target-in-ear-bde8e7b855a2db78",
+    "revision": "2022-03-28.1",
+    "brand": "Moondrop",
+    "model": "Blessing 2 Dusk",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/0g2nei27iv2hb06/Moondrop%20Blessing%202%20Dusk.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 40.0,
+        "gain_db": 0.8,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 160.0,
+        "gain_db": -1.3,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1250.0,
+        "gain_db": -1.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 2000.0,
+        "gain_db": 2.5,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3200.0,
+        "gain_db": -1.3,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5900.0,
+        "gain_db": -1.5,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -2.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

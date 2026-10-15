@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/apple/airpods-pro-1st-gen-oratory1990-target-016a60df8e92a836",
+    "revision": "2025-01-22.1",
+    "brand": "Apple",
+    "model": "AirPods Pro (1st gen)",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/0tw98j0sbhol4ruf2e4vt/Apple-AirPods-Pro-USound.pdf?rlkey=g2eekduzqj9bhr11ss9pffabq&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 43.0,
+        "gain_db": -1.8,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 250.0,
+        "gain_db": 8.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 600.0,
+        "gain_db": -0.8,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 935.0,
+        "gain_db": 2.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 3500.0,
+        "gain_db": 8.0,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5900.0,
+        "gain_db": -1.1,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 9000.0,
+        "gain_db": -7.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

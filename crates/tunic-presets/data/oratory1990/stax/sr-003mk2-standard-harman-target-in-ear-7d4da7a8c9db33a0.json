@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/stax/sr-003mk2-standard-harman-target-in-ear-7d4da7a8c9db33a0",
+    "revision": "2020-07-17.1",
+    "brand": "Stax",
+    "model": "SR-003mk2",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/726c3k23c84sxga/Stax%20SR-003mk2.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -10.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 10.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 700.0,
+        "gain_db": -3.2,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 3,
+        "kind": "high_shelf",
+        "frequency_hz": 1000.0,
+        "gain_db": 9.0,
+        "quality_factor": 0.71,
+        "control_name": "Overall treble"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1690.0,
+        "gain_db": -8.4,
+        "quality_factor": 2.3
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2350.0,
+        "gain_db": -1.1,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4400.0,
+        "gain_db": -5.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 6500.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7300.0,
+        "gain_db": -5.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 9300.0,
+        "gain_db": -8.5,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 12000.0,
+        "gain_db": -15.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

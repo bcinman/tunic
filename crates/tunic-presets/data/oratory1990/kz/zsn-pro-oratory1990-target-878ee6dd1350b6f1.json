@@ -1,0 +1,69 @@
+{
+  "summary": {
+    "id": "oratory1990/kz/zsn-pro-oratory1990-target-878ee6dd1350b6f1",
+    "revision": "2022-02-21.1",
+    "brand": "KZ",
+    "model": "ZSN Pro",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/zoo1ton3167498h/KZ%20ZSN%20Pro%20X.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 235.0,
+        "gain_db": -1.9,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 940.0,
+        "gain_db": 3.1,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1370.0,
+        "gain_db": -3.0,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2350.0,
+        "gain_db": -5.0,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3430.0,
+        "gain_db": 3.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4950.0,
+        "gain_db": -5.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": -7.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness / sharpness"
+      }
+    ]
+  }
+}

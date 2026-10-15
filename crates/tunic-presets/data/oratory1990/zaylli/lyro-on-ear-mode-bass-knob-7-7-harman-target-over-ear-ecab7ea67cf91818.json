@@ -1,0 +1,87 @@
+{
+  "summary": {
+    "id": "oratory1990/zaylli/lyro-on-ear-mode-bass-knob-7-7-harman-target-over-ear-ecab7ea67cf91818",
+    "revision": "2025-12-31.1",
+    "brand": "Zaylli",
+    "model": "Lyrö",
+    "target": "Harman AE/OE 2018",
+    "variant": "on-ear mode - bass knob 7/7"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/jto071iiayai4cmkg4zdx/Zaylli-Lyr-On-Ear-Mode.pdf?rlkey=xn9y0k33ic9muvte3t7180id1&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 55.0,
+        "gain_db": -8.4,
+        "quality_factor": 0.3
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1200.0,
+        "gain_db": -2.1,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1550.0,
+        "gain_db": 2.2,
+        "quality_factor": 1.0,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3600.0,
+        "gain_db": -6.4,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5300.0,
+        "gain_db": 4.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7500.0,
+        "gain_db": -2.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

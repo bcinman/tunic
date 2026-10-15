@@ -1,0 +1,69 @@
+{
+  "summary": {
+    "id": "oratory1990/soranik/mems-2-with-ifi-diablo-x-oratory1990-target-86c73eca70f66bc3",
+    "revision": "2024-09-04.1",
+    "brand": "Soranik",
+    "model": "MEMS-2",
+    "target": "USOUND 1V1 In-Ear",
+    "variant": "with iFi Diablo-X"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/9o7knm645sznthxjh3gx7/Soranik-MEMS-2-with-iFi-Diablo-X-amplifier-oratory1990.pdf?rlkey=jwdc5wl7u7ict9d86y1p75b9d&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 1.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 280.0,
+        "gain_db": -2.3,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 1.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2415.0,
+        "gain_db": -8.0,
+        "quality_factor": 2.8
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3700.0,
+        "gain_db": 3.4,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 9500.0,
+        "gain_db": -3.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": -6.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

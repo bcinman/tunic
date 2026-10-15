@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/inear/prophile-8-standard-harman-target-in-ear-52dce097ae85335b",
+    "revision": "2019-04-18.1",
+    "brand": "InEar",
+    "model": "ProPhile-8",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/n9zb4u5qj44nphh/InEar%20ProPhile-8.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.2,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 35.0,
+        "gain_db": 1.1,
+        "quality_factor": 1.1
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 160.0,
+        "gain_db": -4.3,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 1.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1500.0,
+        "gain_db": -3.3,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2600.0,
+        "gain_db": 1.2,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2750.0,
+        "gain_db": 3.9,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": 2.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5600.0,
+        "gain_db": -1.5,
+        "quality_factor": 5.0
+      }
+    ]
+  }
+}

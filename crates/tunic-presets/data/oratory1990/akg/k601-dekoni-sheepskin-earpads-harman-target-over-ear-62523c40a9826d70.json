@@ -1,0 +1,83 @@
+{
+  "summary": {
+    "id": "oratory1990/akg/k601-dekoni-sheepskin-earpads-harman-target-over-ear-62523c40a9826d70",
+    "revision": "2018-06-22.1",
+    "brand": "AKG",
+    "model": "K601",
+    "target": "Harman AE/OE 2018",
+    "variant": "Dekoni Sheepskin Earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/ncpegzdjntfsuru/AKG%20K601%20%28Dekoni%20Sheepskin%20Earpads%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 25.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 230.0,
+        "gain_db": -5.1,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 750.0,
+        "gain_db": 4.2,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1050.0,
+        "gain_db": -2.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2400.0,
+        "gain_db": -4.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3400.0,
+        "gain_db": 9.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4200.0,
+        "gain_db": 3.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5650.0,
+        "gain_db": -2.4,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -4.0,
+        "quality_factor": 7.0
+      }
+    ]
+  }
+}

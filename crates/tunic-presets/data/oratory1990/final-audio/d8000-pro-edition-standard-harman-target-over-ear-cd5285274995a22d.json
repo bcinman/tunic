@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "id": "oratory1990/final-audio/d8000-pro-edition-standard-harman-target-over-ear-cd5285274995a22d",
+    "revision": "2020-09-28.1",
+    "brand": "Final Audio",
+    "model": "D8000 Pro Edition",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/cghn7tdl1v3xo5s/Final%20Audio%20D8000%20Pro.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -9.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 31.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71,
+        "control_name": "Subbass"
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 500.0,
+        "gain_db": 2.9,
+        "quality_factor": 1.5,
+        "control_name": "Tonal accuracy / timbre"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1020.0,
+        "gain_db": -1.8,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1500.0,
+        "gain_db": -3.8,
+        "quality_factor": 1.8,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2900.0,
+        "gain_db": 10.0,
+        "quality_factor": 0.7,
+        "control_name": "Treble timbral accuracy / presence"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3400.0,
+        "gain_db": -2.3,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4320.0,
+        "gain_db": -4.6,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5620.0,
+        "gain_db": -3.6,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 8200.0,
+        "gain_db": -3.9,
+        "quality_factor": 5.0
+      }
+    ]
+  }
+}

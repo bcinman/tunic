@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/austrian-audio/hi-x65-standard-harman-target-over-ear-8472388bf80b4b8e",
+    "revision": "2026-02-25.1",
+    "brand": "Austrian Audio",
+    "model": "Hi-X65",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/xld7zqkjammrhuh9916w7/Austrian-Audio-Hi-X65.pdf?rlkey=4a2vbjg1tr9a3gibcdcdgfxzd&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -2.7,
+        "quality_factor": 0.5,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 500.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 600.0,
+        "gain_db": -0.7,
+        "quality_factor": 1.2,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1700.0,
+        "gain_db": 7.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2800.0,
+        "gain_db": -2.4,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4200.0,
+        "gain_db": -1.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5800.0,
+        "gain_db": -2.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 6900.0,
+        "gain_db": -2.3,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

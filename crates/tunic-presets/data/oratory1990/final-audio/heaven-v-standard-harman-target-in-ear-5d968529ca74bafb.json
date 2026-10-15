@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/final-audio/heaven-v-standard-harman-target-in-ear-5d968529ca74bafb",
+    "revision": "2020-11-23.1",
+    "brand": "Final Audio",
+    "model": "Heaven V",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/n0okk0vgti5s5t9/Final%20Audio%20Heaven%20V.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 70.0,
+        "gain_db": 3.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 234.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 780.0,
+        "gain_db": 0.6,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1450.0,
+        "gain_db": -1.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 1500.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2900.0,
+        "gain_db": -4.8,
+        "quality_factor": 2.6
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5900.0,
+        "gain_db": -4.1,
+        "quality_factor": 4.5
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 7000.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

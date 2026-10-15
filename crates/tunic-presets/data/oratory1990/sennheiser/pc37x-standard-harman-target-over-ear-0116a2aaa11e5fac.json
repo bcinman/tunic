@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/pc37x-standard-harman-target-over-ear-0116a2aaa11e5fac",
+    "revision": "2022-09-24.2",
+    "brand": "Sennheiser",
+    "model": "PC37X",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/z5eamho73tc7hrn/Sennheiser%20PC37X.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -9.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 50.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 210.0,
+        "gain_db": -2.2,
+        "quality_factor": 0.9,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1250.0,
+        "gain_db": -1.2,
+        "quality_factor": 2.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1600.0,
+        "gain_db": 2.5,
+        "quality_factor": 2.0,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -1.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4300.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4700.0,
+        "gain_db": -3.8,
+        "quality_factor": 4.5
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5850.0,
+        "gain_db": -3.3,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

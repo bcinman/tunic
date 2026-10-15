@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/moondrop/kanas-pro-standard-harman-target-in-ear-9c03a5e89fd77fb0",
+    "revision": "2019-05-22.1",
+    "brand": "Moondrop",
+    "model": "Kanas Pro",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/jyjsg0dz6smfg1g/Moondrop%20Kanas%20Pro.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.6,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 40.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 190.0,
+        "gain_db": -2.2,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 3,
+        "kind": "high_shelf",
+        "frequency_hz": 550.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 950.0,
+        "gain_db": 0.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1550.0,
+        "gain_db": -3.8,
+        "quality_factor": 1.1
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3100.0,
+        "gain_db": 1.4,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4300.0,
+        "gain_db": -1.8,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6500.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.0
+      }
+    ]
+  }
+}

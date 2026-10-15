@@ -1,0 +1,48 @@
+{
+  "summary": {
+    "id": "oratory1990/moondrop/chu-oratory1990-target-842c9e5d8932ce2b",
+    "revision": "2022-06-07.1",
+    "brand": "Moondrop",
+    "model": "Chu",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/hf56xqucb6gca47/Moondrop%20Chu%20%28oratory1990%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 83.0,
+        "gain_db": 3.3,
+        "quality_factor": 0.7,
+        "control_name": "Bass / muddiness"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1400.0,
+        "gain_db": -3.2,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2700.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.3
+      }
+    ]
+  }
+}

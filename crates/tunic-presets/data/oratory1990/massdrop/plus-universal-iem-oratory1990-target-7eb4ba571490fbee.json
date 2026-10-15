@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/massdrop/plus-universal-iem-oratory1990-target-7eb4ba571490fbee",
+    "revision": "2019-03-11.1",
+    "brand": "Massdrop",
+    "model": "Plus Universal IEM",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/cq8zw832ro2jx78/Massdrop%20Plus%20Universal%20IEMs%20%28USound%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 300.0,
+        "gain_db": -3.9,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 800.0,
+        "gain_db": 3.3,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 3,
+        "kind": "high_shelf",
+        "frequency_hz": 850.0,
+        "gain_db": -7.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1050.0,
+        "gain_db": 0.7,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2300.0,
+        "gain_db": -0.4,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3450.0,
+        "gain_db": 0.9,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.7
+      }
+    ]
+  }
+}

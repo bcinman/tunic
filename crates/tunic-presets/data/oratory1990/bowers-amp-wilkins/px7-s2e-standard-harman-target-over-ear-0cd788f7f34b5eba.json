@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/bowers-amp-wilkins/px7-s2e-standard-harman-target-over-ear-0cd788f7f34b5eba",
+    "revision": "2024-05-25.1",
+    "brand": "Bowers & Wilkins",
+    "model": "PX7 S2E",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/hl2mjd63egyj1lb9lreyd/Bowers-Wilkins-PX7-S2E.pdf?rlkey=8hxa12hkfrfk85ptgumojle16&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 19.0,
+        "gain_db": -5.2,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 65.0,
+        "gain_db": -1.6,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 4,
+        "kind": "low_shelf",
+        "frequency_hz": 155.0,
+        "gain_db": -11.5,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 225.0,
+        "gain_db": -3.4,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -3.3,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 1950.0,
+        "gain_db": 3.2,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 2950.0,
+        "gain_db": -2.4,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 3200.0,
+        "gain_db": -1.5,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

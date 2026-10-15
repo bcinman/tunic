@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/philips/she3855-oratory1990-target-92408a4ee135e3a3",
+    "revision": "2019-12-10.1",
+    "brand": "Philips",
+    "model": "SHE3855",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/67hkq1l39mau7ka/Philips%20SHE3855%20%28oratory1990%20target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 50.0,
+        "gain_db": -2.8,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 750.0,
+        "gain_db": 1.7,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -1.6,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2300.0,
+        "gain_db": -4.9,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3350.0,
+        "gain_db": 3.3,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5150.0,
+        "gain_db": -4.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 11600.0,
+        "gain_db": -5.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 12000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

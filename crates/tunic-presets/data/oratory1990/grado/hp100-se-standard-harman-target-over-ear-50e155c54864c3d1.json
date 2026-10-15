@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/grado/hp100-se-standard-harman-target-over-ear-50e155c54864c3d1",
+    "revision": "2025-06-01.1",
+    "brand": "Grado",
+    "model": "HP100 SE",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/mpry0weepphn91jxsyaz6/Grado-HP100-SE.pdf?rlkey=couyhvunwl8sxcbr2hz12fhyx&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 30.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 180.0,
+        "gain_db": -2.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 350.0,
+        "gain_db": 1.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 650.0,
+        "gain_db": 1.4,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 2000.0,
+        "gain_db": -11.0,
+        "quality_factor": 0.45,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": -4.1,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5950.0,
+        "gain_db": -4.2,
+        "quality_factor": 5.5
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 10500.0,
+        "gain_db": -4.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 12000.0,
+        "gain_db": 10.0,
+        "quality_factor": 1.0,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

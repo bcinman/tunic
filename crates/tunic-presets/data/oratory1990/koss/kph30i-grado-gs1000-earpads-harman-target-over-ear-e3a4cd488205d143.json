@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "id": "oratory1990/koss/kph30i-grado-gs1000-earpads-harman-target-over-ear-e3a4cd488205d143",
+    "revision": "2021-07-19.1",
+    "brand": "Koss",
+    "model": "KPH30i",
+    "target": "Harman AE/OE 2018",
+    "variant": "Grado GS1000 earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/bejoy494ezv2tzx/Koss%20KPH30i%20%28Grado%20GS1000%20earpads%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 94.0,
+        "gain_db": -5.8,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -3.5,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 750.0,
+        "gain_db": 0.7,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": -0.7,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3300.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5070.0,
+        "gain_db": -5.6,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5900.0,
+        "gain_db": -1.3,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

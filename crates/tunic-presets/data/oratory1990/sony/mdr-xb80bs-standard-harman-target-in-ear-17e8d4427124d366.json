@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/mdr-xb80bs-standard-harman-target-in-ear-17e8d4427124d366",
+    "revision": "2018-11-03.1",
+    "brand": "Sony",
+    "model": "MDR-XB80BS",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/98d66n9i7ondpw5/Sony%20MDR-XB80BS.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 70.0,
+        "gain_db": 2.1,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 140.0,
+        "gain_db": -4.5,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 350.0,
+        "gain_db": 1.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1150.0,
+        "gain_db": -0.7,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1800.0,
+        "gain_db": 1.3,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2750.0,
+        "gain_db": -1.4,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4100.0,
+        "gain_db": 8.2,
+        "quality_factor": 1.1
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5940.0,
+        "gain_db": -4.2,
+        "quality_factor": 6.0
+      }
+    ]
+  }
+}

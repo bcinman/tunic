@@ -1,0 +1,79 @@
+{
+  "summary": {
+    "id": "oratory1990/hifiman/shangri-la-jr-standard-harman-target-over-ear-854a9537532f179a",
+    "revision": "2024-05-09.1",
+    "brand": "Hifiman",
+    "model": "Shangri-La Jr",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/0iyjk2h6x8jxjr2jhaz3d/Hifiman-Shangri-La-Jr.pdf?rlkey=vu5rlb9i171rxk1o6ck6u8qi5&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 49.0,
+        "gain_db": 2.5,
+        "quality_factor": 0.71,
+        "control_name": "Subbass"
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 500.0,
+        "gain_db": 0.6,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1950.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.0,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -2.8,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": -1.2,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 11000.0,
+        "gain_db": -4.0,
+        "quality_factor": 6.0
+      }
+    ]
+  }
+}

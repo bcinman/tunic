@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/etymotic-research/er-4xr-oratory1990-target-0c358b126e3e19b5",
+    "revision": "2019-03-07.1",
+    "brand": "Etymotic Research",
+    "model": "ER-4XR",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/4771ykizve0p7mi/Etymotic%20ER-4XR%20%28USound%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 160.0,
+        "gain_db": 6.8,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 2,
+        "kind": "high_shelf",
+        "frequency_hz": 1050.0,
+        "gain_db": -2.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 2550.0,
+        "gain_db": -1.1,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 4000.0,
+        "gain_db": 6.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 4900.0,
+        "gain_db": -2.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 7100.0,
+        "gain_db": 6.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 10000.0,
+        "gain_db": -4.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 12800.0,
+        "gain_db": -9.0,
+        "quality_factor": 1.5
+      }
+    ]
+  }
+}

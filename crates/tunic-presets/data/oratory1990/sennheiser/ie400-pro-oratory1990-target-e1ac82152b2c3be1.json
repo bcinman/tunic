@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/ie400-pro-oratory1990-target-e1ac82152b2c3be1",
+    "revision": "2024-05-23.1",
+    "brand": "Sennheiser",
+    "model": "IE400 Pro",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/klhs9wyc1jp0r87gk7lmt/Sennheiser-IE400-Pro-oratory1990.pdf?rlkey=55jk2gzi1uvjgngenb7lj12et&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 260.0,
+        "gain_db": -1.8,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 880.0,
+        "gain_db": 2.7,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 3,
+        "kind": "high_shelf",
+        "frequency_hz": 1500.0,
+        "gain_db": 8.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1500.0,
+        "gain_db": -3.4,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 5150.0,
+        "gain_db": -3.4,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 7000.0,
+        "gain_db": -8.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8700.0,
+        "gain_db": -8.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/samsung/sm-r175-galaxy-buds-standard-harman-target-in-ear-a11dd5340b0d9bbf",
+    "revision": "2020-02-22.1",
+    "brand": "Samsung",
+    "model": "SM-R175 Galaxy Buds+",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/zdeudwzb955jrqw/Samsung%20SM-R175%20Galaxy%20Buds%2B.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.2,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 1320.0,
+        "gain_db": -1.3,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 2750.0,
+        "gain_db": -1.5,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 4200.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4350.0,
+        "gain_db": -1.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 7000.0,
+        "gain_db": -1.0,
+        "quality_factor": 4.0
+      }
+    ]
+  }
+}

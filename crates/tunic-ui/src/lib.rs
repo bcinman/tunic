@@ -367,9 +367,12 @@ mod tests {
     use gpui::{Bounds, point, px, size};
     use tunic_core::{
         AudioFormat, Chain, ChangeHandler, Command, Connection, FrequencyHz, GainDb,
-        MemoryPersistence, Platform, Processor, ProcessorError, SampleRateHz, Session,
+        MemoryPersistence, Platform, PresetId, Processor, ProcessorError, SampleRateHz, Session,
     };
     use tunic_presets::BundledCatalog;
+
+    const HD650: &str = "oratory1990/sennheiser/hd650/harman";
+    const MDR7506: &str = "oratory1990/sony/mdr-7506/harman";
 
     struct TestPlatform(Option<Connection>);
 
@@ -383,17 +386,17 @@ mod tests {
         }
     }
 
-    fn session_with_preset(index: usize) -> Session {
+    fn session_with_preset(id: &str) -> Session {
         let mut session = Session::new(MemoryPersistence::default(), BundledCatalog).unwrap();
         session
-            .execute(Command::UsePreset(session.presets()[index].id.clone()))
+            .execute(Command::UsePreset(PresetId::try_new(id).unwrap()))
             .unwrap();
         session
     }
 
     #[test]
     fn selecting_profiles_updates_the_authoritative_session_state() {
-        let mut session = session_with_preset(1);
+        let mut session = session_with_preset(MDR7506);
         assert_eq!(
             session.selected_profile().unwrap().name().to_string(),
             "Sony MDR-7506"
@@ -432,7 +435,7 @@ mod tests {
         let mut samples = vec![0.25_f32; 512 * 2];
 
         session
-            .execute(Command::UsePreset(session.presets()[1].id.clone()))
+            .execute(Command::UsePreset(PresetId::try_new(MDR7506).unwrap()))
             .unwrap();
         processor.process(&mut samples);
 
@@ -505,7 +508,7 @@ mod tests {
 
     #[test]
     fn incompatible_equalizer_response_is_reported_instead_of_panicking() {
-        let session = session_with_preset(1);
+        let session = session_with_preset(MDR7506);
         let sample_rate = SampleRateHz::try_new(16_000.0).unwrap();
 
         assert!(matches!(
@@ -516,7 +519,7 @@ mod tests {
 
     #[test]
     fn individual_filter_responses_sum_to_the_combined_response() {
-        let chain = session_with_preset(0).active_chain();
+        let chain = session_with_preset(HD650).active_chain();
         let sample_rate = SampleRateHz::try_new(48_000.0).unwrap();
         let combined = equalizer_response(&chain, sample_rate, 20_000.0).unwrap();
         let individual = individual_equalizer_responses(&chain, sample_rate, 20_000.0);
@@ -533,7 +536,7 @@ mod tests {
 
     #[test]
     fn gain_controls_persist_immediately_without_changing_base() {
-        let mut session = session_with_preset(0);
+        let mut session = session_with_preset(HD650);
         let saved = session.selected_profile().unwrap().clone();
         let filter_id = saved.controls()[0].target();
         let edit = Command::SetControlGain {
@@ -562,7 +565,7 @@ mod tests {
 
     #[test]
     fn graph_edits_an_exposed_filter_base_without_changing_its_adjustment() {
-        let mut session = session_with_preset(0);
+        let mut session = session_with_preset(HD650);
         let saved = session.selected_profile().unwrap().clone();
         let filter_id = saved.controls()[0].target();
         let bounds = Bounds {
@@ -597,7 +600,7 @@ mod tests {
 
     #[test]
     fn failed_reset_keeps_the_compatible_live_draft() {
-        let mut session = session_with_preset(1);
+        let mut session = session_with_preset(MDR7506);
         for filter in session.active_chain().equalizer.filters {
             if filter.parameters.frequency.into_inner() >= 8_000.0 {
                 session
@@ -633,7 +636,7 @@ mod tests {
 
     #[test]
     fn saving_does_not_republish_and_reset_filter_history() {
-        let mut session = session_with_preset(0);
+        let mut session = session_with_preset(HD650);
         let filter = session.active_chain().equalizer.filters[0];
         session
             .execute(Command::EditFilter {

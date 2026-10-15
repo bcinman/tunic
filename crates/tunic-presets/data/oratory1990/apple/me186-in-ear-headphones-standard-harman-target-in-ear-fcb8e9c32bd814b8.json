@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "id": "oratory1990/apple/me186-in-ear-headphones-standard-harman-target-in-ear-fcb8e9c32bd814b8",
+    "revision": "2022-07-25.1",
+    "brand": "Apple",
+    "model": "ME186 In-Ear Headphones",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/agciukk2en1sx8x/Apple%20ME186%20In-Ear%20Headphones.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 90.0,
+        "gain_db": -1.6,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.6,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 800.0,
+        "gain_db": 0.4,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1250.0,
+        "gain_db": -0.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 2000.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.6,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -4.5,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4350.0,
+        "gain_db": -1.2,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -7.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

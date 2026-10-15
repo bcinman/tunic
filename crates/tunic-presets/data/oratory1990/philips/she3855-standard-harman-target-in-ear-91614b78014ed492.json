@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/philips/she3855-standard-harman-target-in-ear-91614b78014ed492",
+    "revision": "2019-12-10.1",
+    "brand": "Philips",
+    "model": "SHE3855",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/1gc7ir4v413wclo/Philips%20SHE3855.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 700.0,
+        "gain_db": 3.6,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 2400.0,
+        "gain_db": -4.9,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3350.0,
+        "gain_db": 7.7,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 5100.0,
+        "gain_db": -3.2,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 11600.0,
+        "gain_db": -4.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 12000.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/periodic-audio/be-standard-harman-target-in-ear-7be124518aa7cd9b",
+    "revision": "2018-09-22.1",
+    "brand": "Periodic Audio",
+    "model": "Be",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/txsgqilavlt2iyr/Periodic%20Audio%20Be.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 150.0,
+        "gain_db": -2.1,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 850.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 3,
+        "kind": "high_shelf",
+        "frequency_hz": 2500.0,
+        "gain_db": 10.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1700.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 6250.0,
+        "gain_db": -10.0,
+        "quality_factor": 3.8
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 9650.0,
+        "gain_db": -8.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": 2.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 14000.0,
+        "gain_db": -9.0,
+        "quality_factor": 0.7
+      }
+    ]
+  }
+}

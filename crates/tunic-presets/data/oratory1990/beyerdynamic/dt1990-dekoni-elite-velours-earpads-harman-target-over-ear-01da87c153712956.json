@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "id": "oratory1990/beyerdynamic/dt1990-dekoni-elite-velours-earpads-harman-target-over-ear-01da87c153712956",
+    "revision": "2021-09-06.1",
+    "brand": "Beyerdynamic",
+    "model": "DT1990",
+    "target": "Harman AE/OE 2018",
+    "variant": "Dekoni Elite Velours Earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/3gkvsu9nlhjwqf2/Beyerdynamic%20DT1990%20%28Dekoni%20Elite%20Velours%20Earpads%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 30.0,
+        "gain_db": -1.7,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 70.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 220.0,
+        "gain_db": -4.4,
+        "quality_factor": 0.6,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 700.0,
+        "gain_db": 1.1,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 2.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5500.0,
+        "gain_db": -2.8,
+        "quality_factor": 4.5
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7400.0,
+        "gain_db": -2.5,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8300.0,
+        "gain_db": -4.4,
+        "quality_factor": 5.0,
+        "control_name": "Sharpness / detail"
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

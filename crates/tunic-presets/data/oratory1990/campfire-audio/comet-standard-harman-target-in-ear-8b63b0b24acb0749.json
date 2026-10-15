@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/campfire-audio/comet-standard-harman-target-in-ear-8b63b0b24acb0749",
+    "revision": "2018-10-05.1",
+    "brand": "Campfire Audio",
+    "model": "Comet",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/70tzudkydpftzp7/Campfire%20Audio%20Comet.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 70.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 290.0,
+        "gain_db": -5.3,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -1.4,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2350.0,
+        "gain_db": 1.4,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3280.0,
+        "gain_db": -6.2,
+        "quality_factor": 2.7
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4700.0,
+        "gain_db": 6.6,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 7075.0,
+        "gain_db": -6.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 9800.0,
+        "gain_db": -7.0,
+        "quality_factor": 5.0
+      }
+    ]
+  }
+}

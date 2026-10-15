@@ -1,0 +1,47 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/wf-1000x-oratory1990-target-aa33687765296894",
+    "revision": "2019-07-04.1",
+    "brand": "Sony",
+    "model": "WF-1000X",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/1ewca74r5a9piqv/Sony%20WF-1000X%20%28USound%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": 0.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 500.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -1.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 2700.0,
+        "gain_db": -1.6,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 5050.0,
+        "gain_db": -2.0,
+        "quality_factor": 4.0
+      }
+    ]
+  }
+}

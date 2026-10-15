@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/hifiman/deva-wired-harman-target-over-ear-f473460d984d6bb8",
+    "revision": "2020-10-03.2",
+    "brand": "Hifiman",
+    "model": "Deva",
+    "target": "Harman AE/OE 2018",
+    "variant": "wired"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/x5ix9sybuc9rznm/Hifiman%20Deva%20%28wired%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -10.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 37.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 640.0,
+        "gain_db": 2.2,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 890.0,
+        "gain_db": -1.8,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 1500.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3100.0,
+        "gain_db": -2.5,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5250.0,
+        "gain_db": -4.1,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -4.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness (band 9)"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 8100.0,
+        "gain_db": 1.6,
+        "quality_factor": 1.4,
+        "control_name": "Airiness (band 10)"
+      }
+    ]
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/beyerdynamic/dt250-250-ohm-version-harman-target-over-ear-15b5f134499ae9a6",
+    "revision": "2019-09-26.1",
+    "brand": "Beyerdynamic",
+    "model": "DT250",
+    "target": "Harman AE/OE 2018",
+    "variant": "250 Ohm Version"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/dk4fxwcoasup5py/Beyerdynamic%20DT250.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 910.0,
+        "gain_db": -0.9,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 920.0,
+        "gain_db": -2.5,
+        "quality_factor": 0.3
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1400.0,
+        "gain_db": -1.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2650.0,
+        "gain_db": -2.9,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3650.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4550.0,
+        "gain_db": -1.9,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6900.0,
+        "gain_db": -1.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 9000.0,
+        "gain_db": -5.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 12000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

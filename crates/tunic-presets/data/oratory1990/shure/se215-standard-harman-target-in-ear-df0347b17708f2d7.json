@@ -1,0 +1,77 @@
+{
+  "summary": {
+    "id": "oratory1990/shure/se215-standard-harman-target-in-ear-df0347b17708f2d7",
+    "revision": "2026-06-23.1",
+    "brand": "Shure",
+    "model": "SE215",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/dm1twvx940ggfsw/Shure%20SE215.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 0.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 190.0,
+        "gain_db": -5.4,
+        "quality_factor": 0.45
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 800.0,
+        "gain_db": 2.2,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1430.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2300.0,
+        "gain_db": -4.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3450.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 4000.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.35,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4860.0,
+        "gain_db": -8.0,
+        "quality_factor": 3.8
+      }
+    ]
+  }
+}

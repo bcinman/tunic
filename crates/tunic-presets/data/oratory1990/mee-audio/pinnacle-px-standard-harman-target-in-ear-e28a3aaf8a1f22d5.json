@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/mee-audio/pinnacle-px-standard-harman-target-in-ear-e28a3aaf8a1f22d5",
+    "revision": "2018-08-29.1",
+    "brand": "Mee Audio",
+    "model": "Pinnacle PX",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/dpy8zmm2nh6sugu/Mee%20Audio%20Pinnacle%20PX.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 20.0,
+        "gain_db": 2.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 84.0,
+        "gain_db": -0.9,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 205.0,
+        "gain_db": -7.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 440.0,
+        "gain_db": -1.7,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -0.7,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": 1.5,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2950.0,
+        "gain_db": -1.5,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5000.0,
+        "gain_db": -4.9,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 6800.0,
+        "gain_db": 3.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -8.0,
+        "quality_factor": 0.7
+      }
+    ]
+  }
+}

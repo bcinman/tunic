@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "id": "oratory1990/hifiman/ananda-standard-harman-target-over-ear-d9861c9474fbb615",
+    "revision": "2022-03-09.1",
+    "brand": "Hifiman",
+    "model": "Ananda",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/l1wivpf8901uflr/Hifiman%20Ananda.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 20.0,
+        "gain_db": 2.3,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 970.0,
+        "gain_db": -1.8,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1770.0,
+        "gain_db": 6.5,
+        "quality_factor": 1.1,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3100.0,
+        "gain_db": -2.8,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 6400.0,
+        "gain_db": -1.5,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 7000.0,
+        "gain_db": 2.5,
+        "quality_factor": 1.4,
+        "control_name": "Sibilance"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 8050.0,
+        "gain_db": -2.6,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -0.5,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

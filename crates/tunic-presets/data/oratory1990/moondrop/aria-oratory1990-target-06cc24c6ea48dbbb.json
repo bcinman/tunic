@@ -1,0 +1,54 @@
+{
+  "summary": {
+    "id": "oratory1990/moondrop/aria-oratory1990-target-06cc24c6ea48dbbb",
+    "revision": "2023-03-05.1",
+    "brand": "Moondrop",
+    "model": "Aria",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/hlwjbjq1i5f0ltw/Moondrop%20Aria%20%28oratory1990%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 290.0,
+        "gain_db": -0.7,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 800.0,
+        "gain_db": 1.2,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1420.0,
+        "gain_db": -2.9,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

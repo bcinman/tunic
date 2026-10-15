@@ -1,0 +1,69 @@
+{
+  "summary": {
+    "id": "oratory1990/philips/shp9500-7-band-eq-for-e1da-powerdac-harman-target-over-ear-9e32414c90705a08",
+    "revision": "2021-08-03.1",
+    "brand": "Philips",
+    "model": "SHP9500",
+    "target": "Harman AE/OE 2018",
+    "variant": "7-band EQ for E1DA Powerdac"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/a4scazb14hg3oet/Philips%20SHP9500%20%287-band%20EQ%20for%20E1DA%20Powerdac%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 60.0,
+        "gain_db": 8.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -1.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1250.0,
+        "gain_db": -1.4,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2300.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -2.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5900.0,
+        "gain_db": -8.4,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

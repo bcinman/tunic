@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/neumann/ndh20-standard-harman-target-over-ear-f52610d9648efe75",
+    "revision": "2021-10-11.2",
+    "brand": "Neumann",
+    "model": "NDH20",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/nabq39xj25m097s/Neumann%20NDH%2020.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 35.0,
+        "gain_db": -7.2,
+        "quality_factor": 0.3
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 86.0,
+        "gain_db": 1.3,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -1.2,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 370.0,
+        "gain_db": 1.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2100.0,
+        "gain_db": 8.0,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3250.0,
+        "gain_db": -2.7,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 3850.0,
+        "gain_db": -2.4,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 8500.0,
+        "gain_db": -4.2,
+        "quality_factor": 5.0,
+        "control_name": "Airiness / detail"
+      }
+    ]
+  }
+}

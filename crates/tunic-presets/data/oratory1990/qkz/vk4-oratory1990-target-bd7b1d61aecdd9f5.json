@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/qkz/vk4-oratory1990-target-bd7b1d61aecdd9f5",
+    "revision": "2021-02-08.1",
+    "brand": "QKZ",
+    "model": "VK4",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/w95110qzdz08xh4/QKZ%20VK4%20%28oratory1990%20target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 20.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 125.0,
+        "gain_db": 0.1,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 800.0,
+        "gain_db": 0.8,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1410.0,
+        "gain_db": -2.2,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2700.0,
+        "gain_db": 1.7,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4300.0,
+        "gain_db": -2.0,
+        "quality_factor": 2.6
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -3.0,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

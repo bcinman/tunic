@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/momentum-4-wireless-standard-harman-target-over-ear-6ce07d12951f8769",
+    "revision": "2025-09-09.1",
+    "brand": "Sennheiser",
+    "model": "Momentum 4 Wireless",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/wvm959borifao31qpzxvq/Sennheiser-Momentum-4-Wireless.pdf?rlkey=c5ppx9jou94fawplsc6ogtawq&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 23.0,
+        "gain_db": -7.9,
+        "quality_factor": 0.35
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -1.4,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 970.0,
+        "gain_db": -1.7,
+        "quality_factor": 2.7
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2150.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.1,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2900.0,
+        "gain_db": -2.7,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 3700.0,
+        "gain_db": -1.9,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7100.0,
+        "gain_db": -2.6,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "summary": {
+    "id": "oratory1990/focal/azurys-standard-harman-target-over-ear-eac6ab952029424f",
+    "revision": "2025-01-11.1",
+    "brand": "Focal",
+    "model": "Azurys",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/kdtibb5oz7dmiwo9v2h4r/Focal-Azurys.pdf?rlkey=devle0nojwqvjzvf2n295l2x9&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.6,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 35.0,
+        "gain_db": -8.1,
+        "quality_factor": 0.35
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 220.0,
+        "gain_db": 0.8,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 2100.0,
+        "gain_db": 6.0,
+        "quality_factor": 0.4,
+        "control_name": "Treble"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3400.0,
+        "gain_db": -5.0,
+        "quality_factor": 1.9
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 6750.0,
+        "gain_db": -2.6,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8200.0,
+        "gain_db": -3.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -6.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

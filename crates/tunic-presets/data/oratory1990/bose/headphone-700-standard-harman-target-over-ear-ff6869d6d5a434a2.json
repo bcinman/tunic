@@ -1,0 +1,82 @@
+{
+  "summary": {
+    "id": "oratory1990/bose/headphone-700-standard-harman-target-over-ear-ff6869d6d5a434a2",
+    "revision": "2021-08-19.1",
+    "brand": "Bose",
+    "model": "Headphone 700",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/uakzugvxna5zv7j/Bose%20700%20Headphone.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 170.0,
+        "gain_db": -3.3,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 400.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 950.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1190.0,
+        "gain_db": 3.8,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 2000.0,
+        "gain_db": 2.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2100.0,
+        "gain_db": -1.3,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4830.0,
+        "gain_db": -4.5,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8500.0,
+        "gain_db": -4.0,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

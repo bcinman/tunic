@@ -1,0 +1,47 @@
+{
+  "summary": {
+    "id": "oratory1990/obravo/cupid-oratory1990-target-5e2c14979226f13d",
+    "revision": "2019-07-29.1",
+    "brand": "oBravo",
+    "model": "Cupid",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/zezv6z56lmwdub0/oBravo%20Cupid.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 800.0,
+        "gain_db": 2.7,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 2750.0,
+        "gain_db": -3.2,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 4330.0,
+        "gain_db": -5.4,
+        "quality_factor": 3.8
+      }
+    ]
+  }
+}

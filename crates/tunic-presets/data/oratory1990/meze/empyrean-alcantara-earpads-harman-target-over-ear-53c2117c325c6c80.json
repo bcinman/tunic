@@ -1,0 +1,95 @@
+{
+  "summary": {
+    "id": "oratory1990/meze/empyrean-alcantara-earpads-harman-target-over-ear-53c2117c325c6c80",
+    "revision": "2021-04-29.1",
+    "brand": "Meze",
+    "model": "Empyrean",
+    "target": "Harman AE/OE 2018",
+    "variant": "Alcantara earpads"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/l1ardkc1vfyturd/Meze%20Empyrean%20%28Alcantara%20earpads%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 65.0,
+        "gain_db": -2.6,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -2.6,
+        "quality_factor": 0.7,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 350.0,
+        "gain_db": 1.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1050.0,
+        "gain_db": -1.0,
+        "quality_factor": 2.2
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1950.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.0,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": -1.8,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7900.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.0,
+        "control_name": "Timbral accuracy / sibilance"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -2.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

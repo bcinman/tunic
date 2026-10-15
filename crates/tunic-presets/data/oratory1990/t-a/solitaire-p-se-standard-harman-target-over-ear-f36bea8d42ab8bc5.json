@@ -1,0 +1,84 @@
+{
+  "summary": {
+    "id": "oratory1990/t-a/solitaire-p-se-standard-harman-target-over-ear-f36bea8d42ab8bc5",
+    "revision": "2022-06-13.1",
+    "brand": "T+A",
+    "model": "Solitaire P SE",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/uqbi59ep7vd1p2r/T%2BA%20Solitaire%20P%20SE.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 45.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 350.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 1500.0,
+        "gain_db": 6.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2800.0,
+        "gain_db": -1.2,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 6600.0,
+        "gain_db": -3.8,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -5.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 8200.0,
+        "gain_db": -6.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

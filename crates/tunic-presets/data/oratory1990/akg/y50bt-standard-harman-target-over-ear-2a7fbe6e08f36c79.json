@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/akg/y50bt-standard-harman-target-over-ear-2a7fbe6e08f36c79",
+    "revision": "2018-07-13.1",
+    "brand": "AKG",
+    "model": "Y50BT",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/amtwyhfhyeris9p/AKG%20Y50BT.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 40.0,
+        "gain_db": 8.0,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 186.0,
+        "gain_db": 5.3,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 340.0,
+        "gain_db": -1.7,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -2.7,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1500.0,
+        "gain_db": -1.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2700.0,
+        "gain_db": 6.0,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3300.0,
+        "gain_db": -2.6,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -3.5,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 10000.0,
+        "gain_db": 4.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 13000.0,
+        "gain_db": -5.0,
+        "quality_factor": 1.5
+      }
+    ]
+  }
+}

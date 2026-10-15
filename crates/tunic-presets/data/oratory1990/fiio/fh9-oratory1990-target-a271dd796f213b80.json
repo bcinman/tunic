@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/fiio/fh9-oratory1990-target-a271dd796f213b80",
+    "revision": "2024-05-16.1",
+    "brand": "Fiio",
+    "model": "FH9",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/xf3rykifghn0qdlrhkrm6/Fiio-FH9-oratory1990.pdf?rlkey=4zk0wyejkhituvwxbxg4eaexx&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.2,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 1.4,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 290.0,
+        "gain_db": -4.2,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 950.0,
+        "gain_db": 0.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1420.0,
+        "gain_db": -2.8,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2750.0,
+        "gain_db": -4.6,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.7,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": -3.8,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8800.0,
+        "gain_db": -2.9,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

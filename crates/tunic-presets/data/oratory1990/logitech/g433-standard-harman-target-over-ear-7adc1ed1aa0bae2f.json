@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/logitech/g433-standard-harman-target-over-ear-7adc1ed1aa0bae2f",
+    "revision": "2019-06-11.1",
+    "brand": "Logitech",
+    "model": "G433",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/s2popi4ny34hx8y/Logitech%20G433.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 170.0,
+        "gain_db": -7.0,
+        "quality_factor": 0.55
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 370.0,
+        "gain_db": 8.0,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 650.0,
+        "gain_db": -1.9,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1480.0,
+        "gain_db": -3.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2850.0,
+        "gain_db": -4.5,
+        "quality_factor": 2.8
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3500.0,
+        "gain_db": 6.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": -5.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5500.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8200.0,
+        "gain_db": -6.2,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 9900.0,
+        "gain_db": -8.5,
+        "quality_factor": 5.0
+      }
+    ]
+  }
+}

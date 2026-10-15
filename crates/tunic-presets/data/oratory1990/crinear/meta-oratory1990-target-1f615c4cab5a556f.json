@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/crinear/meta-oratory1990-target-1f615c4cab5a556f",
+    "revision": "2025-04-22.1",
+    "brand": "CrinEar",
+    "model": "Meta",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/5axwna28sivhgty4lo7xn/CrinEar-Meta.pdf?rlkey=h6okvuheb1wese7dh7uxllt3e&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 133.0,
+        "gain_db": 3.7,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 380.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 0.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1280.0,
+        "gain_db": -1.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2750.0,
+        "gain_db": -2.2,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.35
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 9000.0,
+        "gain_db": -6.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

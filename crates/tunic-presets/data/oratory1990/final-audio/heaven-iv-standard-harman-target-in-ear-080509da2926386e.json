@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/final-audio/heaven-iv-standard-harman-target-in-ear-080509da2926386e",
+    "revision": "2020-11-23.1",
+    "brand": "Final Audio",
+    "model": "Heaven IV",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/c3w05k3h9ep7r8r/Final%20Audio%20Heaven%20IV.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 72.0,
+        "gain_db": 3.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 234.0,
+        "gain_db": -5.5,
+        "quality_factor": 0.55
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -0.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 1800.0,
+        "gain_db": 6.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3050.0,
+        "gain_db": -3.9,
+        "quality_factor": 2.8
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 6300.0,
+        "gain_db": -2.7,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8100.0,
+        "gain_db": -3.0,
+        "quality_factor": 4.0
+      }
+    ]
+  }
+}

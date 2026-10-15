@@ -1,0 +1,62 @@
+{
+  "summary": {
+    "id": "oratory1990/tin-audio/t2-spotify-eq-oratory1990-target-ab17270f9e2fb4d8",
+    "revision": "2019-02-13.1",
+    "brand": "Tin Audio",
+    "model": "T2",
+    "target": "USOUND 1V1 In-Ear",
+    "variant": "Spotify EQ"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/klnanburxg9bru4/Tin%20Audio%20T2%20%28Spotify%20v1%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.2,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 60.0,
+        "gain_db": 5.2,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 150.0,
+        "gain_db": 0.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 400.0,
+        "gain_db": -3.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2400.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 15000.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.0
+      }
+    ]
+  }
+}

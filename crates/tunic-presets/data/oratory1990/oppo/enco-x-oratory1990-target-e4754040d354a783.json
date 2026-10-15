@@ -1,0 +1,82 @@
+{
+  "summary": {
+    "id": "oratory1990/oppo/enco-x-oratory1990-target-e4754040d354a783",
+    "revision": "2022-03-05.1",
+    "brand": "Oppo",
+    "model": "Enco X",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/53w8zhkqv1zk4pa/Oppo%20Enco%20X%20%28oratory1990%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 220.0,
+        "gain_db": 3.1,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 470.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -1.4,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2250.0,
+        "gain_db": 0.9,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -5.5,
+        "quality_factor": 2.7
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 7600.0,
+        "gain_db": -5.9,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 15000.0,
+        "gain_db": -4.0,
+        "quality_factor": 2.0
+      }
+    ]
+  }
+}

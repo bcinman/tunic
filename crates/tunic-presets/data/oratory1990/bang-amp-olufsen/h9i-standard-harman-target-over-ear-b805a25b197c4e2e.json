@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/bang-amp-olufsen/h9i-standard-harman-target-over-ear-b805a25b197c4e2e",
+    "revision": "2019-03-16.1",
+    "brand": "Bang & Olufsen",
+    "model": "H9i",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/ofurxzzmwnsi8l8/B%26O%20H9i.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 22.5,
+        "gain_db": -10.0,
+        "quality_factor": 1.1
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 350.0,
+        "gain_db": 1.9,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 470.0,
+        "gain_db": 1.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 600.0,
+        "gain_db": 1.8,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1420.0,
+        "gain_db": -13.4,
+        "quality_factor": 1.9
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2120.0,
+        "gain_db": 3.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3350.0,
+        "gain_db": -8.0,
+        "quality_factor": 2.2
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": 10.0,
+        "quality_factor": 0.3
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8700.0,
+        "gain_db": -10.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 10500.0,
+        "gain_db": -10.0,
+        "quality_factor": 4.5
+      }
+    ]
+  }
+}

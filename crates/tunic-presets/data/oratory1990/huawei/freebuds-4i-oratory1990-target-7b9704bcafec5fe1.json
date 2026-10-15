@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/huawei/freebuds-4i-oratory1990-target-7b9704bcafec5fe1",
+    "revision": "2021-08-27.1",
+    "brand": "Huawei",
+    "model": "Freebuds 4i",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/x696q3d3vlvkwer/Huawei%20Freebuds%204i%20%28oratory1990%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 190.0,
+        "gain_db": -0.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 1450.0,
+        "gain_db": -1.7,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": -0.7,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3250.0,
+        "gain_db": -5.0,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3300.0,
+        "gain_db": 3.5,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": -1.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8100.0,
+        "gain_db": -3.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/philips/fidelio-x3-standard-harman-target-over-ear-831294fd07847ae2",
+    "revision": "2024-05-19.1",
+    "brand": "Philips",
+    "model": "Fidelio X3",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/qst47sbzbgkxdw80tja1z/Philips-Fidelio-X3.pdf?rlkey=50b696d7k5i3bq7s52vsihj0m&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -6.6,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 80.0,
+        "gain_db": -2.5,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -1.8,
+        "quality_factor": 1.0,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1600.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2300.0,
+        "gain_db": 7.8,
+        "quality_factor": 1.3,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3150.0,
+        "gain_db": -0.9,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4400.0,
+        "gain_db": 3.4,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6250.0,
+        "gain_db": -5.0,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 9900.0,
+        "gain_db": -5.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

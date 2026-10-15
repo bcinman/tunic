@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/creative/aurvana-live-2-standard-harman-target-over-ear-e87d3565a0eb9c4b",
+    "revision": "2022-10-26.1",
+    "brand": "Creative",
+    "model": "Aurvana Live!2",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/myfaw7591s0p34w/Creative%20Aurvana%20Live%212.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.6,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 80.0,
+        "gain_db": 1.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 425.0,
+        "gain_db": -10.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 690.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -1.8,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2250.0,
+        "gain_db": 4.9,
+        "quality_factor": 1.0,
+        "control_name": "Shoutiness / lower treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3100.0,
+        "gain_db": -3.9,
+        "quality_factor": 2.9
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 2.3,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -1.9,
+        "quality_factor": 4.5
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

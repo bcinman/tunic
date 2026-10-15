@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/hifiman/arya-organic-10-band-graphic-eq-harman-target-over-ear-51e0edfc82aff578",
+    "revision": "2026-04-06.1",
+    "brand": "Hifiman",
+    "model": "Arya Organic",
+    "target": "Harman 2015",
+    "variant": "10 band graphic EQ"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/s1h22zoox6i7g82sgr2r2/Hifiman-Arya-Organic-octave-band-EQ.pdf?rlkey=695dioubft6s8rn5g90f48sty&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.6,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 31.5,
+        "gain_db": 4.0,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 63.0,
+        "gain_db": 1.7,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 125.0,
+        "gain_db": -0.4,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -0.1,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 500.0,
+        "gain_db": -0.1,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -0.5,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -2.9,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 16000.0,
+        "gain_db": -5.9,
+        "quality_factor": 1.41
+      }
+    ]
+  }
+}

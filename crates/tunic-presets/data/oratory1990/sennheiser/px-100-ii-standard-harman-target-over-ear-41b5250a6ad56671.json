@@ -1,0 +1,71 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/px-100-ii-standard-harman-target-over-ear-41b5250a6ad56671",
+    "revision": "2021-05-31.1",
+    "brand": "Sennheiser",
+    "model": "PX 100-II",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/omxy5zzko3cdcs6/Sennheiser%20PX%20100-II.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 180.0,
+        "gain_db": -3.0,
+        "quality_factor": 1.0,
+        "control_name": "Warmth / muddiness"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 650.0,
+        "gain_db": 1.3,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1770.0,
+        "gain_db": -5.5,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 2000.0,
+        "gain_db": 10.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3300.0,
+        "gain_db": -3.2,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4700.0,
+        "gain_db": -6.5,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 12000.0,
+        "gain_db": -10.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

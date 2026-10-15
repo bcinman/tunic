@@ -1,0 +1,87 @@
+{
+  "summary": {
+    "id": "oratory1990/audeze/lcd-2-closed-back-standard-harman-target-over-ear-59abb8226334b390",
+    "revision": "2024-04-14.1",
+    "brand": "Audeze",
+    "model": "LCD-2 Closed Back",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/1lqe376tkubmm7j/Audeze%20LCD-2%20Closed%20Back.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 80.0,
+        "gain_db": -4.3,
+        "quality_factor": 0.4
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 230.0,
+        "gain_db": -1.2,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 380.0,
+        "gain_db": 1.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1850.0,
+        "gain_db": -4.7,
+        "quality_factor": 0.8,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.7,
+        "control_name": "Lower treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5870.0,
+        "gain_db": -6.5,
+        "quality_factor": 2.7,
+        "control_name": "Harshness"
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 11800.0,
+        "gain_db": -3.0,
+        "quality_factor": 6.0
+      }
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/jabra/elite-7-pro-standard-harman-target-in-ear-99b85ab15f739303",
+    "revision": "2022-06-19.1",
+    "brand": "Jabra",
+    "model": "Elite 7 Pro",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/4hmbm52jh0n5xm7/Jabra%20Elite%207%20Pro.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 72.0,
+        "gain_db": -1.8,
+        "quality_factor": 2.2
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 410.0,
+        "gain_db": 3.5,
+        "quality_factor": 1.9
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 760.0,
+        "gain_db": 1.4,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2500.0,
+        "gain_db": -0.9,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3700.0,
+        "gain_db": 2.5,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8100.0,
+        "gain_db": -5.0,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

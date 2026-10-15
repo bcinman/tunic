@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/campfire-audio/vega-foam-eartips-oratory1990-target-49392fbd8764eb89",
+    "revision": "2018-07-09.1",
+    "brand": "Campfire Audio",
+    "model": "Vega",
+    "target": "USOUND 1V0 In-Ear",
+    "variant": "Foam Eartips"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/hrtc29yjoakj6iq/Campfire%20Audio%20Vega%20%28Foam%20Eartips%29%20%28USound%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -10.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -2.7,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 800.0,
+        "gain_db": 2.4,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1450.0,
+        "gain_db": -1.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1900.0,
+        "gain_db": -2.4,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3400.0,
+        "gain_db": 10.6,
+        "quality_factor": 0.85
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5250.0,
+        "gain_db": -1.7,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 6100.0,
+        "gain_db": -0.7,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 7000.0,
+        "gain_db": -15.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8500.0,
+        "gain_db": -3.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 14000.0,
+        "gain_db": 20.0,
+        "quality_factor": 1.0
+      }
+    ]
+  }
+}

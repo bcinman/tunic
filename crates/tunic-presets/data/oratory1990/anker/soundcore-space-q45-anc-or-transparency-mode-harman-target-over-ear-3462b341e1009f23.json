@@ -1,0 +1,87 @@
+{
+  "summary": {
+    "id": "oratory1990/anker/soundcore-space-q45-anc-or-transparency-mode-harman-target-over-ear-3462b341e1009f23",
+    "revision": "2023-07-11.1",
+    "brand": "Anker",
+    "model": "Soundcore Space Q45",
+    "target": "Harman AE/OE 2018",
+    "variant": "ANC or Transparency mode"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/xdwqxcfw3omzzk0/Anker%20Soundcore%20Space%20Q45%20%28ANC%20on%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 100.0,
+        "gain_db": -1.3,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 150.0,
+        "gain_db": -9.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 630.0,
+        "gain_db": -3.4,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1280.0,
+        "gain_db": -6.0,
+        "quality_factor": 1.5,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": -2.3,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5800.0,
+        "gain_db": -4.9,
+        "quality_factor": 4.5
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.4,
+        "control_name": "Treble detail"
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

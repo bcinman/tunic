@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/v-moda/m200-standard-harman-target-over-ear-8e472d8539690a5d",
+    "revision": "2023-02-01.1",
+    "brand": "V Moda",
+    "model": "M200",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/kasbv83c5j0xszr/V%20Moda%20M200.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -12.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 85.0,
+        "gain_db": 1.5,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 300.0,
+        "gain_db": 1.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 2000.0,
+        "gain_db": 9.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2850.0,
+        "gain_db": -4.4,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4400.0,
+        "gain_db": 8.0,
+        "quality_factor": 1.0,
+        "control_name": "Sharpness / detail"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5050.0,
+        "gain_db": -2.3,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5250.0,
+        "gain_db": -8.1,
+        "quality_factor": 4.9
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8600.0,
+        "gain_db": -2.8,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

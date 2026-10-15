@@ -1,0 +1,79 @@
+{
+  "summary": {
+    "id": "oratory1990/beyerdynamic/xelento-standard-harman-target-in-ear-da12e36171173e8c",
+    "revision": "2022-01-30.1",
+    "brand": "Beyerdynamic",
+    "model": "Xelento",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/qn4g94iqw8gm9j2/Beyerdynamic%20Xelento%20%28Harman%20Target%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 145.0,
+        "gain_db": -5.6,
+        "quality_factor": 0.3
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 810.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1340.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3450.0,
+        "gain_db": 5.4,
+        "quality_factor": 1.0,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5150.0,
+        "gain_db": -3.8,
+        "quality_factor": 5.0,
+        "control_name": "Harshness"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 8100.0,
+        "gain_db": -4.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": 2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

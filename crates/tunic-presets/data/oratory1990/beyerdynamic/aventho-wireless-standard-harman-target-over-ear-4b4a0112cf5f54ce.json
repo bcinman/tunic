@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/beyerdynamic/aventho-wireless-standard-harman-target-over-ear-4b4a0112cf5f54ce",
+    "revision": "2021-08-31.1",
+    "brand": "Beyerdynamic",
+    "model": "Aventho Wireless",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/uix019or2v5156m/Beyerdynamic%20Aventho%20Wireless.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 80.0,
+        "gain_db": -8.8,
+        "quality_factor": 0.4
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 180.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1200.0,
+        "gain_db": -2.5,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2250.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.4,
+        "control_name": "Timbre / thickness"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3800.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5200.0,
+        "gain_db": -2.8,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 8500.0,
+        "gain_db": -2.8,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 10500.0,
+        "gain_db": -3.5,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

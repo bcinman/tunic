@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/hd599-standard-harman-target-over-ear-d347e75d071d9d81",
+    "revision": "2025-03-19.1",
+    "brand": "Sennheiser",
+    "model": "HD599",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/xo3o8ge30qe23vat3ybd5/Sennheiser-HD599.pdf?rlkey=3u94biy0ewk8txko3lqs4tx0x&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -9.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 33.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 165.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.45
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1150.0,
+        "gain_db": -1.1,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1700.0,
+        "gain_db": 3.6,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3100.0,
+        "gain_db": -2.6,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4350.0,
+        "gain_db": -2.6,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5800.0,
+        "gain_db": -3.0,
+        "quality_factor": 3.5
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

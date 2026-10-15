@@ -1,0 +1,65 @@
+{
+  "summary": {
+    "id": "oratory1990/moondrop/variations-standard-harman-target-in-ear-9338f16a9305edd1",
+    "revision": "2024-02-07.1",
+    "brand": "Moondrop",
+    "model": "Variations",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/ctqvupbf7uu9p5fdtkm11/Moondrop-Variations.pdf?rlkey=4l5erqu1iy0p6b8njqjah5kle&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.4,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": -2.3,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 120.0,
+        "gain_db": -1.7,
+        "quality_factor": 1.0,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -1.9,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3020.0,
+        "gain_db": -2.1,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 1.8,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

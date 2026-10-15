@@ -1,0 +1,91 @@
+{
+  "summary": {
+    "id": "oratory1990/akg/k240-sextett-standard-harman-target-over-ear-f96951c0de1288f2",
+    "revision": "2021-01-17.1",
+    "brand": "AKG",
+    "model": "K240 Sextett",
+    "target": "Harman 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/aowkh6fy1os6s41/AKG%20K240%20Sextett.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 64.0,
+        "gain_db": 3.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 120.0,
+        "gain_db": -9.4,
+        "quality_factor": 0.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 150.0,
+        "gain_db": 1.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": 1.6,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2500.0,
+        "gain_db": -3.0,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3300.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.4,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4600.0,
+        "gain_db": -3.6,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 6700.0,
+        "gain_db": -7.5,
+        "quality_factor": 3.0,
+        "control_name": "Sibilance"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 8800.0,
+        "gain_db": -2.8,
+        "quality_factor": 4.0
+      }
+    ]
+  }
+}

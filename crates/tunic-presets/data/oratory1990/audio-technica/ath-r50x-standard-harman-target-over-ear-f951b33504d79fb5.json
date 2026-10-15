@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "id": "oratory1990/audio-technica/ath-r50x-standard-harman-target-over-ear-f951b33504d79fb5",
+    "revision": "2025-03-13.1",
+    "brand": "Audio Technica",
+    "model": "ATH-R50x",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/8fudnf02uxw73q9k6w0sg/Audio-Technica-ATH-R50x.pdf?rlkey=2rdh2whzrgcamyixp3ldgmrb6&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 70.0,
+        "gain_db": -2.4,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 150.0,
+        "gain_db": -1.4,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 600.0,
+        "gain_db": 2.5,
+        "quality_factor": 0.4
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1500.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3900.0,
+        "gain_db": -1.7,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6500.0,
+        "gain_db": -3.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/austrian-audio/the-arranger-standard-harman-target-over-ear-76b63b1c13f75371",
+    "revision": "2026-04-12.1",
+    "brand": "Austrian Audio",
+    "model": "The Arranger",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/h4cpfnlkbtdo8jha6tlv3/Austrian-Audio-The-Arranger.pdf?rlkey=qi4jqr0npp4i29dr30prmig5f&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 380.0,
+        "gain_db": -6.0,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": -1.3,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1625.0,
+        "gain_db": 4.5,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 2500.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.35
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2800.0,
+        "gain_db": -3.1,
+        "quality_factor": 2.3
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3500.0,
+        "gain_db": 2.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4130.0,
+        "gain_db": -1.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5370.0,
+        "gain_db": -4.2,
+        "quality_factor": 4.5
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

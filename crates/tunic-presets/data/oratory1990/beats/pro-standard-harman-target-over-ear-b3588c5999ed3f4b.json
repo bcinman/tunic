@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/beats/pro-standard-harman-target-over-ear-b3588c5999ed3f4b",
+    "revision": "2019-03-02.1",
+    "brand": "Beats",
+    "model": "Pro",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/3mgo8o7ejupj71b/Beats%20Pro.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.2,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 50.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -7.2,
+        "quality_factor": 0.55
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 410.0,
+        "gain_db": 4.2,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1450.0,
+        "gain_db": 4.7,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 2500.0,
+        "gain_db": 2.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2900.0,
+        "gain_db": -10.6,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": 3.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4800.0,
+        "gain_db": -2.8,
+        "quality_factor": 8.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 6500.0,
+        "gain_db": -3.1,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 7800.0,
+        "gain_db": -7.0,
+        "quality_factor": 4.0
+      }
+    ]
+  }
+}

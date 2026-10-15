@@ -1,0 +1,54 @@
+{
+  "summary": {
+    "id": "oratory1990/arpegear/hane-standard-harman-target-in-ear-058fe1b185641805",
+    "revision": "2024-11-08.1",
+    "brand": "Arpegear",
+    "model": "Hane",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/o0l5w4l65c3yrrwg8gjam/Arpegear-Hane.pdf?rlkey=c7g4ksm8leokfruwa8ovi5eyy&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 80.0,
+        "gain_db": 3.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 220.0,
+        "gain_db": -1.2,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 770.0,
+        "gain_db": 1.4,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1380.0,
+        "gain_db": -1.2,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3700.0,
+        "gain_db": 1.5,
+        "quality_factor": 2.0
+      }
+    ]
+  }
+}

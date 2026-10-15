@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/momentum-3-wireless-graphic-eq-harman-target-over-ear-cbdd831d79b845fc",
+    "revision": "2021-05-04.1",
+    "brand": "Sennheiser",
+    "model": "Momentum 3 Wireless",
+    "target": "Harman AE/OE 2018",
+    "variant": "graphic EQ"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/bky8vwqrkid2pwb/Sennheiser%20Momentum%203%20Wireless%20%28graphic%20EQ%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 31.5,
+        "gain_db": -2.5,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 63.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 125.0,
+        "gain_db": -4.9,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -1.1,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 500.0,
+        "gain_db": 1.3,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": 1.1,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": -3.2,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 1.0,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -3.0,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 16000.0,
+        "gain_db": -0.5,
+        "quality_factor": 1.41
+      }
+    ]
+  }
+}

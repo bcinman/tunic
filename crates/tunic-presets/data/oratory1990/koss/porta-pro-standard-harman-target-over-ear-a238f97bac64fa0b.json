@@ -1,0 +1,87 @@
+{
+  "summary": {
+    "id": "oratory1990/koss/porta-pro-standard-harman-target-over-ear-a238f97bac64fa0b",
+    "revision": "2026-02-01.1",
+    "brand": "Koss",
+    "model": "Porta Pro",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/4w574dgee0on6s23u3x5q/Koss-Porta-Pro.pdf?rlkey=5qs41i0wx3qax9u9s8lq8dyrr&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.3,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 80.0,
+        "gain_db": -5.3,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 195.0,
+        "gain_db": -4.1,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2050.0,
+        "gain_db": -4.6,
+        "quality_factor": 1.1,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4800.0,
+        "gain_db": 4.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5350.0,
+        "gain_db": -11.0,
+        "quality_factor": 4.0,
+        "control_name": "Sharpness"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 9700.0,
+        "gain_db": -6.0,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

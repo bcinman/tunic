@@ -1,0 +1,69 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/mdr-ex1000-front-tube-filters-removed-oratory1990-target-fce9f5e33fd9befc",
+    "revision": "2021-08-07.1",
+    "brand": "Sony",
+    "model": "MDR-EX1000",
+    "target": "USOUND 1V1 In-Ear",
+    "variant": "front tube filters removed"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/qt94kuveaxsn912/Sony%20MDR-EX1000%20%28filter%20removed%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -11.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 150.0,
+        "gain_db": 11.0,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 950.0,
+        "gain_db": 3.4,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1370.0,
+        "gain_db": -1.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2480.0,
+        "gain_db": -4.3,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3950.0,
+        "gain_db": 7.7,
+        "quality_factor": 1.1
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5600.0,
+        "gain_db": -8.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 11000.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

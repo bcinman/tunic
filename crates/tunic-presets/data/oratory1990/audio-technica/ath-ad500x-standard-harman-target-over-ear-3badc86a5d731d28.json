@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/audio-technica/ath-ad500x-standard-harman-target-over-ear-3badc86a5d731d28",
+    "revision": "2024-05-13.1",
+    "brand": "Audio Technica",
+    "model": "ATH-AD500X",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/x6id98l1lg86x5m4zum27/Audio-Technica-ATH-AD500X.pdf?rlkey=tutp4lyjx3x12dy1gh4i3m747&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -11.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 35.0,
+        "gain_db": 6.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 160.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.5,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -2.9,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2700.0,
+        "gain_db": 5.3,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2800.0,
+        "gain_db": -3.7,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4170.0,
+        "gain_db": -7.0,
+        "quality_factor": 4.7
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -3.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 7000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

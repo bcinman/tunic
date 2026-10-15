@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "id": "oratory1990/beyerdynamic/custom-one-pro-plus-velours-earpads-bass-slider-3-4-harman-target-over-ear-98bc095aa4c0a04e",
+    "revision": "2021-02-07.1",
+    "brand": "Beyerdynamic",
+    "model": "Custom One Pro Plus",
+    "target": "Harman AE/OE 2018",
+    "variant": "velours earpads, bass slider 3/4"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/suuak4ghfoawzol/Beyerdynamic%20Custom%20One%20Pro%20Plus%20%28velours%20earpads%2C%20bass%20slider%203%3A4%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 48.0,
+        "gain_db": -6.5,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 125.0,
+        "gain_db": -2.5,
+        "quality_factor": 2.0,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": 2.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2600.0,
+        "gain_db": -2.8,
+        "quality_factor": 1.7
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 2.8,
+        "quality_factor": 0.71,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3900.0,
+        "gain_db": -1.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5700.0,
+        "gain_db": -5.0,
+        "quality_factor": 4.5
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8100.0,
+        "gain_db": -3.7,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/pulse-explore-oratory1990-target-c98f83d7845a9a5e",
+    "revision": "2023-12-11.1",
+    "brand": "Sony",
+    "model": "Pulse Explore",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/bkjhi20uh3p320766x3ia/Sony-Pulse-Explore.pdf?rlkey=p134qq8581wturl12u5c07mrp&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 100.0,
+        "gain_db": 1.3,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": 1.6,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 350.0,
+        "gain_db": -0.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 700.0,
+        "gain_db": 1.2,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1250.0,
+        "gain_db": -2.2,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5900.0,
+        "gain_db": -4.2,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": 1.5,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

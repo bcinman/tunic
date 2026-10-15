@@ -1,0 +1,61 @@
+{
+  "summary": {
+    "id": "oratory1990/moondrop/starfield-standard-harman-target-in-ear-7076e16f8f43a382",
+    "revision": "2020-04-21.1",
+    "brand": "Moondrop",
+    "model": "Starfield",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/38twoh8sl0gd48l/Moondrop%20Starfield.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.2,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 54.0,
+        "gain_db": 1.6,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -2.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 880.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -2.2,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 2000.0,
+        "gain_db": 2.2,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2200.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.4
+      }
+    ]
+  }
+}

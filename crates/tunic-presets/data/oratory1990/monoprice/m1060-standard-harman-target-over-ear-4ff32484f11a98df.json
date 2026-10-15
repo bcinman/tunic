@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/monoprice/m1060-standard-harman-target-over-ear-4ff32484f11a98df",
+    "revision": "2019-05-02.1",
+    "brand": "Monoprice",
+    "model": "M1060",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/dazkdi0voflg1zi/Monoprice%20M1060.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 70.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 210.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 390.0,
+        "gain_db": 1.8,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": -1.3,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": -6.1,
+        "quality_factor": 7.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5600.0,
+        "gain_db": -1.5,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 7000.0,
+        "gain_db": 1.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7500.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 18500.0,
+        "gain_db": -4.0,
+        "quality_factor": 1.0
+      }
+    ]
+  }
+}

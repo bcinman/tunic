@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/cx3-00-standard-harman-target-in-ear-83785b63d64eb0e7",
+    "revision": "2018-07-21.1",
+    "brand": "Sennheiser",
+    "model": "CX3.00",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/ua7mf3zm2306f8a/Sennheiser%20CX3.00.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -10.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 38.0,
+        "gain_db": 2.7,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -1.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 850.0,
+        "gain_db": 4.8,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1350.0,
+        "gain_db": -3.2,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3550.0,
+        "gain_db": 10.3,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 5100.0,
+        "gain_db": 1.3,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 7,
+        "kind": "high_shelf",
+        "frequency_hz": 6000.0,
+        "gain_db": -1.5,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7300.0,
+        "gain_db": -6.0,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

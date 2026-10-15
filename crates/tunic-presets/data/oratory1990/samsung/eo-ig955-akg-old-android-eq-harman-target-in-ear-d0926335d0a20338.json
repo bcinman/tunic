@@ -1,0 +1,69 @@
+{
+  "summary": {
+    "id": "oratory1990/samsung/eo-ig955-akg-old-android-eq-harman-target-in-ear-d0926335d0a20338",
+    "revision": "2018-07-16.1",
+    "brand": "Samsung",
+    "model": "EO-IG955 (AKG)",
+    "target": "Harman In-Ear 2017_1",
+    "variant": "Old Android EQ"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/yihocvipyg37eb3/Samsung%20EO-IG955%20%28AKG%29%20%28Old%20Android%20EQ%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -0.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 60.0,
+        "gain_db": -2.2,
+        "quality_factor": 1.05
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 150.0,
+        "gain_db": -5.5,
+        "quality_factor": 0.98
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 400.0,
+        "gain_db": -2.2,
+        "quality_factor": 1.05
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": 1.2,
+        "quality_factor": 0.87
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": 0.8,
+        "quality_factor": 0.98
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": -3.9,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 16000.0,
+        "gain_db": -10.0,
+        "quality_factor": 1.41
+      }
+    ]
+  }
+}

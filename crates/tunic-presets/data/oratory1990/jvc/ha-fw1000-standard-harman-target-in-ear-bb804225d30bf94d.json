@@ -1,0 +1,61 @@
+{
+  "summary": {
+    "id": "oratory1990/jvc/ha-fw1000-standard-harman-target-in-ear-bb804225d30bf94d",
+    "revision": "2019-07-19.1",
+    "brand": "JVC",
+    "model": "HA-FW1000",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/wm3tz66dsb55fyb/JVC%20HA-FW10000.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 500.0,
+        "gain_db": 4.0,
+        "quality_factor": 0.85
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 1300.0,
+        "gain_db": -0.9,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 75.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1950.0,
+        "gain_db": -3.4,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 235.0,
+        "gain_db": -3.3,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4700.0,
+        "gain_db": -0.8,
+        "quality_factor": 2.0
+      }
+    ]
+  }
+}

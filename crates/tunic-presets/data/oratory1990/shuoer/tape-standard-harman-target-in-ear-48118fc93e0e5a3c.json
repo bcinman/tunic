@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "id": "oratory1990/shuoer/tape-standard-harman-target-in-ear-48118fc93e0e5a3c",
+    "revision": "2020-02-19.1",
+    "brand": "Shuoer",
+    "model": "Tape",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/fvcasfq5aygg9od/Shuoer%20Tape.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -4.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 9.9,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 135.0,
+        "gain_db": -10.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 230.0,
+        "gain_db": -1.7,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 2.9,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2050.0,
+        "gain_db": 1.0,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3300.0,
+        "gain_db": -3.8,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3900.0,
+        "gain_db": -1.4,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6500.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.4
+      }
+    ]
+  }
+}

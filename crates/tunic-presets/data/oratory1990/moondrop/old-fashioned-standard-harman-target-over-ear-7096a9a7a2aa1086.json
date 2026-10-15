@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/moondrop/old-fashioned-standard-harman-target-over-ear-7096a9a7a2aa1086",
+    "revision": "2026-02-09.1",
+    "brand": "Moondrop",
+    "model": "Old Fashioned",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/5jeyezincdn0y0084suxh/Moondrop-Old-Fashioned.pdf?rlkey=l0z8lweair8g8pkq6nz66pxbm&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -14.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 55.0,
+        "gain_db": 9.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 180.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.65
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3050.0,
+        "gain_db": -8.0,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3300.0,
+        "gain_db": -2.3,
+        "quality_factor": 5.0,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 4500.0,
+        "gain_db": -1.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4650.0,
+        "gain_db": -5.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4700.0,
+        "gain_db": 9.5,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7500.0,
+        "gain_db": -2.0,
+        "quality_factor": 3.0,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 0.5,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

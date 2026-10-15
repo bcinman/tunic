@@ -1,0 +1,47 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/mdr-ex10-standard-harman-target-in-ear-39c6b08e34302331",
+    "revision": "2019-03-23.1",
+    "brand": "Sony",
+    "model": "MDR-EX10",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/w3m8u0h7pfxtitb/Sony%20MDR-EX10.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 400.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 800.0,
+        "gain_db": 1.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 4200.0,
+        "gain_db": -1.3,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -0.5,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

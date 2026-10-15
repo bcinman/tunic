@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/hyperx/cloud-ii-standard-harman-target-over-ear-552efe76ea3ab4a0",
+    "revision": "2024-06-15.1",
+    "brand": "HyperX",
+    "model": "Cloud II",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/wvojk9bpyvfp3jk15fwvw/HyperX-Cloud-II.pdf?rlkey=zvhq88os0h4icuhr1qf28mecm&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 190.0,
+        "gain_db": -1.5,
+        "quality_factor": 1.2
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 290.0,
+        "gain_db": 5.3,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 4,
+        "kind": "low_shelf",
+        "frequency_hz": 350.0,
+        "gain_db": -7.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2400.0,
+        "gain_db": -2.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -2.7,
+        "quality_factor": 1.1
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4300.0,
+        "gain_db": 12.0,
+        "quality_factor": 1.4,
+        "control_name": "Treble sharpness"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5150.0,
+        "gain_db": -8.3,
+        "quality_factor": 2.7
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 8000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness / detail"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 8500.0,
+        "gain_db": -5.5,
+        "quality_factor": 3.0
+      }
+    ]
+  }
+}

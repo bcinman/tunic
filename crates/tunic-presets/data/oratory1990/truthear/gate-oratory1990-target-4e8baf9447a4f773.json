@@ -1,0 +1,47 @@
+{
+  "summary": {
+    "id": "oratory1990/truthear/gate-oratory1990-target-4e8baf9447a4f773",
+    "revision": "2024-07-21.1",
+    "brand": "Truthear",
+    "model": "Gate",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/h8xrdaljenexvc82uncdf/Truthear-Gate.pdf?rlkey=ibyhlv7eaq8hirsvs539iby2t&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.3,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 95.0,
+        "gain_db": 2.3,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 1420.0,
+        "gain_db": -2.6,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 2700.0,
+        "gain_db": -2.0,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 7000.0,
+        "gain_db": 1.5,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

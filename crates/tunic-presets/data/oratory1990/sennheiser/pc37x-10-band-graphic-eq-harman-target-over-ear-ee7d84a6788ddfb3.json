@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/pc37x-10-band-graphic-eq-harman-target-over-ear-ee7d84a6788ddfb3",
+    "revision": "2020-08-10.1",
+    "brand": "Sennheiser",
+    "model": "PC37X",
+    "target": "Harman AE/OE 2018",
+    "variant": "10-band graphic EQ"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/1eo1g9iv5a4xljk/Sennheiser%20PC37X%20%2810%20band%20graphic%20EQ%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -12.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 31.5,
+        "gain_db": 12.0,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 63.0,
+        "gain_db": 4.5,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 125.0,
+        "gain_db": 0.5,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 250.0,
+        "gain_db": -1.5,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 500.0,
+        "gain_db": 0.3,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1000.0,
+        "gain_db": 0.3,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2000.0,
+        "gain_db": 0.0,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4000.0,
+        "gain_db": 2.0,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.41
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 16000.0,
+        "gain_db": 0.0,
+        "quality_factor": 1.41
+      }
+    ]
+  }
+}

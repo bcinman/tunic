@@ -1,0 +1,82 @@
+{
+  "summary": {
+    "id": "oratory1990/fiio/fh5-standard-harman-target-in-ear-e4cf503ab302f7aa",
+    "revision": "2019-03-16.1",
+    "brand": "Fiio",
+    "model": "FH5",
+    "target": "Harman In-Ear 2017_1"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/q4d4fb0sxim6nn3/Fiio%20FH5.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -8.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -1.9,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 500.0,
+        "gain_db": 0.6,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1250.0,
+        "gain_db": -2.1,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2100.0,
+        "gain_db": -2.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3000.0,
+        "gain_db": -0.4,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3600.0,
+        "gain_db": 9.4,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5300.0,
+        "gain_db": -1.1,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 7000.0,
+        "gain_db": -2.0,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7500.0,
+        "gain_db": -1.5,
+        "quality_factor": 7.0
+      }
+    ]
+  }
+}

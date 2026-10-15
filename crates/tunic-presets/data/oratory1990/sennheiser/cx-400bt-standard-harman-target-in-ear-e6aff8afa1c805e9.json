@@ -1,0 +1,71 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/cx-400bt-standard-harman-target-in-ear-e6aff8afa1c805e9",
+    "revision": "2020-09-09.1",
+    "brand": "Sennheiser",
+    "model": "CX 400BT",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/spe4sgwsvsbeusb/Sennheiser%20CX%20400BT%20True%20Wireless.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -10.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 190.0,
+        "gain_db": -3.7,
+        "quality_factor": 0.5,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 700.0,
+        "gain_db": 1.1,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1650.0,
+        "gain_db": -5.0,
+        "quality_factor": 1.2,
+        "control_name": "Midrange accuracy / shoutiness"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 3900.0,
+        "gain_db": 12.0,
+        "quality_factor": 0.6,
+        "control_name": "Treble accuracy / harshness"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 7200.0,
+        "gain_db": -5.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 10200.0,
+        "gain_db": -5.7,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 14300.0,
+        "gain_db": -3.7,
+        "quality_factor": 2.0
+      }
+    ]
+  }
+}

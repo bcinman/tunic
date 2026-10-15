@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "id": "oratory1990/bose/qc20-passive-oratory1990-target-a6a5e24b8e52e5aa",
+    "revision": "2024-12-03.1",
+    "brand": "Bose",
+    "model": "QC20",
+    "target": "USOUND 1V1 In-Ear",
+    "variant": "passive"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/ta8pl459y2ctguzsy9xtm/Bose-QC20-passive.pdf?rlkey=vo4ph738ird1btxdqu3dn5wnh&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -11.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 20.0,
+        "gain_db": 7.0,
+        "quality_factor": 0.5
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 80.0,
+        "gain_db": -3.4,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 320.0,
+        "gain_db": -4.4,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 620.0,
+        "gain_db": 4.3,
+        "quality_factor": 1.3,
+        "control_name": "Midrange accuracy"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 1600.0,
+        "gain_db": -8.4,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 2750.0,
+        "gain_db": 8.5,
+        "quality_factor": 1.2,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4110.0,
+        "gain_db": -8.3,
+        "quality_factor": 4.5
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": 5.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

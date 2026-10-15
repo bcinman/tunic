@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/beyerdynamic/dt770-80-ohm-standard-harman-target-over-ear-8ba30f5b290afadd",
+    "revision": "2025-07-29.1",
+    "brand": "Beyerdynamic",
+    "model": "DT770 (80 Ohm)",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/gqu1wg1hh4o0qnbj8lvwr/Beyerdynamic-DT770-80-Ohm.pdf?rlkey=ouwbyd4o31nbpjf7xf16169fu&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -3.7,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 65.0,
+        "gain_db": -9.7,
+        "quality_factor": 0.35
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 210.0,
+        "gain_db": 7.8,
+        "quality_factor": 1.6
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 950.0,
+        "gain_db": -1.0,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2600.0,
+        "gain_db": -3.1,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 1.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3700.0,
+        "gain_db": 5.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4700.0,
+        "gain_db": -3.0,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7200.0,
+        "gain_db": -6.5,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

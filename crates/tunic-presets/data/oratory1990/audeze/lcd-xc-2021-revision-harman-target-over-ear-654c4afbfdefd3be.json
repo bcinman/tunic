@@ -1,0 +1,79 @@
+{
+  "summary": {
+    "id": "oratory1990/audeze/lcd-xc-2021-revision-harman-target-over-ear-654c4afbfdefd3be",
+    "revision": "2024-04-11.1",
+    "brand": "Audeze",
+    "model": "LCD-XC",
+    "target": "Harman AE/OE 2018",
+    "variant": "2021 revision"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/1o9vd6e65659dwe/Audeze%20LCD-XC%20%282021%20revision%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -5.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 70.0,
+        "gain_db": -1.9,
+        "quality_factor": 0.8
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 210.0,
+        "gain_db": -0.6,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 425.0,
+        "gain_db": 1.2,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1800.0,
+        "gain_db": -3.3,
+        "quality_factor": 0.65,
+        "control_name": "Treble"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4200.0,
+        "gain_db": 3.5,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": -3.3,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -2.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

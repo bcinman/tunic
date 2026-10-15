@@ -1,0 +1,49 @@
+{
+  "summary": {
+    "id": "oratory1990/samsung/sm-r190-galaxy-buds-pro-standard-harman-target-in-ear-e2492f689754df2d",
+    "revision": "2022-07-20.1",
+    "brand": "Samsung",
+    "model": "SM-R190 Galaxy Buds Pro",
+    "target": "Harman In-Ear LI"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/1yo4c69opqz6jtu/Samsung%20SM-R190%20Galaxy%20Buds%20Pro.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -0.1,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 110.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 200.0,
+        "gain_db": -5.4,
+        "quality_factor": 0.3,
+        "control_name": "Warmth / muddiness"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 900.0,
+        "gain_db": 1.6,
+        "quality_factor": 0.7
+      },
+      {
+        "id": 4,
+        "kind": "high_shelf",
+        "frequency_hz": 6500.0,
+        "gain_db": -5.0,
+        "quality_factor": 0.71,
+        "control_name": "Treble / airiness"
+      }
+    ]
+  }
+}

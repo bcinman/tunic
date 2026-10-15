@@ -101,11 +101,25 @@ mod tests {
     #[test]
     fn indexes_resolve_every_entry_and_intersect_exact_filters() {
         let catalog = BundledCatalog;
-        assert_eq!(catalog.brands(), ["Sennheiser", "Sony"]);
-        assert_eq!(catalog.models("Sennheiser"), ["HD650"]);
         assert!(catalog.models("sennheiser").is_empty());
         let all = catalog.list(&PresetQuery::default());
         assert_eq!(all.len(), ENTRIES.len());
+        let brands = all
+            .iter()
+            .map(|s| s.brand.clone())
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(catalog.brands(), brands.iter().cloned().collect::<Vec<_>>());
+        for brand in brands {
+            let models = all
+                .iter()
+                .filter(|s| s.brand == brand)
+                .map(|s| s.model.clone())
+                .collect::<std::collections::BTreeSet<_>>();
+            assert_eq!(
+                catalog.models(&brand),
+                models.into_iter().collect::<Vec<_>>()
+            );
+        }
         for summary in &all {
             assert_eq!(catalog.get(&summary.id).unwrap().summary, *summary);
             for query in [
@@ -189,6 +203,105 @@ mod tests {
     }
 
     #[test]
+    fn target_and_anc_variants_preserve_source_controls() {
+        for (id, target, variant, preamp, bands, controls) in [
+            (
+                "oratory1990/7hz/salnotes-zero/harman",
+                "Harman In-Ear LI",
+                None,
+                -2.8,
+                6,
+                vec![(1, "Bass"), (2, "Warmth"), (5, "Treble"), (6, "Airiness")],
+            ),
+            (
+                "oratory1990/7hz/salnotes-zero/oratory1990",
+                "USOUND 1V1 In-Ear",
+                None,
+                -3.3,
+                5,
+                vec![],
+            ),
+            (
+                "oratory1990/anker/soundcore-life-q30/anc-off/harman",
+                "Harman AE/OE 2018",
+                Some("ANC off"),
+                -5.1,
+                10,
+                vec![
+                    (2, "Bass"),
+                    (4, "Boxiness / tonality"),
+                    (7, "Treble presence"),
+                    (10, "Airiness"),
+                ],
+            ),
+            (
+                "oratory1990/anker/soundcore-life-q30/anc-on/harman",
+                "Harman AE/OE 2018",
+                Some("ANC on"),
+                -3.5,
+                10,
+                vec![
+                    (1, "Bass"),
+                    (5, "Boxiness / tonality"),
+                    (8, "Treble presence"),
+                    (10, "Airiness"),
+                ],
+            ),
+        ] {
+            let preset = BundledCatalog.get(&PresetId::try_new(id).unwrap()).unwrap();
+            assert_eq!(preset.summary.target, target, "{id}");
+            assert_eq!(preset.summary.variant.as_deref(), variant, "{id}");
+            assert_eq!(preset.chain.equalizer.preamp.into_inner(), preamp, "{id}");
+            assert_eq!(preset.chain.equalizer.filters.len(), bands, "{id}");
+            assert_eq!(
+                preset
+                    .controls
+                    .iter()
+                    .map(|c| (c.target().into_inner(), c.name().to_string()))
+                    .collect::<Vec<_>>(),
+                controls
+                    .into_iter()
+                    .map(|(band, name)| (band, name.to_owned()))
+                    .collect::<Vec<_>>(),
+                "{id}"
+            );
+        }
+    }
+
+    #[test]
+    fn source_inventory_accounts_for_every_bundled_preset() {
+        let manifest: serde_json::Value =
+            serde_json::from_str(include_str!("../oratory1990-manifest.json")).unwrap();
+        let mut imported = std::collections::BTreeSet::new();
+        for entry in manifest["entries"].as_array().unwrap() {
+            match entry["status"].as_str().unwrap() {
+                "imported" => {
+                    let id = entry["preset_id"].as_str().unwrap();
+                    assert!(
+                        imported.insert(id.to_owned()),
+                        "duplicate inventory ID {id}"
+                    );
+                    let preset = BundledCatalog.get(&PresetId::try_new(id).unwrap()).unwrap();
+                    assert_eq!(
+                        preset.attribution.source_url,
+                        entry["source_url"].as_str().unwrap()
+                    );
+                    assert_eq!(preset.summary.brand, entry["brand"].as_str().unwrap());
+                    assert_eq!(preset.summary.model, entry["model"].as_str().unwrap());
+                }
+                "blocked" => assert!(!entry["issues"].as_array().unwrap().is_empty()),
+                status => panic!("unknown inventory status {status}"),
+            }
+        }
+        let bundled = BundledCatalog
+            .list(&PresetQuery::default())
+            .into_iter()
+            .map(|s| s.id.to_string())
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(imported, bundled);
+    }
+
+    #[test]
     fn every_preset_compiles_at_common_playback_rates() {
         for summary in BundledCatalog.list(&PresetQuery::default()) {
             let preset = BundledCatalog.get(&summary.id).unwrap();
@@ -212,7 +325,10 @@ mod tests {
 
     #[test]
     fn schema_rejects_typos_unsupported_values_and_broken_references() {
-        let valid: serde_json::Value = serde_json::from_str(ENTRIES[0].json).unwrap();
+        let valid: serde_json::Value = serde_json::from_str(include_str!(
+            "../data/oratory1990/sennheiser/hd650-harman.json"
+        ))
+        .unwrap();
         for (pointer, value) in [
             ("/summary/id", serde_json::json!(" ")),
             ("/summary/brand", serde_json::json!("")),

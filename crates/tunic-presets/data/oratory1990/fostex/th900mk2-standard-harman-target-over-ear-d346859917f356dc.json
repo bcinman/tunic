@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/fostex/th900mk2-standard-harman-target-over-ear-d346859917f356dc",
+    "revision": "2023-11-27.1",
+    "brand": "Fostex",
+    "model": "TH900mk2",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/du83mhwv2dl72dc/Fostex%20TH900mk2.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.3,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 45.0,
+        "gain_db": -10.0,
+        "quality_factor": 0.3
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 210.0,
+        "gain_db": -1.6,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 460.0,
+        "gain_db": 1.8,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1030.0,
+        "gain_db": -3.0,
+        "quality_factor": 1.3
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2500.0,
+        "gain_db": 3.3,
+        "quality_factor": 1.6,
+        "control_name": "Treble presence / clarity"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3600.0,
+        "gain_db": -1.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5450.0,
+        "gain_db": -9.4,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 9,
+        "kind": "high_shelf",
+        "frequency_hz": 10000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 11300.0,
+        "gain_db": -2.0,
+        "quality_factor": 5.0
+      }
+    ]
+  }
+}

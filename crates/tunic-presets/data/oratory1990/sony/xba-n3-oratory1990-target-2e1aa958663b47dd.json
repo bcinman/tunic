@@ -1,0 +1,82 @@
+{
+  "summary": {
+    "id": "oratory1990/sony/xba-n3-oratory1990-target-2e1aa958663b47dd",
+    "revision": "2020-12-17.1",
+    "brand": "Sony",
+    "model": "XBA-N3",
+    "target": "USOUND 1V1 In-Ear"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/2cva6k3k9awqo5d/Sony%20XBA-N3%20%28oratory1990%29.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -2.9,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 230.0,
+        "gain_db": -1.2,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 700.0,
+        "gain_db": 1.4,
+        "quality_factor": 0.6
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 1330.0,
+        "gain_db": -3.0,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2200.0,
+        "gain_db": -1.8,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 3150.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3850.0,
+        "gain_db": -2.7,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4950.0,
+        "gain_db": -1.4,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6000.0,
+        "gain_db": 2.7,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7500.0,
+        "gain_db": -4.4,
+        "quality_factor": 5.0
+      }
+    ]
+  }
+}

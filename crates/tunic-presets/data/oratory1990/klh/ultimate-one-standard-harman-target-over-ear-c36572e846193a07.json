@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "id": "oratory1990/klh/ultimate-one-standard-harman-target-over-ear-c36572e846193a07",
+    "revision": "2019-11-28.1",
+    "brand": "KLH",
+    "model": "Ultimate One",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/zm44k2aoqwy9q0l/KLH%20Ultimate%20One.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.2,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 2,
+        "kind": "peaking",
+        "frequency_hz": 210.0,
+        "gain_db": -1.4,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 400.0,
+        "gain_db": -6.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 545.0,
+        "gain_db": 4.1,
+        "quality_factor": 0.95
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 1250.0,
+        "gain_db": 6.5,
+        "quality_factor": 1.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 2800.0,
+        "gain_db": -5.8,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4500.0,
+        "gain_db": 3.0,
+        "quality_factor": 1.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 6050.0,
+        "gain_db": -6.5,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 7500.0,
+        "gain_db": -1.8,
+        "quality_factor": 6.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 12000.0,
+        "gain_db": -4.0,
+        "quality_factor": 0.71
+      }
+    ]
+  }
+}

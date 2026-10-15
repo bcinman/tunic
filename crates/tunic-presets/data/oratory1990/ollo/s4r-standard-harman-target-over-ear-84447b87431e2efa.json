@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "id": "oratory1990/ollo/s4r-standard-harman-target-over-ear-84447b87431e2efa",
+    "revision": "2020-07-25.1",
+    "brand": "Ollo",
+    "model": "S4R",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/fcco46cmx41xrwg/Ollo%20S4R.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -7.0,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 350.0,
+        "gain_db": -4.5,
+        "quality_factor": 0.71
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 410.0,
+        "gain_db": 8.5,
+        "quality_factor": 1.5,
+        "control_name": "Mid-accuracy"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 2180.0,
+        "gain_db": -2.7,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 5,
+        "kind": "high_shelf",
+        "frequency_hz": 3500.0,
+        "gain_db": 4.5,
+        "quality_factor": 0.71,
+        "control_name": "Treble presence"
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 4050.0,
+        "gain_db": -3.9,
+        "quality_factor": 4.5
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 5760.0,
+        "gain_db": -2.6,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 8300.0,
+        "gain_db": -2.0,
+        "quality_factor": 5.5
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 10900.0,
+        "gain_db": -3.0,
+        "quality_factor": 5.0
+      },
+      {
+        "id": 10,
+        "kind": "high_shelf",
+        "frequency_hz": 12000.0,
+        "gain_db": -3.0,
+        "quality_factor": 0.71,
+        "control_name": "Airiness"
+      }
+    ]
+  }
+}

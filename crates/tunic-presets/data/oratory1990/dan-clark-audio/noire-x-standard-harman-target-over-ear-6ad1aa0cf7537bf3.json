@@ -1,0 +1,91 @@
+{
+  "summary": {
+    "id": "oratory1990/dan-clark-audio/noire-x-standard-harman-target-over-ear-6ad1aa0cf7537bf3",
+    "revision": "2025-03-15.1",
+    "brand": "Dan Clark Audio",
+    "model": "Noire X",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/scl/fi/iieo2fj6qh5danokb00ki/Dan-Clark-Audio-Noire-X.pdf?rlkey=cidsg3xud2g7bxdzhzklyd0jr&dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -1.5,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 100.0,
+        "gain_db": -1.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "low_shelf",
+        "frequency_hz": 300.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.4
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 630.0,
+        "gain_db": 1.5,
+        "quality_factor": 1.8
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2100.0,
+        "gain_db": -1.8,
+        "quality_factor": 3.0
+      },
+      {
+        "id": 6,
+        "kind": "high_shelf",
+        "frequency_hz": 3000.0,
+        "gain_db": 0.0,
+        "quality_factor": 0.35,
+        "control_name": "Treble"
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 3500.0,
+        "gain_db": 1.5,
+        "quality_factor": 2.0
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 4750.0,
+        "gain_db": -2.9,
+        "quality_factor": 4.0
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": 1.5,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 11000.0,
+        "gain_db": -6.0,
+        "quality_factor": 5.0
+      }
+    ]
+  }
+}

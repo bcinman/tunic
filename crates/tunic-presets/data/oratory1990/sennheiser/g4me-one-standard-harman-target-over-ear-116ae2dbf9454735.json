@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "id": "oratory1990/sennheiser/g4me-one-standard-harman-target-over-ear-116ae2dbf9454735",
+    "revision": "2022-01-06.1",
+    "brand": "Sennheiser",
+    "model": "G4ME ONE",
+    "target": "Harman AE/OE 2018"
+  },
+  "attribution": {
+    "provider": "oratory1990",
+    "measurement_source": "oratory1990",
+    "source_url": "https://www.dropbox.com/s/ot64bbp68ogfq48/Sennheiser%20G4ME%20ONE.pdf?dl=0"
+  },
+  "equalizer": {
+    "preamp_gain_db": -10.8,
+    "filters": [
+      {
+        "id": 1,
+        "kind": "peaking",
+        "frequency_hz": 24.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.9
+      },
+      {
+        "id": 2,
+        "kind": "low_shelf",
+        "frequency_hz": 105.0,
+        "gain_db": 5.5,
+        "quality_factor": 0.71,
+        "control_name": "Bass"
+      },
+      {
+        "id": 3,
+        "kind": "peaking",
+        "frequency_hz": 160.0,
+        "gain_db": -2.5,
+        "quality_factor": 0.5,
+        "control_name": "Warmth"
+      },
+      {
+        "id": 4,
+        "kind": "peaking",
+        "frequency_hz": 1100.0,
+        "gain_db": -0.8,
+        "quality_factor": 2.0,
+        "control_name": "Shoutiness / mid accuracy"
+      },
+      {
+        "id": 5,
+        "kind": "peaking",
+        "frequency_hz": 2950.0,
+        "gain_db": -2.5,
+        "quality_factor": 2.5
+      },
+      {
+        "id": 6,
+        "kind": "peaking",
+        "frequency_hz": 3800.0,
+        "gain_db": 4.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 7,
+        "kind": "peaking",
+        "frequency_hz": 4600.0,
+        "gain_db": -3.1,
+        "quality_factor": 4.5
+      },
+      {
+        "id": 8,
+        "kind": "peaking",
+        "frequency_hz": 5550.0,
+        "gain_db": -4.0,
+        "quality_factor": 3.6
+      },
+      {
+        "id": 9,
+        "kind": "peaking",
+        "frequency_hz": 8000.0,
+        "gain_db": 5.0,
+        "quality_factor": 1.4
+      },
+      {
+        "id": 10,
+        "kind": "peaking",
+        "frequency_hz": 8200.0,
+        "gain_db": -2.0,
+        "quality_factor": 6.0
+      }
+    ]
+  }
+}
