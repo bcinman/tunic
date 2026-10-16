@@ -38,7 +38,6 @@ struct ProfilePicker: View {
                         .foregroundStyle(.secondary)
                 }
                 .lineLimit(1)
-                .frame(maxWidth: .infinity)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption.weight(.semibold))
                     .accessibilityHidden(true)
