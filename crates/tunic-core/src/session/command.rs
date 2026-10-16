@@ -3,15 +3,38 @@
 //! Commands describe requested state changes without performing persistence,
 //! device I/O, or real-time processor control.
 
-use super::PresetId;
+use super::{DeviceId, PresetId, ProfileId, ProfileName};
 use crate::{FilterId, FrequencyHz, GainDb};
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ProfileSource {
+    Preset(PresetId),
+    Flat,
+}
 
 /// An intended change to Tunic's product state.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Command {
     SetProcessingEnabled(bool),
-    UseFlat,
-    UsePreset(PresetId),
+    CreateProfile {
+        device: DeviceId,
+        name: ProfileName,
+        source: ProfileSource,
+    },
+    SelectProfile {
+        device: DeviceId,
+        profile: ProfileId,
+    },
+    EditProfile {
+        profile: ProfileId,
+        edit: ProfileEdit,
+    },
+    RefreshAudio,
+}
+
+/// An edit addressed to the profile that originated the interaction.
+#[derive(Clone, Debug, PartialEq)]
+pub enum ProfileEdit {
     EditFilter {
         filter: FilterId,
         frequency: FrequencyHz,
@@ -29,6 +52,4 @@ pub enum Command {
     CancelControlGain,
     SaveDraft,
     ResetDraft,
-    ClearSelection,
-    RefreshAudio,
 }

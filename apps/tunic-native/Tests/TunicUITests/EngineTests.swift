@@ -21,7 +21,8 @@ private struct Timeout: Error { let condition: String }
 @Test(.enabled(if: ProcessInfo.processInfo.environment["TUNIC_MENU_TESTS"] == "1")) @MainActor
 func profilePickerOpensFromPaddedSurface() async throws {
     _ = NSApplication.shared
-    let host = NSHostingView(rootView: ProfilePicker(profileName: "Test profile", presets: [], send: { _ in })
+    let host = NSHostingView(rootView: ProfilePicker(
+        profileName: "Test profile", profiles: [], device: "system-output", send: { _ in })
         .fixedSize())
     let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 100),
                           styleMask: [.titled], backing: .buffered, defer: false)
@@ -158,9 +159,11 @@ func swiftModelUsesRustDraftsAndReceivesFailedCommands() async throws {
     defer { model.shutdown() }
     try await waitUntil { model.snapshot != nil }
     let preset = try #require(model.snapshot?.presets.first { $0.model == "HD650" })
-    model.enqueue(.usePreset(id: preset.id))
+    model.enqueue(.createProfile(device: model.snapshot?.deviceId ?? "system-output",
+                                 name: "HD650", source: .preset(id: preset.id)))
     try await waitUntil { model.snapshot?.presetId == preset.id }
     let control = try #require(model.snapshot?.controls.first)
+    let profile = try #require(model.snapshot?.selectedProfileId)
     let originalResponse = model.response
     #expect(model.snapshot?.processingEnabled == true)
     model.enqueue(.setProcessingEnabled(enabled: false))
@@ -169,37 +172,37 @@ func swiftModelUsesRustDraftsAndReceivesFailedCommands() async throws {
     #expect(model.response == originalResponse)
     model.enqueue(.setProcessingEnabled(enabled: true))
     try await waitUntil { model.snapshot?.processingEnabled == true }
-    model.enqueue(.previewControlGain(filter: control.filter, gain: -3.5))
+    model.enqueue(.previewControlGain(profile: profile, filter: control.filter, gain: -3.5))
     try await waitUntil { model.snapshot?.controls.first?.gain == -3.5 }
     #expect(model.snapshot?.isPreviewingGain == true)
     #expect(model.snapshot?.hasDraft == false)
     #expect(model.response != originalResponse)
     #expect(model.response.count == 128)
-    let receipt = try #require(model.enqueue(.finishControlGain))
+    let receipt = try #require(model.enqueue(.finishControlGain(profile: profile)))
     try await waitUntil { (model.snapshot?.processedCommand ?? 0) >= receipt }
     #expect(model.snapshot?.isPreviewingGain == false)
     #expect(model.snapshot?.controls.first?.gain == -3.5)
-    model.enqueue(.previewControlGain(filter: control.filter, gain: 6))
+    model.enqueue(.previewControlGain(profile: profile, filter: control.filter, gain: 6))
     try await waitUntil { model.snapshot?.controls.first?.gain == 6 }
-    let cancelled = try #require(model.enqueue(.cancelControlGain))
+    let cancelled = try #require(model.enqueue(.cancelControlGain(profile: profile)))
     try await waitUntil { (model.snapshot?.processedCommand ?? 0) >= cancelled }
     #expect(model.snapshot?.controls.first?.gain == -3.5)
     #expect(model.snapshot?.isPreviewingGain == false)
 
-    model.enqueue(.usePreset(id: "missing"))
+    model.enqueue(.createProfile(device: "system-output", name: "Missing", source: .preset(id: "missing")))
     try await waitUntil { model.snapshot?.actionError != nil }
     #expect(model.snapshot?.controls.first?.gain == -3.5)
-    model.enqueue(.editFilter(filter: control.filter, frequency: 1234, gain: 2))
+    model.enqueue(.editFilter(profile: profile, filter: control.filter, frequency: 1234, gain: 2))
     try await waitUntil { model.snapshot?.hasDraft == true }
-    model.enqueue(.resetDraft)
+    model.enqueue(.resetDraft(profile: profile))
     try await waitUntil { model.snapshot?.hasDraft == false }
     #expect(model.snapshot?.controls.first?.gain == -3.5)
     #expect(model.snapshot?.actionError == nil)
 
-    model.enqueue(.setControlGain(filter: control.filter, gain: 2.25))
+    model.enqueue(.setControlGain(profile: profile, filter: control.filter, gain: 2.25))
     try await waitUntil { model.snapshot?.controls.first?.gain == 2.25 }
     #expect(model.snapshot?.hasDraft == false)
-    model.enqueue(.editFilter(filter: 0, frequency: 100, gain: 0))
+    model.enqueue(.editFilter(profile: profile, filter: 0, frequency: 100, gain: 0))
     #expect(model.error != nil)
 }
 
@@ -224,13 +227,17 @@ func updateStreamsHaveIndependentLifetimesAndFinishAtShutdown() async throws {
     first.cancel()
     await first.value
     let stoppedCount = firstCount
-    for _ in 0..<100 { _ = try engine.enqueue(command: .useFlat) }
+    for _ in 0..<100 {
+        _ = try engine.enqueue(command: .createProfile(device: "system-output", name: "Flat", source: .flat))
+    }
     try await waitUntil { secondRevision >= 101 }
     #expect(firstCount == stoppedCount)
     #expect(engine.snapshot()?.profileName != nil)
     engine.shutdown()
     try await waitUntil { finished }
-    #expect(throws: EngineError.self) { try engine.enqueue(command: .useFlat) }
+    #expect(throws: EngineError.self) {
+        try engine.enqueue(command: .createProfile(device: "system-output", name: "Flat", source: .flat))
+    }
     // Subscribing after shutdown must complete rather than hang.
     for await _ in engine.updates() { Issue.record("Closed engine emitted an update") }
 }
@@ -245,11 +252,13 @@ func diskStorageSurvivesEngineRecreationAndReportsCorruption() async throws {
     defer { engine.shutdown() }
     try await waitUntil { engine.snapshot() != nil }
     let preset = try #require(engine.snapshot()?.presets.first)
-    _ = try engine.enqueue(command: .usePreset(id: preset.id))
+    _ = try engine.enqueue(command: .createProfile(device: "system-output", name: "Saved preset",
+                                                  source: .preset(id: preset.id)))
     try await waitUntil { engine.snapshot()?.profileName != nil }
     let savedName = engine.snapshot()?.profileName
     let control = try #require(engine.snapshot()?.controls.first)
-    _ = try engine.enqueue(command: .previewControlGain(filter: control.filter, gain: 3.75))
+    let profile = try #require(engine.snapshot()?.selectedProfileId)
+    _ = try engine.enqueue(command: .previewControlGain(profile: profile, filter: control.filter, gain: 3.75))
     try await waitUntil { engine.snapshot()?.isPreviewingGain == true }
     engine.shutdown()
 
@@ -292,15 +301,17 @@ func renderNativeStates() async throws {
     try await waitUntil { model.snapshot != nil }
     try await render(model, to: directory, name: "empty")
     let preset = try #require(model.snapshot?.presets.first { $0.model == "HD650" })
-    model.enqueue(.usePreset(id: preset.id))
+    model.enqueue(.createProfile(device: model.snapshot?.deviceId ?? "system-output",
+                                 name: "HD650", source: .preset(id: preset.id)))
     try await waitUntil { model.snapshot?.presetId == preset.id }
     let control = try #require(model.snapshot?.controls.first)
+    let profile = try #require(model.snapshot?.selectedProfileId)
     for gain in [0.0, -6, 3, -12, 12] {
-        model.enqueue(.setControlGain(filter: control.filter, gain: gain))
+        model.enqueue(.setControlGain(profile: profile, filter: control.filter, gain: gain))
         try await waitUntil { model.snapshot?.controls.first?.gain == gain }
         try await render(model, to: directory, name: "gain-\(Int(gain))")
     }
-    model.enqueue(.usePreset(id: "missing"))
+    model.enqueue(.createProfile(device: "system-output", name: "Missing", source: .preset(id: "missing")))
     try await waitUntil { model.snapshot?.actionError != nil }
     try await render(model, to: directory, name: "error")
 }
@@ -315,7 +326,8 @@ func liveAudioThroughSwiftBindings() async throws {
     #expect(initial.audioError == nil)
     try #require(initial.acceptedChain != nil)
     let preset = try #require(initial.presets.first { $0.model == "HD650" })
-    model.enqueue(.usePreset(id: preset.id))
+    model.enqueue(.createProfile(device: model.snapshot?.deviceId ?? "system-output",
+                                 name: "HD650", source: .preset(id: preset.id)))
     try await waitUntil("live preset selection") { model.snapshot?.presetId == preset.id }
     #expect(model.snapshot?.acceptedChain == model.snapshot?.desiredChain)
     let measurements = Task { await model.measureWhileVisible() }

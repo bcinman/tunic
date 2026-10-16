@@ -8,7 +8,7 @@ use gpui::{
     Bounds, Context, Div, Entity, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent, Pixels,
     Point, Render, Stateful, Window, canvas, div, fill, oklcha, point, prelude::*, px, rgb, size,
 };
-use tunic_core::{Command, FilterId, FrequencyHz, GainDb, Session};
+use tunic_core::{Command, FilterId, FrequencyHz, GainDb, ProfileEdit, ProfileId, Session};
 
 use components::{
     equalizer::{closest_filter, maximum_frequency_hz, values_at_position},
@@ -22,8 +22,8 @@ const CONTROL_MAX_GAIN_DB: f64 = 12.0;
 pub struct TunicView {
     session: Session,
     spectrum: Entity<SpectrumView>,
-    dragging_filter: Option<FilterId>,
-    dragging_control: Option<FilterId>,
+    dragging_filter: Option<(ProfileId, FilterId)>,
+    dragging_control: Option<(ProfileId, FilterId)>,
 }
 
 impl TunicView {
@@ -42,9 +42,51 @@ impl TunicView {
         &self.session
     }
 
+    fn create_profile(
+        &mut self,
+        base: &str,
+        source: tunic_core::ProfileSource,
+        cx: &mut Context<Self>,
+    ) {
+        let mut name = base.to_owned();
+        let mut suffix = 2;
+        while self
+            .session
+            .profiles()
+            .iter()
+            .any(|profile| profile.name().to_string() == name)
+        {
+            name = format!("{base} {suffix}");
+            suffix += 1;
+        }
+        self.execute(
+            Command::CreateProfile {
+                device: self.session.device_id().clone(),
+                name: tunic_core::ProfileName::try_new(name).expect("nonempty label"),
+                source,
+            },
+            cx,
+        );
+    }
+
     pub fn execute(&mut self, command: Command, cx: &mut Context<Self>) {
         let generation = self.session.audio_generation();
+        let selected = self
+            .session
+            .selected_profile()
+            .map(|profile| profile.id().clone());
+        let device = self.session.device_id().clone();
         let _ = self.session.execute(command);
+        if selected
+            != self
+                .session
+                .selected_profile()
+                .map(|profile| profile.id().clone())
+            || device != *self.session.device_id()
+        {
+            self.dragging_filter = None;
+            self.dragging_control = None;
+        }
         if generation != self.session.audio_generation() {
             self.spectrum.update(cx, |view, cx| {
                 view.replace_telemetry(self.session.subscribe_telemetry());
@@ -57,6 +99,14 @@ impl TunicView {
 
 impl Render for TunicView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let profile = self
+            .session
+            .selected_profile()
+            .map(|profile| profile.id().clone());
+        let save_profile = profile.clone();
+        let reset_profile = profile.clone();
+        let graph_profile = profile.clone();
+        let graph_move_profile = profile.clone();
         let selected = self
             .session
             .selected_profile()
@@ -122,7 +172,14 @@ impl Render for TunicView {
                         .child("Adjustments")
                         .children(controls.into_iter().enumerate().map(
                             |(index, (target, name, gain))| {
-                                gain_control(index, target, name, gain, cx)
+                                gain_control(
+                                    index,
+                                    profile.clone().expect("controls have a profile"),
+                                    target,
+                                    name,
+                                    gain,
+                                    cx,
+                                )
                             },
                         )),
                 )
@@ -132,33 +189,66 @@ impl Render for TunicView {
                     .flex()
                     .gap_2()
                     .child(
-                        button("save", "Save").on_click(cx.listener(|this, _, _, cx| {
-                            this.execute(Command::SaveDraft, cx);
+                        button("save", "Save").on_click(cx.listener(move |this, _, _, cx| {
+                            if let Some(profile) = &save_profile {
+                                this.execute(
+                                    Command::EditProfile {
+                                        profile: profile.clone(),
+                                        edit: ProfileEdit::SaveDraft,
+                                    },
+                                    cx,
+                                );
+                            }
                         })),
                     )
-                    .child(
-                        button("reset", "Reset").on_click(cx.listener(|this, _, _, cx| {
+                    .child(button("reset", "Reset").on_click(cx.listener(
+                        move |this, _, _, cx| {
                             this.dragging_filter = None;
-                            this.execute(Command::ResetDraft, cx);
-                        })),
-                    ),
+                            if let Some(profile) = &reset_profile {
+                                this.execute(
+                                    Command::EditProfile {
+                                        profile: profile.clone(),
+                                        edit: ProfileEdit::ResetDraft,
+                                    },
+                                    cx,
+                                );
+                            }
+                        },
+                    ))),
             )
             .child(
-                button("flat", "Use Flat").on_click(cx.listener(|this, _, _, cx| {
-                    this.execute(Command::UseFlat, cx);
+                button("flat", "Create Flat profile").on_click(cx.listener(|this, _, _, cx| {
+                    this.create_profile("Flat", tunic_core::ProfileSource::Flat, cx);
                 })),
             )
             .children(presets.into_iter().enumerate().map(|(index, preset)| {
-                let label = format!("Use {} {} — {}", preset.brand, preset.model, preset.target);
+                let label = format!(
+                    "Create {} {} — {}",
+                    preset.brand, preset.model, preset.target
+                );
                 button(("preset", index), label).on_click(cx.listener(move |this, _, _, cx| {
-                    this.execute(Command::UsePreset(preset.id.clone()), cx);
+                    this.create_profile(
+                        &format!("{} {}", preset.brand, preset.model),
+                        tunic_core::ProfileSource::Preset(preset.id.clone()),
+                        cx,
+                    );
                 }))
             }))
-            .child(
-                button("clear", "Clear selection").on_click(cx.listener(|this, _, _, cx| {
-                    this.execute(Command::ClearSelection, cx);
-                })),
-            )
+            .children(self.session.profiles().iter().cloned().enumerate().map(
+                |(index, profile)| {
+                    button(("profile", index), profile.name().to_string()).on_click(cx.listener(
+                        move |this, _, _, cx| {
+                            this.execute(
+                                Command::SelectProfile {
+                                    device: this.session.device_id().clone(),
+                                    profile: profile.id().clone(),
+                                },
+                                cx,
+                            );
+                        },
+                    ))
+                },
+            ))
             .when_some(self.session.audio_error(), |view, error| {
                 view.child(
                     div()
@@ -184,14 +274,19 @@ impl Render for TunicView {
                         this.session.sample_rate(),
                         bounds,
                         event.position,
-                    );
+                    )
+                    .and_then(|filter| graph_profile.clone().map(|profile| (profile, filter)));
                 }),
             )
             .on_mouse_move(cx.listener(move |this, event: &MouseMoveEvent, _, cx| {
-                let (Some(filter), Some(bounds)) = (this.dragging_filter, mouse_move_bounds.get())
+                let (Some((profile, filter)), Some(bounds)) =
+                    (this.dragging_filter.clone(), mouse_move_bounds.get())
                 else {
                     return;
                 };
+                if graph_move_profile.as_ref() != Some(&profile) {
+                    return;
+                }
                 if !event.dragging() {
                     this.dragging_filter = None;
                     return;
@@ -200,11 +295,14 @@ impl Render for TunicView {
                     maximum_frequency_hz().min(this.session.sample_rate().into_inner() * 0.499);
                 let (frequency, gain) = values_at_position(bounds, event.position, max_frequency);
                 this.execute(
-                    Command::EditFilter {
-                        filter,
-                        frequency: FrequencyHz::try_new(frequency)
-                            .expect("drag frequency is positive"),
-                        gain: GainDb::try_new(gain).expect("drag gain is finite"),
+                    Command::EditProfile {
+                        profile,
+                        edit: ProfileEdit::EditFilter {
+                            filter,
+                            frequency: FrequencyHz::try_new(frequency)
+                                .expect("drag frequency is positive"),
+                            gain: GainDb::try_new(gain).expect("drag gain is finite"),
+                        },
                     },
                     cx,
                 );
@@ -222,6 +320,7 @@ impl Render for TunicView {
 
 fn gain_control(
     index: usize,
+    profile: ProfileId,
     target: FilterId,
     name: String,
     gain: f64,
@@ -233,6 +332,9 @@ fn gain_control(
     let prepaint_bounds = Rc::clone(&bounds);
     let mouse_down_bounds = Rc::clone(&bounds);
     let mouse_move_bounds = Rc::clone(&bounds);
+    let down_profile = profile.clone();
+    let move_profile = profile.clone();
+    let up_profile = profile.clone();
 
     div()
         .flex()
@@ -284,9 +386,36 @@ fn gain_control(
                         let Some(bounds) = mouse_down_bounds.get() else {
                             return;
                         };
-                        this.dragging_control = Some(target);
+                        this.dragging_control = Some((down_profile.clone(), target));
                         this.execute(
-                            Command::PreviewControlGain {
+                            Command::EditProfile {
+                                profile: down_profile.clone(),
+                                edit: ProfileEdit::PreviewControlGain {
+                                    filter: target,
+                                    gain: GainDb::try_new(gain_at_slider_position(
+                                        bounds,
+                                        event.position,
+                                    ))
+                                    .expect("slider gain is finite"),
+                                },
+                            },
+                            cx,
+                        );
+                    }),
+                )
+                .on_mouse_move(cx.listener(move |this, event: &MouseMoveEvent, _, cx| {
+                    if this.dragging_control != Some((move_profile.clone(), target))
+                        || !event.dragging()
+                    {
+                        return;
+                    }
+                    let Some(bounds) = mouse_move_bounds.get() else {
+                        return;
+                    };
+                    this.execute(
+                        Command::EditProfile {
+                            profile: move_profile.clone(),
+                            edit: ProfileEdit::PreviewControlGain {
                                 filter: target,
                                 gain: GainDb::try_new(gain_at_slider_position(
                                     bounds,
@@ -294,39 +423,37 @@ fn gain_control(
                                 ))
                                 .expect("slider gain is finite"),
                             },
-                            cx,
-                        );
-                    }),
-                )
-                .on_mouse_move(cx.listener(move |this, event: &MouseMoveEvent, _, cx| {
-                    if this.dragging_control != Some(target) || !event.dragging() {
-                        return;
-                    }
-                    let Some(bounds) = mouse_move_bounds.get() else {
-                        return;
-                    };
-                    this.execute(
-                        Command::PreviewControlGain {
-                            filter: target,
-                            gain: GainDb::try_new(gain_at_slider_position(bounds, event.position))
-                                .expect("slider gain is finite"),
                         },
                         cx,
                     );
                 }))
                 .on_mouse_up(
                     MouseButton::Left,
-                    cx.listener(|this, _, _, cx| {
-                        if this.dragging_control.take().is_some() {
-                            this.execute(Command::FinishControlGain, cx);
+                    cx.listener(move |this, _, _, cx| {
+                        if this.dragging_control == Some((up_profile.clone(), target)) {
+                            this.dragging_control = None;
+                            this.execute(
+                                Command::EditProfile {
+                                    profile: up_profile.clone(),
+                                    edit: ProfileEdit::FinishControlGain,
+                                },
+                                cx,
+                            );
                         }
                     }),
                 )
                 .on_mouse_up_out(
                     MouseButton::Left,
-                    cx.listener(|this, _, _, cx| {
-                        if this.dragging_control.take().is_some() {
-                            this.execute(Command::FinishControlGain, cx);
+                    cx.listener(move |this, _, _, cx| {
+                        if this.dragging_control == Some((profile.clone(), target)) {
+                            this.dragging_control = None;
+                            this.execute(
+                                Command::EditProfile {
+                                    profile: profile.clone(),
+                                    edit: ProfileEdit::FinishControlGain,
+                                },
+                                cx,
+                            );
                         }
                     }),
                 ),
@@ -366,8 +493,9 @@ mod tests {
     };
     use gpui::{Bounds, point, px, size};
     use tunic_core::{
-        AudioFormat, Chain, ChangeHandler, Command, Connection, FrequencyHz, GainDb,
-        MemoryPersistence, Platform, PresetId, Processor, ProcessorError, SampleRateHz, Session,
+        AudioFormat, Chain, ChangeHandler, Command, Connection, DeviceId, FrequencyHz, GainDb,
+        MemoryPersistence, Platform, PresetId, Processor, ProcessorError, ProfileEdit, ProfileName,
+        ProfileSource, SampleRateHz, Session,
     };
     use tunic_presets::BundledCatalog;
 
@@ -381,17 +509,26 @@ mod tests {
             Ok(())
         }
 
-        fn refresh_default_output(&mut self, _: &Chain) -> Result<Option<Connection>, String> {
+        fn refresh_default_output(
+            &mut self,
+            _: &dyn Fn(&DeviceId) -> Chain,
+        ) -> Result<Option<Connection>, String> {
             Ok(self.0.take())
         }
     }
 
     fn session_with_preset(id: &str) -> Session {
         let mut session = Session::new(MemoryPersistence::default(), BundledCatalog).unwrap();
+        session.execute(create_preset(id)).unwrap();
         session
-            .execute(Command::UsePreset(PresetId::try_new(id).unwrap()))
-            .unwrap();
-        session
+    }
+
+    fn create_preset(id: &str) -> Command {
+        Command::CreateProfile {
+            device: DeviceId::try_new("system-output").unwrap(),
+            name: ProfileName::try_new("Sony MDR-7506").unwrap(),
+            source: ProfileSource::Preset(PresetId::try_new(id).unwrap()),
+        }
     }
 
     #[test]
@@ -401,14 +538,28 @@ mod tests {
             session.selected_profile().unwrap().name().to_string(),
             "Sony MDR-7506"
         );
-        session.execute(Command::UseFlat).unwrap();
+        session
+            .execute(Command::CreateProfile {
+                device: session.device_id().clone(),
+                name: ProfileName::try_new("Flat").unwrap(),
+                source: ProfileSource::Flat,
+            })
+            .unwrap();
         assert_eq!(
             session.selected_profile().unwrap().name().to_string(),
             "Flat"
         );
-        assert_eq!(session.state().profiles.len(), 2);
-        session.execute(Command::ClearSelection).unwrap();
-        assert!(session.selected_profile().is_none());
+        assert_eq!(session.profiles().len(), 2);
+        session
+            .execute(Command::SelectProfile {
+                device: session.device_id().clone(),
+                profile: session.profiles()[0].id().clone(),
+            })
+            .unwrap();
+        assert_eq!(
+            session.selected_profile().unwrap().name().to_string(),
+            "Sony MDR-7506"
+        );
         assert!(session.action_error().is_none());
     }
 
@@ -427,6 +578,7 @@ mod tests {
             .unwrap()
             .with_audio(
                 TestPlatform(Some(Connection {
+                    device_id: DeviceId::try_new("system-output").unwrap(),
                     device_name: "Test".into(),
                     controller,
                 })),
@@ -434,9 +586,7 @@ mod tests {
             );
         let mut samples = vec![0.25_f32; 512 * 2];
 
-        session
-            .execute(Command::UsePreset(PresetId::try_new(MDR7506).unwrap()))
-            .unwrap();
+        session.execute(create_preset(MDR7506)).unwrap();
         processor.process(&mut samples);
 
         assert!(samples.iter().any(|sample| *sample != 0.25));
@@ -539,9 +689,12 @@ mod tests {
         let mut session = session_with_preset(HD650);
         let saved = session.selected_profile().unwrap().clone();
         let filter_id = saved.controls()[0].target();
-        let edit = Command::SetControlGain {
-            filter: filter_id,
-            gain: GainDb::try_new(4.0).unwrap(),
+        let edit = Command::EditProfile {
+            profile: saved.id().clone(),
+            edit: ProfileEdit::SetControlGain {
+                filter: filter_id,
+                gain: GainDb::try_new(4.0).unwrap(),
+            },
         };
         session.execute(edit).unwrap();
         let active = session.active_chain();
@@ -576,13 +729,21 @@ mod tests {
         let (frequency, gain) =
             values_at_position(bounds, graph_point(bounds, 0.75, 0.25), 20_000.0);
         session
-            .execute(Command::EditFilter {
-                filter: filter_id,
-                frequency: FrequencyHz::try_new(frequency).unwrap(),
-                gain: GainDb::try_new(gain).unwrap(),
+            .execute(Command::EditProfile {
+                profile: saved.id().clone(),
+                edit: ProfileEdit::EditFilter {
+                    filter: filter_id,
+                    frequency: FrequencyHz::try_new(frequency).unwrap(),
+                    gain: GainDb::try_new(gain).unwrap(),
+                },
             })
             .unwrap();
-        session.execute(Command::SaveDraft).unwrap();
+        session
+            .execute(Command::EditProfile {
+                profile: saved.id().clone(),
+                edit: ProfileEdit::SaveDraft,
+            })
+            .unwrap();
         let persisted = session.selected_profile().unwrap();
         assert_eq!(
             persisted.base().equalizer.filters[2]
@@ -601,13 +762,17 @@ mod tests {
     #[test]
     fn failed_reset_keeps_the_compatible_live_draft() {
         let mut session = session_with_preset(MDR7506);
+        let profile = session.selected_profile().unwrap().id().clone();
         for filter in session.active_chain().equalizer.filters {
             if filter.parameters.frequency.into_inner() >= 8_000.0 {
                 session
-                    .execute(Command::EditFilter {
-                        filter: filter.id,
-                        frequency: FrequencyHz::try_new(4_000.0).unwrap(),
-                        gain: filter.parameters.gain,
+                    .execute(Command::EditProfile {
+                        profile: profile.clone(),
+                        edit: ProfileEdit::EditFilter {
+                            filter: filter.id,
+                            frequency: FrequencyHz::try_new(4_000.0).unwrap(),
+                            gain: filter.parameters.gain,
+                        },
                     })
                     .unwrap();
             }
@@ -624,12 +789,20 @@ mod tests {
         .unwrap();
         let mut session = session.with_audio(
             TestPlatform(Some(Connection {
+                device_id: DeviceId::try_new("system-output").unwrap(),
                 device_name: "Test".into(),
                 controller,
             })),
             Arc::new(|| {}),
         );
-        assert!(session.execute(Command::ResetDraft).is_err());
+        assert!(
+            session
+                .execute(Command::EditProfile {
+                    profile,
+                    edit: ProfileEdit::ResetDraft
+                })
+                .is_err()
+        );
         assert_eq!(session.active_chain(), draft);
         assert!(session.action_error().is_some());
     }
@@ -637,12 +810,16 @@ mod tests {
     #[test]
     fn saving_does_not_republish_and_reset_filter_history() {
         let mut session = session_with_preset(HD650);
+        let profile = session.selected_profile().unwrap().id().clone();
         let filter = session.active_chain().equalizer.filters[0];
         session
-            .execute(Command::EditFilter {
-                filter: filter.id,
-                frequency: filter.parameters.frequency,
-                gain: GainDb::try_new(8.0).unwrap(),
+            .execute(Command::EditProfile {
+                profile: profile.clone(),
+                edit: ProfileEdit::EditFilter {
+                    filter: filter.id,
+                    frequency: filter.parameters.frequency,
+                    gain: GainDb::try_new(8.0).unwrap(),
+                },
             })
             .unwrap();
         let draft = session.active_chain();
@@ -654,6 +831,7 @@ mod tests {
         let (mut reference, _) = Processor::new(format(), draft.clone(), false).unwrap();
         let mut session = session.with_audio(
             TestPlatform(Some(Connection {
+                device_id: DeviceId::try_new("system-output").unwrap(),
                 device_name: "Test".into(),
                 controller,
             })),
@@ -664,7 +842,12 @@ mod tests {
         let mut reference_warmup = warmup.clone();
         processor.process(&mut warmup);
         reference.process(&mut reference_warmup);
-        session.execute(Command::SaveDraft).unwrap();
+        session
+            .execute(Command::EditProfile {
+                profile,
+                edit: ProfileEdit::SaveDraft,
+            })
+            .unwrap();
         let mut actual = vec![0.25_f32; 512 * 2];
         let mut expected = actual.clone();
         processor.process(&mut actual);

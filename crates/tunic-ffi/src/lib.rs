@@ -254,7 +254,12 @@ fn run(mut session: Session, receiver: mpsc::Receiver<Message>, shared: &Shared)
         };
         match message {
             Message::Shutdown => {
-                let _ = session.execute(Command::FinishControlGain);
+                if let Some(profile) = session.selected_profile() {
+                    let _ = session.execute(Command::EditProfile {
+                        profile: profile.id().clone(),
+                        edit: tunic_core::ProfileEdit::FinishControlGain,
+                    });
+                }
                 break;
             }
             Message::Execute(command, receipt) => {

@@ -84,19 +84,21 @@ fn saved_state() -> State {
         None,
     )
     .unwrap();
-    State {
-        selections: vec![
-            DeviceProfileSelection {
-                device: DeviceId::try_new("system-output").unwrap(),
-                profile: profile.id().clone(),
-            },
-            DeviceProfileSelection {
-                device: DeviceId::try_new("headphones").unwrap(),
-                profile: flat.id().clone(),
-            },
-        ],
-        profiles: vec![profile, flat],
-    }
+    State::new(vec![
+        DeviceProfiles::new(
+            DeviceId::try_new("system-output").unwrap(),
+            vec![profile.clone()],
+            profile.id().clone(),
+        )
+        .unwrap(),
+        DeviceProfiles::new(
+            DeviceId::try_new("headphones").unwrap(),
+            vec![flat.clone()],
+            flat.id().clone(),
+        )
+        .unwrap(),
+    ])
+    .unwrap()
 }
 
 #[test]
@@ -133,18 +135,24 @@ fn session_restores_saved_adjustments_but_not_unsaved_drafts() {
     )
     .unwrap();
     session
-        .execute(Command::SetControlGain {
-            filter: FilterId::try_new(8).unwrap(),
-            gain: GainDb::try_new(-4.5).unwrap(),
+        .execute(Command::EditProfile {
+            profile: session.selected_profile().unwrap().id().clone(),
+            edit: tunic_core::ProfileEdit::SetControlGain {
+                filter: FilterId::try_new(8).unwrap(),
+                gain: GainDb::try_new(-4.5).unwrap(),
+            },
         })
         .unwrap();
     let saved = session.state().clone();
     assert!(session.draft().is_none());
     session
-        .execute(Command::EditFilter {
-            filter: FilterId::try_new(8).unwrap(),
-            frequency: FrequencyHz::try_new(1234.0).unwrap(),
-            gain: GainDb::try_new(7.0).unwrap(),
+        .execute(Command::EditProfile {
+            profile: session.selected_profile().unwrap().id().clone(),
+            edit: tunic_core::ProfileEdit::EditFilter {
+                filter: FilterId::try_new(8).unwrap(),
+                frequency: FrequencyHz::try_new(1234.0).unwrap(),
+                gain: GainDb::try_new(7.0).unwrap(),
+            },
         })
         .unwrap();
     drop(session);
@@ -196,10 +204,16 @@ fn invalid_payloads_and_domain_values_are_not_silently_reset() {
         .query_row("SELECT payload FROM snapshot", [], |row| row.get(0))
         .unwrap();
     for (pointer, value) in [
-        ("/profiles/0/filters/0/frequency", serde_json::json!(0)),
-        ("/profiles/0/controls/0/target", serde_json::json!(123)),
-        ("/profiles/0/id", serde_json::json!("")),
-        ("/selections/0/profile", serde_json::json!("missing")),
+        (
+            "/devices/0/profiles/0/filters/0/frequency",
+            serde_json::json!(0),
+        ),
+        (
+            "/devices/0/profiles/0/controls/0/target",
+            serde_json::json!(123),
+        ),
+        ("/devices/0/profiles/0/id", serde_json::json!("")),
+        ("/devices/0/selected", serde_json::json!("missing")),
     ] {
         let mut document: serde_json::Value = serde_json::from_str(&payload).unwrap();
         *document.pointer_mut(pointer).unwrap() = value;
@@ -216,6 +230,18 @@ fn invalid_payloads_and_domain_values_are_not_silently_reset() {
             ))
         ));
     }
+    let old_payload = r#"{"profiles":[],"selections":[]}"#;
+    connection
+        .execute("UPDATE snapshot SET payload = ?1", [old_payload])
+        .unwrap();
+    assert!(matches!(
+        store.load(),
+        Err(PersistenceError::Corrupt { .. })
+    ));
+    let unchanged: String = connection
+        .query_row("SELECT payload FROM snapshot", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(unchanged, old_payload);
     connection
         .execute("UPDATE snapshot SET payload = 'broken json'", [])
         .unwrap();

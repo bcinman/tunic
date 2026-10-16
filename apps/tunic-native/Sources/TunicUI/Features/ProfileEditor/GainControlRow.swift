@@ -9,6 +9,7 @@ struct GainControlRow: View {
         case cancelled
     }
 
+    let profile: String
     let control: Control
     let processedCommand: UInt64
     let send: (EngineCommand) -> UInt64?
@@ -48,14 +49,14 @@ struct GainControlRow: View {
             guard case .dragging = interaction else { return }
             interaction = .cancelled
             dragChanged(false)
-            _ = send(.cancelControlGain)
+            _ = send(.cancelControlGain(profile: profile))
         }
         .onDisappear { editingChanged(false) }
     }
 
     private func changeGain(_ value: Double) {
         if case .cancelled = interaction { return }
-        let accepted = send(.previewControlGain(filter: control.filter, gain: value)) != nil
+        let accepted = send(.previewControlGain(profile: profile, filter: control.filter, gain: value)) != nil
         if case .dragging = interaction {
             interaction = .dragging(accepted ? value : control.gain)
         } else if accepted {
@@ -79,7 +80,7 @@ struct GainControlRow: View {
     }
 
     private func finish(_ value: Double) {
-        if let receipt = send(.finishControlGain) {
+        if let receipt = send(.finishControlGain(profile: profile)) {
             interaction = .awaitingFinish(value: value, receipt: receipt)
         } else {
             interaction = .idle

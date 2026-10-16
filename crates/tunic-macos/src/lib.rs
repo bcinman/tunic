@@ -24,9 +24,8 @@ struct AudioSession {
 }
 
 impl AudioSession {
-    /// Starts processing the current default output with `initial_chain`.
-    fn start(initial_chain: Chain) -> Result<(Self, Controller), Error> {
-        let output = default_output_id()?;
+    /// Starts processing the resolved output with `initial_chain`.
+    fn start(output: AudioObjectID, initial_chain: Chain) -> Result<(Self, Controller), Error> {
         let device_name = device_name(output)?;
         let (route, controller) = Route::start(output, sample_rate(output)?, initial_chain)?;
         Ok((

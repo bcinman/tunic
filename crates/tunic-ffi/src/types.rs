@@ -19,32 +19,54 @@ impl EngineError {
 
 #[data]
 #[derive(Clone, Debug)]
+pub enum ProfileSource {
+    Preset { id: String },
+    Flat,
+}
+
+#[data]
+#[derive(Clone, Debug)]
 pub enum EngineCommand {
     SetProcessingEnabled {
         enabled: bool,
     },
-    UseFlat,
-    UsePreset {
-        id: String,
+    CreateProfile {
+        device: String,
+        name: String,
+        source: ProfileSource,
+    },
+    SelectProfile {
+        device: String,
+        profile: String,
     },
     EditFilter {
+        profile: String,
         filter: u32,
         frequency: f64,
         gain: f64,
     },
     SetControlGain {
+        profile: String,
         filter: u32,
         gain: f64,
     },
     PreviewControlGain {
+        profile: String,
         filter: u32,
         gain: f64,
     },
-    FinishControlGain,
-    CancelControlGain,
-    SaveDraft,
-    ResetDraft,
-    ClearSelection,
+    FinishControlGain {
+        profile: String,
+    },
+    CancelControlGain {
+        profile: String,
+    },
+    SaveDraft {
+        profile: String,
+    },
+    ResetDraft {
+        profile: String,
+    },
 }
 
 impl TryFrom<EngineCommand> for core::Command {
@@ -53,32 +75,76 @@ impl TryFrom<EngineCommand> for core::Command {
     fn try_from(command: EngineCommand) -> Result<Self, Self::Error> {
         Ok(match command {
             EngineCommand::SetProcessingEnabled { enabled } => Self::SetProcessingEnabled(enabled),
-            EngineCommand::UseFlat => Self::UseFlat,
-            EngineCommand::UsePreset { id } => {
-                Self::UsePreset(core::PresetId::try_new(id).map_err(EngineError::invalid)?)
-            }
+            EngineCommand::CreateProfile {
+                device,
+                name,
+                source,
+            } => Self::CreateProfile {
+                device: core::DeviceId::try_new(device).map_err(EngineError::invalid)?,
+                name: core::ProfileName::try_new(name).map_err(EngineError::invalid)?,
+                source: match source {
+                    ProfileSource::Preset { id } => core::ProfileSource::Preset(
+                        core::PresetId::try_new(id).map_err(EngineError::invalid)?,
+                    ),
+                    ProfileSource::Flat => core::ProfileSource::Flat,
+                },
+            },
+            EngineCommand::SelectProfile { device, profile } => Self::SelectProfile {
+                device: core::DeviceId::try_new(device).map_err(EngineError::invalid)?,
+                profile: core::ProfileId::try_new(profile).map_err(EngineError::invalid)?,
+            },
             EngineCommand::EditFilter {
+                profile,
                 filter,
                 frequency,
                 gain,
-            } => Self::EditFilter {
-                filter: core::FilterId::try_new(filter).map_err(EngineError::invalid)?,
-                frequency: core::FrequencyHz::try_new(frequency).map_err(EngineError::invalid)?,
-                gain: core::GainDb::try_new(gain).map_err(EngineError::invalid)?,
+            } => Self::EditProfile {
+                profile: core::ProfileId::try_new(profile).map_err(EngineError::invalid)?,
+                edit: core::ProfileEdit::EditFilter {
+                    filter: core::FilterId::try_new(filter).map_err(EngineError::invalid)?,
+                    frequency: core::FrequencyHz::try_new(frequency)
+                        .map_err(EngineError::invalid)?,
+                    gain: core::GainDb::try_new(gain).map_err(EngineError::invalid)?,
+                },
             },
-            EngineCommand::SetControlGain { filter, gain } => Self::SetControlGain {
-                filter: core::FilterId::try_new(filter).map_err(EngineError::invalid)?,
-                gain: core::GainDb::try_new(gain).map_err(EngineError::invalid)?,
+            EngineCommand::SetControlGain {
+                profile,
+                filter,
+                gain,
+            } => Self::EditProfile {
+                profile: core::ProfileId::try_new(profile).map_err(EngineError::invalid)?,
+                edit: core::ProfileEdit::SetControlGain {
+                    filter: core::FilterId::try_new(filter).map_err(EngineError::invalid)?,
+                    gain: core::GainDb::try_new(gain).map_err(EngineError::invalid)?,
+                },
             },
-            EngineCommand::PreviewControlGain { filter, gain } => Self::PreviewControlGain {
-                filter: core::FilterId::try_new(filter).map_err(EngineError::invalid)?,
-                gain: core::GainDb::try_new(gain).map_err(EngineError::invalid)?,
+            EngineCommand::PreviewControlGain {
+                profile,
+                filter,
+                gain,
+            } => Self::EditProfile {
+                profile: core::ProfileId::try_new(profile).map_err(EngineError::invalid)?,
+                edit: core::ProfileEdit::PreviewControlGain {
+                    filter: core::FilterId::try_new(filter).map_err(EngineError::invalid)?,
+                    gain: core::GainDb::try_new(gain).map_err(EngineError::invalid)?,
+                },
             },
-            EngineCommand::FinishControlGain => Self::FinishControlGain,
-            EngineCommand::CancelControlGain => Self::CancelControlGain,
-            EngineCommand::SaveDraft => Self::SaveDraft,
-            EngineCommand::ResetDraft => Self::ResetDraft,
-            EngineCommand::ClearSelection => Self::ClearSelection,
+            EngineCommand::FinishControlGain { profile } => Self::EditProfile {
+                profile: core::ProfileId::try_new(profile).map_err(EngineError::invalid)?,
+                edit: core::ProfileEdit::FinishControlGain,
+            },
+            EngineCommand::CancelControlGain { profile } => Self::EditProfile {
+                profile: core::ProfileId::try_new(profile).map_err(EngineError::invalid)?,
+                edit: core::ProfileEdit::CancelControlGain,
+            },
+            EngineCommand::SaveDraft { profile } => Self::EditProfile {
+                profile: core::ProfileId::try_new(profile).map_err(EngineError::invalid)?,
+                edit: core::ProfileEdit::SaveDraft,
+            },
+            EngineCommand::ResetDraft { profile } => Self::EditProfile {
+                profile: core::ProfileId::try_new(profile).map_err(EngineError::invalid)?,
+                edit: core::ProfileEdit::ResetDraft,
+            },
         })
     }
 }
@@ -185,12 +251,23 @@ pub struct Preset {
 
 #[data]
 #[derive(Clone, Debug)]
+pub struct ProfileSummary {
+    pub id: String,
+    pub name: String,
+}
+
+#[data]
+#[derive(Clone, Debug)]
 pub struct StateSnapshot {
     /// Notification sequence, not a profile revision or audio acknowledgement.
     pub revision: u64,
     /// All enqueue receipts through this value have executed, successfully or otherwise.
     pub processed_command: u64,
     pub device_name: String,
+    pub device_id: String,
+    pub can_create_profile: bool,
+    pub profiles: Vec<ProfileSummary>,
+    pub selected_profile_id: Option<String>,
     pub processing_enabled: bool,
     pub profile_name: Option<String>,
     pub preset_id: Option<String>,
@@ -215,6 +292,19 @@ impl StateSnapshot {
             revision,
             processed_command,
             device_name: session.device_name().to_owned(),
+            device_id: session.device_id().to_string(),
+            can_create_profile: session.can_create_profile(),
+            profiles: session
+                .profiles()
+                .iter()
+                .map(|profile| ProfileSummary {
+                    id: profile.id().to_string(),
+                    name: profile.name().to_string(),
+                })
+                .collect(),
+            selected_profile_id: session
+                .selected_profile()
+                .map(|profile| profile.id().to_string()),
             processing_enabled: session.processing_enabled(),
             profile_name: profile.map(|p| p.name().to_string()),
             preset_id: profile.and_then(|p| p.origin()).map(|o| o.id.to_string()),

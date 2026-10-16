@@ -6,15 +6,15 @@ use tunic_core as core;
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Snapshot {
-    profiles: Vec<Profile>,
-    selections: Vec<Selection>,
+    devices: Vec<DeviceProfiles>,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Selection {
+struct DeviceProfiles {
     device: String,
-    profile: String,
+    profiles: Vec<Profile>,
+    selected: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -66,54 +66,54 @@ struct Origin {
 
 pub(super) fn encode(state: &core::State) -> Result<String, core::PersistenceError> {
     let snapshot = Snapshot {
-        profiles: state
-            .profiles
+        devices: state
+            .devices()
             .iter()
-            .map(|profile| Profile {
-                id: profile.id().to_string(),
-                name: profile.name().to_string(),
-                preamp: profile.base().equalizer.preamp.into_inner(),
-                filters: profile
-                    .base()
-                    .equalizer
-                    .filters
+            .map(|device| DeviceProfiles {
+                device: device.device_id().to_string(),
+                selected: device.selected_profile_id().to_string(),
+                profiles: device
+                    .profiles()
                     .iter()
-                    .map(|filter| Filter {
-                        id: filter.id.into_inner(),
-                        kind: match filter.parameters.kind {
-                            core::FilterKind::Peaking => FilterKind::Peaking,
-                            core::FilterKind::LowShelf => FilterKind::LowShelf,
-                            core::FilterKind::HighShelf => FilterKind::HighShelf,
-                        },
-                        frequency: filter.parameters.frequency.into_inner(),
-                        gain: filter.parameters.gain.into_inner(),
-                        quality_factor: filter.parameters.quality_factor.into_inner(),
+                    .map(|profile| Profile {
+                        id: profile.id().to_string(),
+                        name: profile.name().to_string(),
+                        preamp: profile.base().equalizer.preamp.into_inner(),
+                        filters: profile
+                            .base()
+                            .equalizer
+                            .filters
+                            .iter()
+                            .map(|filter| Filter {
+                                id: filter.id.into_inner(),
+                                kind: match filter.parameters.kind {
+                                    core::FilterKind::Peaking => FilterKind::Peaking,
+                                    core::FilterKind::LowShelf => FilterKind::LowShelf,
+                                    core::FilterKind::HighShelf => FilterKind::HighShelf,
+                                },
+                                frequency: filter.parameters.frequency.into_inner(),
+                                gain: filter.parameters.gain.into_inner(),
+                                quality_factor: filter.parameters.quality_factor.into_inner(),
+                            })
+                            .collect(),
+                        controls: profile
+                            .controls()
+                            .iter()
+                            .map(|control| Control {
+                                target: control.target().into_inner(),
+                                name: control.name().to_string(),
+                                gain_adjustment: control.gain_adjustment().into_inner(),
+                            })
+                            .collect(),
+                        origin: profile.origin().map(|origin| Origin {
+                            id: origin.id.to_string(),
+                            revision: origin.revision.to_string(),
+                            provider: origin.attribution.provider.clone(),
+                            measurement_source: origin.attribution.measurement_source.clone(),
+                            source_url: origin.attribution.source_url.clone(),
+                        }),
                     })
                     .collect(),
-                controls: profile
-                    .controls()
-                    .iter()
-                    .map(|control| Control {
-                        target: control.target().into_inner(),
-                        name: control.name().to_string(),
-                        gain_adjustment: control.gain_adjustment().into_inner(),
-                    })
-                    .collect(),
-                origin: profile.origin().map(|origin| Origin {
-                    id: origin.id.to_string(),
-                    revision: origin.revision.to_string(),
-                    provider: origin.attribution.provider.clone(),
-                    measurement_source: origin.attribution.measurement_source.clone(),
-                    source_url: origin.attribution.source_url.clone(),
-                }),
-            })
-            .collect(),
-        selections: state
-            .selections
-            .iter()
-            .map(|selection| Selection {
-                device: selection.device.to_string(),
-                profile: selection.profile.to_string(),
             })
             .collect(),
     };
@@ -122,23 +122,25 @@ pub(super) fn encode(state: &core::State) -> Result<String, core::PersistenceErr
 
 pub(super) fn decode(payload: &str) -> Result<core::State, core::PersistenceError> {
     let snapshot: Snapshot = serde_json::from_str(payload).map_err(corrupt)?;
-    Ok(core::State {
-        profiles: snapshot
-            .profiles
+    core::State::new(
+        snapshot
+            .devices
             .into_iter()
-            .map(Profile::restore)
-            .collect::<Result<_, _>>()?,
-        selections: snapshot
-            .selections
-            .into_iter()
-            .map(|selection| {
-                Ok(core::DeviceProfileSelection {
-                    device: core::DeviceId::try_new(selection.device).map_err(corrupt)?,
-                    profile: core::ProfileId::try_new(selection.profile).map_err(corrupt)?,
-                })
+            .map(|device| {
+                core::DeviceProfiles::new(
+                    core::DeviceId::try_new(device.device).map_err(corrupt)?,
+                    device
+                        .profiles
+                        .into_iter()
+                        .map(Profile::restore)
+                        .collect::<Result<_, _>>()?,
+                    core::ProfileId::try_new(device.selected).map_err(corrupt)?,
+                )
+                .map_err(corrupt)
             })
             .collect::<Result<_, core::PersistenceError>>()?,
-    })
+    )
+    .map_err(corrupt)
 }
 
 impl Profile {

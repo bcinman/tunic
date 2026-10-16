@@ -20,7 +20,7 @@ func renderProfileMeterStates() async throws {
         try await Task.sleep(for: .milliseconds(10))
     }
     let preset = try #require(model.snapshot?.presets.first { $0.model == "HD650" })
-    model.enqueue(.usePreset(id: preset.id))
+    model.enqueue(.createProfile(device: "system-output", name: "HD650", source: .preset(id: preset.id)))
     for _ in 0..<100 where model.snapshot?.presetId != preset.id {
         try await Task.sleep(for: .milliseconds(10))
     }
@@ -457,7 +457,7 @@ func nativeVisualizerHostsMetalView() async throws {
         try await Task.sleep(for: .milliseconds(10))
     }
     let preset = try #require(model.snapshot?.presets.first { $0.model == "HD650" })
-    model.enqueue(.usePreset(id: preset.id))
+    model.enqueue(.createProfile(device: "system-output", name: "HD650", source: .preset(id: preset.id)))
     for _ in 0..<100 where model.snapshot?.presetId != preset.id {
         try await Task.sleep(for: .milliseconds(10))
     }
@@ -534,6 +534,7 @@ func nativeVisualizerHostsMetalView() async throws {
 func renderVisualizerLab() async throws {
     let directory = try #require(ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"])
     _ = NSApplication.shared
+    try await renderProfileCreationLab(directory: directory)
     let state = LabState()
     let host = NSHostingView(rootView: LabPreview(state: state))
     let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 360),
@@ -619,7 +620,7 @@ private func renderGainHoverStates(directory: String) async throws {
         try await Task.sleep(for: .milliseconds(10))
     }
     let preset = try #require(model.snapshot?.presets.first { $0.model == "HD650" })
-    model.enqueue(.usePreset(id: preset.id))
+    model.enqueue(.createProfile(device: "system-output", name: "HD650", source: .preset(id: preset.id)))
     for _ in 0..<100 where model.snapshot?.presetId != preset.id {
         try await Task.sleep(for: .milliseconds(10))
     }

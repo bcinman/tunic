@@ -13,9 +13,19 @@ This file is the source of truth for implemented product capabilities.
 - Session commands own profile selection, draft editing, save/reset, audio
   previews, and route refresh. Read-only accessors expose application state;
   GPUI retains only gestures, presentation, and spectrum animation.
-- A narrow command API for flat/preset selection, filter/control edits,
-  save/reset, clear selection, and audio refresh. Session owns the only draft;
+- A narrow command API for creating named profiles from presets or a neutral
+  five-band EQ, selecting saved profiles, filter/control edits, save/reset,
+  and audio refresh. Session owns the only draft;
   callers cannot submit replacement profiles, and profiles need no revision counters.
+- Devices own independent profile collections and remember their last selection.
+  Creation atomically saves and selects a fresh profile; names are unique per device.
+  Stale-device commands and selecting another device's profile are rejected.
+  All edits carry the originating profile ID; stale slider updates, completion,
+  cancellation, and draft commands cannot affect a newly selected profile.
+  Audio-backed sessions reject profile creation while no route is available;
+  the native Add button waits for a real device rather than saving to a placeholder.
+  Explicit offline test/preview sessions still support profile creation.
+  Flat starts with neutral Bass, Warmth, Mids, Presence, and Treble controls.
 - Atomic whole-state persistence through a `Persistence` contract and rejection
   of corrupt restored state. Failed saves retain drafts. DSP publication errors
   remain visible across no-op commands until resolved; refresh cannot bypass a
@@ -26,6 +36,8 @@ This file is the source of truth for implemented product capabilities.
   saved data. Both macOS hosts use
   `~/Library/Application Support/Tunic/session.sqlite3`; tests and previews retain
   memory storage. Startup storage errors surface rather than falling back to memory.
+  The device-owned snapshot format is incompatible with earlier development data;
+  old snapshots are rejected without silently resetting or modifying their payload.
   Saved profiles, adjustments, attribution, and selections survive relaunch;
   named gain adjustments preview in audio without disk writes during a drag and
   persist once when the interaction ends, without saving pending base EQ edits.
@@ -58,14 +70,16 @@ This file is the source of truth for implemented product capabilities.
   of sequenced raw stereo peak/RMS measurements and 256-point spectra.
 - A minimal GPUI-CE application split into shared `tunic-ui` presentation and
   `tunic-app` lifecycle/platform composition. It browses bundled presets,
-  creates and selects real core profiles, and clears selection.
+  creates independent profiles, and selects saved profiles for the current device.
 - A `tunic-macos` route for the current default output using a Core Audio process
   tap, private aggregate device, callback-owned core `Processor`, native-buffer
   normalization, and ordered teardown. Profile clicks publish live chain changes
   through the core `Controller`.
 - A Session-owned `Platform` contract with a shared `tunic-macos::MacosPlatform`
   that observes Core Audio default-output notifications and rebuilds the complete
-  route with the current draft. Each host schedules refresh commands and retries.
+  route using stable Core Audio device UIDs. Same-device reconnections retain the
+  current draft; device switches start with that device's saved selection and
+  discard the previous base draft. Each host schedules refresh commands and retries.
 - A polished 640-pixel desktop shell with native traffic lights, current device
   and profile context, and a low-opacity real-time spectrum behind the equalizer.
 - An editable logarithmic equalizer graph with the exact digital filter response,
@@ -79,10 +93,14 @@ This file is the source of truth for implemented product capabilities.
   native resources, retries route failures, and tears down on explicit shutdown
   or handle drop. No audio buffers or real-time callbacks cross into Swift.
 - A SwiftUI menu-bar app linked to generated BoltFFI bindings, with real device
-  status, preset selection, automatically saved named gain controls, and live circular RMS
+  status, device-scoped profile selection, automatically saved named gain controls, and live circular RMS
   meters. A bottom-left gear menu offers Quit Tunic and Open at Login through macOS
   ServiceManagement; login startup requires a signed app bundle and is disabled
   in the `swift run` development build. The app currently has no bundle packaging task.
+  Devices without profiles open headphone search with live, variant-aware results,
+  editable profile names, and a secondary flat-EQ starting point. The normal picker
+  lists only the current device's profiles and reuses that form for later additions.
+  Browsing does not change audio; failed additions retain the form for correction.
   The meters flank the profile picker. Translucent white rings fill with white
   arcs on a −60 to 0 dBFS scale, updating with ~30 Hz telemetry. Arc opacity rises
   linearly from 25% at empty to 100% at full.

@@ -12,39 +12,41 @@ mod state;
 mod tests;
 
 pub use catalog::{PresetCatalog, PresetQuery};
-pub use command::Command;
+pub use command::{Command, ProfileEdit, ProfileSource};
 pub use persistence::{MemoryPersistence, Persistence, PersistenceError};
 pub use profile::{
     Attribution, FilterControl, FilterControlName, FilterControlNameError, Preset, PresetId,
     PresetIdError, PresetOrigin, PresetRevision, PresetRevisionError, PresetSummary, Profile,
     ProfileError, ProfileId, ProfileIdError, ProfileName, ProfileNameError,
 };
-pub use state::{DeviceId, DeviceIdError, DeviceProfileSelection, State};
+pub use state::{DeviceId, DeviceIdError, DeviceProfiles, State};
 
-use std::{collections::HashSet, sync::Arc};
+use std::sync::Arc;
 
 use crate::{Chain, Controller, FilterId, FrequencyHz, GainDb, SampleRateHz, Telemetry};
 
 pub type ChangeHandler = Arc<dyn Fn() + Send + Sync + 'static>;
 
 pub struct Connection {
+    pub device_id: DeviceId,
     pub device_name: String,
     pub controller: Controller,
 }
 
-/// Owns native routes. Each new connection must already be running `active_chain`.
+/// Owns native routes. Resolve the stable device identity, then obtain its chain
+/// from the callback before starting that exact route. Never start a new device
+/// with the previous device's processing chain.
 /// An unchanged route returns `None`; an error tears down the previous route.
 pub trait Platform {
     fn watch_default_output(&mut self, notify: ChangeHandler) -> Result<(), String>;
     fn refresh_default_output(
         &mut self,
-        active_chain: &Chain,
+        chain_for_device: &dyn Fn(&DeviceId) -> Chain,
     ) -> Result<Option<Connection>, String>;
 }
 
 const SYSTEM_OUTPUT: &str = "system-output";
 const UNAVAILABLE_DEVICE: &str = "System Output (audio unavailable)";
-const FLAT_PROFILE: &str = "flat";
 
 struct GainPreview {
     filter: FilterId,
@@ -85,8 +87,10 @@ struct GainPreview {
 /// - [`Self::applied_chain`] is the last controller-accepted chain; it can differ
 ///   from the desired chain or be absent when audio is disconnected.
 ///
-/// Submit intent through [`Command`], not a cloned/replaced [`Profile`]. Session
-/// owns the only draft, so there are no profile revision counters or external
+/// Submit intent through [`Command`], not a cloned/replaced [`Profile`].
+/// Edits must carry the originating profile ID in [`Command::EditProfile`];
+/// stale edits are rejected before touching previews or drafts.
+/// Session owns the only draft, so there are no profile revision counters or external
 /// snapshot-save API. Base EQ edits preview without saving. Named adjustments use
 /// PreviewControlGain during interaction and FinishControlGain to persist once;
 /// SetControlGain performs a discrete saved adjustment. Gain previews are separate
@@ -128,6 +132,9 @@ pub struct Session {
     draft: Option<Profile>,
     gain_preview: Option<GainPreview>,
     presets: Vec<PresetSummary>,
+    // Offline sessions deliberately use a synthetic device; audio-backed sessions
+    // must not create profiles until a real route has established its identity.
+    audio_requested: bool,
     // Present only after successful watcher installation.
     platform: Option<Box<dyn Platform>>,
     audio_error: Option<String>,
@@ -149,7 +156,6 @@ impl Session {
             .load()
             .map_err(SessionError::PersistenceFailed)?
             .unwrap_or_default();
-        validate_state(&state)?;
         let presets = catalog.list(&PresetQuery::default());
         Ok(Self {
             persistence: Box::new(persistence),
@@ -161,6 +167,7 @@ impl Session {
             draft: None,
             gain_preview: None,
             presets,
+            audio_requested: false,
             platform: None,
             audio_error: None,
             publication_error: None,
@@ -184,6 +191,7 @@ impl Session {
         mut platform: impl Platform + 'static,
         notify: ChangeHandler,
     ) -> Self {
+        self.audio_requested = true;
         self.platform = None;
         if self.controller.take().is_some() {
             self.audio_generation += 1;
@@ -205,6 +213,16 @@ impl Session {
     #[must_use]
     pub fn state(&self) -> &State {
         &self.state
+    }
+
+    pub fn device_id(&self) -> &DeviceId {
+        &self.device
+    }
+
+    pub fn profiles(&self) -> &[Profile] {
+        self.state
+            .device(&self.device)
+            .map_or(&[], DeviceProfiles::profiles)
     }
 
     #[must_use]
@@ -307,14 +325,26 @@ impl Session {
         self.processing_enabled
     }
 
+    #[must_use]
+    pub fn can_create_profile(&self) -> bool {
+        !self.audio_requested || self.controller.is_some()
+    }
+
     /// Selection is persisted before audio publication; an audio error does not roll it back.
     pub fn execute(&mut self, command: Command) -> Result<(), SessionError> {
-        if matches!(
-            command,
-            Command::FinishControlGain | Command::CancelControlGain
-        ) && self.gain_preview.is_none()
-        {
-            return Ok(());
+        if let Command::EditProfile { profile, edit } = &command {
+            if self.selected_profile().map(Profile::id) != Some(profile) {
+                let error = SessionError::StaleProfile(profile.clone());
+                self.action_error = Some(error.clone());
+                return Err(error);
+            }
+            if matches!(
+                edit,
+                ProfileEdit::FinishControlGain | ProfileEdit::CancelControlGain
+            ) && self.gain_preview.is_none()
+            {
+                return Ok(());
+            }
         }
         let refresh = matches!(command, Command::RefreshAudio);
         let result = self.execute_command(command);
@@ -325,14 +355,25 @@ impl Session {
     }
 
     fn execute_command(&mut self, command: Command) -> Result<(), SessionError> {
+        match &command {
+            Command::CreateProfile { .. } if !self.can_create_profile() => {
+                return Err(SessionError::DeviceUnavailable);
+            }
+            Command::CreateProfile { device, .. } | Command::SelectProfile { device, .. }
+                if device != &self.device =>
+            {
+                return Err(SessionError::StaleDevice(device.clone()));
+            }
+            Command::SelectProfile { profile, .. }
+                if !self.profiles().iter().any(|saved| saved.id() == profile) =>
+            {
+                return Err(SessionError::ProfileNotFound(profile.clone()));
+            }
+            _ => {}
+        }
         if matches!(
             command,
-            Command::UseFlat
-                | Command::UsePreset(_)
-                | Command::ClearSelection
-                | Command::EditFilter { .. }
-                | Command::SaveDraft
-                | Command::ResetDraft
+            Command::CreateProfile { .. } | Command::SelectProfile { .. }
         ) {
             self.finish_control_gain()?;
         }
@@ -345,20 +386,33 @@ impl Session {
                 Ok(())
             }
             Command::RefreshAudio => self.refresh_audio(),
-            Command::UseFlat => self.use_profile(None),
-            Command::UsePreset(id) => self.use_profile(Some(id)),
-            Command::EditFilter {
+            Command::CreateProfile { name, source, .. } => self.create_profile(name, source),
+            Command::SelectProfile { profile, .. } => self.select_profile(profile),
+            Command::EditProfile { edit, .. } => self.edit_profile(edit),
+        }
+    }
+
+    fn edit_profile(&mut self, edit: ProfileEdit) -> Result<(), SessionError> {
+        if matches!(
+            edit,
+            ProfileEdit::EditFilter { .. } | ProfileEdit::SaveDraft | ProfileEdit::ResetDraft
+        ) {
+            self.finish_control_gain()?;
+        }
+        match edit {
+            ProfileEdit::EditFilter {
                 filter,
                 frequency,
                 gain,
             } => self.edit_filter(filter, frequency, gain),
-            Command::SetControlGain { filter, gain } => self.set_control_gain(filter, gain),
-            Command::PreviewControlGain { filter, gain } => self.preview_control_gain(filter, gain),
-            Command::FinishControlGain => self.finish_control_gain(),
-            Command::CancelControlGain => self.cancel_control_gain(),
-            Command::SaveDraft => self.save_draft(),
-            Command::ResetDraft => self.reset_draft(),
-            Command::ClearSelection => self.clear_selection(),
+            ProfileEdit::SetControlGain { filter, gain } => self.set_control_gain(filter, gain),
+            ProfileEdit::PreviewControlGain { filter, gain } => {
+                self.preview_control_gain(filter, gain)
+            }
+            ProfileEdit::FinishControlGain => self.finish_control_gain(),
+            ProfileEdit::CancelControlGain => self.cancel_control_gain(),
+            ProfileEdit::SaveDraft => self.save_draft(),
+            ProfileEdit::ResetDraft => self.reset_draft(),
         }
     }
 
@@ -372,79 +426,60 @@ impl Session {
         Ok(())
     }
 
-    fn use_profile(&mut self, preset: Option<PresetId>) -> Result<(), SessionError> {
-        let id = ProfileId::try_new(preset.as_ref().map_or_else(
-            || FLAT_PROFILE.to_owned(),
-            |id| format!("preset-{}", id.as_ref()),
-        ))
-        .expect("generated profile ID is nonempty");
-        let mut next = self.state.clone();
-        if next.profile(&id).is_none() {
-            let profile = match preset {
-                Some(preset_id) => {
-                    let preset = self
-                        .catalog
-                        .get(&preset_id)
-                        .ok_or(SessionError::PresetNotFound(preset_id))?;
-                    let name = ProfileName::try_new(format!(
-                        "{} {}",
-                        preset.summary.brand, preset.summary.model
-                    ))
-                    .expect("catalog brand and model produce a nonempty name");
-                    let origin = PresetOrigin {
-                        id: preset.summary.id,
-                        revision: preset.summary.revision,
-                        attribution: preset.attribution,
-                    };
-                    Profile::new(
-                        id.clone(),
-                        name,
-                        preset.chain,
-                        preset.controls,
-                        Some(origin),
-                    )
-                }
-                None => Profile::new(
-                    id.clone(),
-                    ProfileName::try_new("Flat").expect("valid name"),
-                    Chain::default(),
-                    Vec::new(),
-                    None,
-                ),
-            }
-            .map_err(SessionError::InvalidProfile)?;
-            if next
-                .profiles
-                .iter()
-                .any(|saved| saved.name() == profile.name())
-            {
-                return Err(SessionError::ProfileNameAlreadyExists(
-                    profile.name().clone(),
-                ));
-            }
-            next.profiles.push(profile);
-        }
-        if let Some(selection) = next
-            .selections
-            .iter_mut()
-            .find(|selection| selection.device == self.device)
+    fn create_profile(
+        &mut self,
+        name: ProfileName,
+        source: ProfileSource,
+    ) -> Result<(), SessionError> {
+        if self
+            .profiles()
+            .iter()
+            .any(|profile| profile.name() == &name)
         {
-            selection.profile = id;
+            return Err(SessionError::ProfileNameAlreadyExists(name));
+        }
+        let id = self.state.fresh_profile_id();
+        let mut next = self.state.clone();
+        let profile = match source {
+            ProfileSource::Preset(preset_id) => {
+                let preset = self
+                    .catalog
+                    .get(&preset_id)
+                    .ok_or(SessionError::PresetNotFound(preset_id))?;
+                let origin = PresetOrigin {
+                    id: preset.summary.id,
+                    revision: preset.summary.revision,
+                    attribution: preset.attribution,
+                };
+                Profile::new(
+                    id.clone(),
+                    name,
+                    preset.chain,
+                    preset.controls,
+                    Some(origin),
+                )
+            }
+            ProfileSource::Flat => {
+                Profile::new(id.clone(), name, flat_chain(), flat_controls(), None)
+            }
+        }
+        .map_err(SessionError::InvalidProfile)?;
+        if let Some(device) = next.device_mut(&self.device) {
+            device.profiles.push(profile);
+            device.selected = id;
         } else {
-            next.selections.push(DeviceProfileSelection {
-                device: self.device.clone(),
-                profile: id,
-            });
+            next.insert(DeviceProfiles::new(self.device.clone(), vec![profile], id)?);
         }
         self.commit(next)?;
         self.draft = None;
         self.publish_active_chain()
     }
 
-    fn clear_selection(&mut self) -> Result<(), SessionError> {
+    fn select_profile(&mut self, id: ProfileId) -> Result<(), SessionError> {
         let mut next = self.state.clone();
-        next.selections
-            .retain(|selection| selection.device != self.device);
+        next.device_mut(&self.device)
+            .ok_or(SessionError::NoSelectedProfile)?
+            .selected = id;
         self.commit(next)?;
         self.draft = None;
         self.publish_active_chain()
@@ -536,6 +571,8 @@ impl Session {
             .id();
         let mut next = self.state.clone();
         let saved = next
+            .device_mut(&self.device)
+            .expect("selected device exists")
             .profiles
             .iter_mut()
             .find(|saved| saved.id() == id)
@@ -560,6 +597,8 @@ impl Session {
         };
         let mut next = self.state.clone();
         let saved = next
+            .device_mut(&self.device)
+            .expect("selected device exists")
             .profiles
             .iter_mut()
             .find(|profile| profile.id() == draft.id())
@@ -607,7 +646,25 @@ impl Session {
     }
 
     fn refresh_audio(&mut self) -> Result<(), SessionError> {
-        let chain = self.active_chain();
+        if let Err(error) = self.finish_control_gain() {
+            // Refresh is normally not an action, but a failed gain commit must
+            // remain visible and must not prevent a later route retry.
+            self.action_error = Some(error.clone());
+            self.audio_retry_needed = self.platform.is_some();
+            return Err(error);
+        }
+        let current_chain = self.active_chain();
+        let state = &self.state;
+        let current_device = &self.device;
+        let chain_for_device = |device: &DeviceId| {
+            if device == current_device {
+                current_chain.clone()
+            } else {
+                state
+                    .selected_profile(device)
+                    .map_or_else(Chain::default, Profile::effective_chain)
+            }
+        };
         let platform = self.platform.as_mut().ok_or_else(|| {
             SessionError::Audio(
                 self.audio_error
@@ -615,8 +672,13 @@ impl Session {
                     .unwrap_or_else(|| "audio platform is unavailable".into()),
             )
         })?;
-        match platform.refresh_default_output(&chain) {
+        match platform.refresh_default_output(&chain_for_device) {
             Ok(Some(connection)) => {
+                let chain = chain_for_device(&connection.device_id);
+                if connection.device_id != self.device {
+                    self.draft = None;
+                }
+                self.device = connection.device_id;
                 connection.controller.set_bypassed(!self.processing_enabled);
                 self.device_name = connection.device_name;
                 self.controller = Some(connection.controller);
@@ -648,39 +710,52 @@ impl Session {
     }
 }
 
-fn validate_state(state: &State) -> Result<(), SessionError> {
-    let mut profile_ids = HashSet::new();
-    let mut profile_names = HashSet::new();
-    for profile in &state.profiles {
-        profile
-            .validate()
-            .map_err(|error| corrupt(format!("{error:?}")))?;
-        if !profile_ids.insert(profile.id().clone()) {
-            return Err(corrupt(format!("duplicate profile id '{}'", profile.id())));
-        }
-        if !profile_names.insert(profile.name().clone()) {
-            return Err(corrupt(format!(
-                "duplicate profile name '{}'",
-                profile.name()
-            )));
-        }
+const FLAT_BANDS: [(&str, f64); 5] = [
+    ("Bass", 100.0),
+    ("Warmth", 300.0),
+    ("Mids", 1000.0),
+    ("Presence", 3000.0),
+    ("Treble", 8000.0),
+];
+
+fn flat_chain() -> Chain {
+    use crate::{Equalizer, Filter, FilterKind, FilterParameters, QualityFactor};
+    Chain {
+        equalizer: Equalizer {
+            preamp: GainDb::default(),
+            filters: FLAT_BANDS
+                .iter()
+                .enumerate()
+                .map(|(index, (_, frequency))| Filter {
+                    id: FilterId::try_new(index as u32 + 1).expect("static ID"),
+                    parameters: FilterParameters {
+                        kind: match index {
+                            0 => FilterKind::LowShelf,
+                            4 => FilterKind::HighShelf,
+                            _ => FilterKind::Peaking,
+                        },
+                        frequency: FrequencyHz::try_new(*frequency).expect("static frequency"),
+                        gain: GainDb::default(),
+                        quality_factor: QualityFactor::try_new(std::f64::consts::FRAC_1_SQRT_2)
+                            .expect("static Q"),
+                    },
+                })
+                .collect(),
+        },
     }
-    let mut selected_devices = HashSet::new();
-    for selection in &state.selections {
-        if !selected_devices.insert(selection.device.clone()) {
-            return Err(corrupt(format!(
-                "multiple profile selections for device '{}'",
-                selection.device
-            )));
-        }
-        if !profile_ids.contains(&selection.profile) {
-            return Err(corrupt(format!(
-                "device '{}' selects missing profile '{}'",
-                selection.device, selection.profile
-            )));
-        }
-    }
-    Ok(())
+}
+
+fn flat_controls() -> Vec<FilterControl> {
+    FLAT_BANDS
+        .iter()
+        .enumerate()
+        .map(|(index, (name, _))| {
+            FilterControl::new(
+                FilterId::try_new(index as u32 + 1).expect("static ID"),
+                FilterControlName::try_new(*name).expect("static name"),
+            )
+        })
+        .collect()
 }
 
 fn corrupt(message: String) -> SessionError {
@@ -690,6 +765,10 @@ fn corrupt(message: String) -> SessionError {
 /// A rejected command or failed session operation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SessionError {
+    DeviceUnavailable,
+    StaleDevice(DeviceId),
+    StaleProfile(ProfileId),
+    ProfileNotFound(ProfileId),
     NoSelectedProfile,
     Audio(String),
     PresetNotFound(PresetId),

@@ -14,10 +14,10 @@ pub use processor::{
     SampleRateHzError, Spectrum, StereoLevels, Telemetry, TelemetryFrame, spectrum_frequency_hz,
 };
 pub use session::{
-    Attribution, ChangeHandler, Command, Connection, DeviceId, DeviceIdError,
-    DeviceProfileSelection, FilterControl, FilterControlName, FilterControlNameError,
-    MemoryPersistence, Persistence, PersistenceError, Platform, Preset, PresetCatalog, PresetId,
-    PresetIdError, PresetOrigin, PresetQuery, PresetRevision, PresetRevisionError, PresetSummary,
-    Profile, ProfileError, ProfileId, ProfileIdError, ProfileName, ProfileNameError, Session,
+    Attribution, ChangeHandler, Command, Connection, DeviceId, DeviceIdError, DeviceProfiles,
+    FilterControl, FilterControlName, FilterControlNameError, MemoryPersistence, Persistence,
+    PersistenceError, Platform, Preset, PresetCatalog, PresetId, PresetIdError, PresetOrigin,
+    PresetQuery, PresetRevision, PresetRevisionError, PresetSummary, Profile, ProfileEdit,
+    ProfileError, ProfileId, ProfileIdError, ProfileName, ProfileNameError, ProfileSource, Session,
     SessionError, State,
 };
