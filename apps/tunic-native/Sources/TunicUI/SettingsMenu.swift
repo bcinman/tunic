@@ -2,6 +2,8 @@ import ServiceManagement
 import SwiftUI
 
 struct SettingsMenu: View {
+    @Binding var isProcessing: Bool
+    var processingAvailable = true
     let quit: () -> Void
     @State private var loginStatus = SMAppService.mainApp.status
     @State private var loginError: String?
@@ -10,6 +12,9 @@ struct SettingsMenu: View {
 
     var body: some View {
         Menu {
+            Toggle("Processing", isOn: $isProcessing)
+                .disabled(!processingAvailable)
+            Divider()
             Toggle("Open at Login", isOn: Binding(
                 get: { loginStatus == .enabled },
                 set: setOpenAtLogin

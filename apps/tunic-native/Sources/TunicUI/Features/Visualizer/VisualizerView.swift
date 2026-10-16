@@ -34,7 +34,7 @@ struct VisualizerView: View {
             spectrum
                 .overlay(alignment: .bottomTrailing) {
                     labToggle
-                        .padding(.trailing, 16)
+                        .padding(.trailing, 12)
                 }
                 .contentShape(Rectangle())
                 .onHover { spectrumHovered = $0 }
