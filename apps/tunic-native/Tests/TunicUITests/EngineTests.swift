@@ -23,6 +23,7 @@ func profilePickerOpensFromPaddedSurface() async throws {
     _ = NSApplication.shared
     let host = NSHostingView(rootView: ProfilePicker(
         deviceName: "External Headphones", profileName: "Test profile",
+        selectedProfileId: nil,
         profiles: [], device: "system-output", send: { _ in })
         .fixedSize())
     let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 100),

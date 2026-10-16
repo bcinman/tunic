@@ -4,6 +4,7 @@ import TunicEngine
 struct ProfilePicker: View {
     let deviceName: String
     let profileName: String?
+    let selectedProfileId: String?
     let profiles: [ProfileSummary]
     let device: String
     var addPreset: () -> Void = {}
@@ -13,19 +14,18 @@ struct ProfilePicker: View {
     var body: some View {
         Menu {
             ForEach(profiles, id: \.id) { profile in
-                Button {
-                    send(.selectProfile(device: device, profile: profile.id))
-                } label: {
-                    if profile.name == profileName {
-                        Label(profile.name, systemImage: "checkmark")
-                    } else {
-                        Text(profile.name)
+                Toggle(profile.name, isOn: Binding(
+                    get: { profile.id == selectedProfileId },
+                    set: { selected in
+                        if selected {
+                            send(.selectProfile(device: device, profile: profile.id))
+                        }
                     }
-                }
+                ))
             }
             Divider()
-            Button("Add from preset…", action: addPreset)
-            Button("Start flat…", action: addFlat)
+            Button("Add from preset…", systemImage: "slider.horizontal.3", action: addPreset)
+            Button("Start flat…", systemImage: "line.3.horizontal", action: addFlat)
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "headphones")

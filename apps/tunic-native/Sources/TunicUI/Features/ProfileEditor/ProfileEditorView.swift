@@ -1,30 +1,35 @@
 import SwiftUI
 import TunicEngine
 
-struct ProfileEditorView<Levels: View>: View {
+struct ProfileHeaderView<Levels: View>: View {
     let state: StateSnapshot
     let send: (EngineCommand) -> UInt64?
-    var hoverChanged: (UInt32?) -> Void = { _ in }
-    var dragChanged: (UInt32?) -> Void = { _ in }
     var addPreset: () -> Void = {}
     var addFlat: () -> Void = {}
     @ViewBuilder var levels: (LiveLevels.Channel) -> Levels
 
     var body: some View {
-        Group {
-            HStack(spacing: 8) {
-                levels(.left)
-                ProfilePicker(deviceName: state.deviceName, profileName: state.profileName,
-                              profiles: state.profiles, device: state.deviceId,
-                              addPreset: addPreset, addFlat: addFlat, send: { _ = send($0) })
-                levels(.right)
-            }
-            .padding(16)
+        HStack(spacing: 8) {
+            levels(.left)
+            ProfilePicker(deviceName: state.deviceName, profileName: state.profileName,
+                          selectedProfileId: state.selectedProfileId,
+                          profiles: state.profiles, device: state.deviceId,
+                          addPreset: addPreset, addFlat: addFlat, send: { _ = send($0) })
+            levels(.right)
+        }
+        .padding(16)
+    }
+}
 
+struct ProfileEditorView: View {
+    let state: StateSnapshot
+    let send: (EngineCommand) -> UInt64?
+    var hoverChanged: (UInt32?) -> Void = { _ in }
+    var dragChanged: (UInt32?) -> Void = { _ in }
+
+    var body: some View {
+        Group {
             if let profile = state.selectedProfileId, !state.controls.isEmpty {
-                Divider()
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 16)
                 VStack(spacing: 0) {
                     ForEach(state.controls, id: \.filter) { control in
                         GainControlRow(profile: profile, control: control,
@@ -42,6 +47,7 @@ struct ProfileEditorView<Levels: View>: View {
                 .onHover { inside in
                     if !inside { hoverChanged(nil) }
                 }
+                .padding(.top, 16)
                 .id(state.selectedProfileId)
             }
         }

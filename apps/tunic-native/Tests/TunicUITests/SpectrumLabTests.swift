@@ -31,11 +31,12 @@ func renderProfileMeterStates() async throws {
                                 ("stereo", 0.03162278, 0.25118864), ("full", 1, 1), ] {
         let release = MeterPreviewRelease()
         let host = NSHostingView(rootView: VStack(spacing: 12) {
-            SpectrumView(spectrum: demoSpectrum, maximumFrequency: 20_000, style: SpectrumStyle())
-                .frame(height: 160)
-            ProfileEditorView(state: snapshot, send: model.enqueue) { channel in
+            ProfileHeaderView(state: snapshot, send: model.enqueue) { channel in
                 CircularLevelMeter(rms: release.silent ? 0 : channel == .left ? left : right, channel: channel)
             }
+            SpectrumView(spectrum: demoSpectrum, maximumFrequency: 20_000, style: SpectrumStyle())
+                .frame(height: 160)
+            ProfileEditorView(state: snapshot, send: model.enqueue)
         }
         .padding(.bottom, 12).frame(width: 320)
         .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, .dark))
@@ -633,13 +634,21 @@ private func renderGainHoverStates(directory: String) async throws {
         display.deviceName = name == "Long-Names"
             ? "External Headphones through USB Audio Interface" : "External Headphones"
         display.profileName = name == "Long-Names" ? "Sennheiser HD6XX with custom bass adjustment" : "Sennheiser HD6XX"
-        let host = NSHostingView(rootView: VStack(spacing: 16) {
-            AudioStatusView(deviceName: nil, isProcessing: .constant(name != "Processing-Off"))
-            VisualizerView(model: model, maximumFrequency: 20_000, hoveredFilter: filter)
-            ProfileEditorView(state: display, send: model.enqueue) { channel in
+        let host = NSHostingView(rootView: VStack(spacing: 0) {
+            ProfileHeaderView(state: display, send: model.enqueue) { channel in
                 CircularLevelMeter(rms: 0, channel: channel)
             }
-        }.padding(.bottom, 16).frame(width: 320)
+            VisualizerView(model: model, maximumFrequency: 20_000, hoveredFilter: filter)
+            ProfileEditorView(state: display, send: model.enqueue)
+            HStack {
+                AudioStatusView(deviceName: nil, isProcessing: .constant(name != "Processing-Off"))
+                Spacer()
+                SettingsMenu(quit: {})
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
+        }.padding(.bottom, 12).frame(width: 320)
             .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, .dark))
         let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 500),
                               styleMask: [.borderless], backing: .buffered, defer: false)

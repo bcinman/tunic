@@ -15,15 +15,6 @@ public struct ContentView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            AudioStatusView(deviceName: model.snapshot == nil ? "Connecting…" :
-                                (creation != nil || model.snapshot?.selectedProfileId == nil
-                                    ? model.snapshot?.deviceName : nil),
-                            isProcessing: Binding(
-                                get: { model.snapshot?.processingEnabled ?? true },
-                                set: { model.enqueue(.setProcessingEnabled(enabled: $0)) }
-                            ))
-                .disabled(model.snapshot == nil)
-
             if let state = model.snapshot {
                 if creation != nil || state.selectedProfileId == nil {
                     ProfileCreationView(state: state, draft: Binding(
@@ -33,17 +24,18 @@ public struct ContentView: View {
                         submit: { submit(device: state.deviceId) })
                     .id(state.deviceId)
                 } else {
-                    VisualizerView(model: model, maximumFrequency: min(20_000, state.sampleRate * 0.499),
-                                   hoveredFilter: draggedFilter ?? hoveredFilter)
-                    ProfileEditorView(state: state, send: model.enqueue,
-                                      hoverChanged: { hoveredFilter = $0 },
-                                      dragChanged: { draggedFilter = $0 },
+                    ProfileHeaderView(state: state, send: model.enqueue,
                                       addPreset: { creation = ProfileCreationDraft(device: state.deviceId) },
                                       addFlat: {
                                           creation = ProfileCreationDraft(
                                               device: state.deviceId, source: .flat, name: "Custom")
                                       },
                                       levels: { LiveLevels(model: model, channel: $0) })
+                    VisualizerView(model: model, maximumFrequency: min(20_000, state.sampleRate * 0.499),
+                                   hoveredFilter: draggedFilter ?? hoveredFilter)
+                    ProfileEditorView(state: state, send: model.enqueue,
+                                      hoverChanged: { hoveredFilter = $0 },
+                                      dragChanged: { draggedFilter = $0 })
                 }
             }
 
@@ -55,9 +47,21 @@ public struct ContentView: View {
                 Text(error).font(.caption).foregroundStyle(.orange)
                     .padding(.horizontal, 12)
             }
-            SettingsMenu(quit: quit)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 12)
+            HStack {
+                AudioStatusView(deviceName: model.snapshot == nil ? "Connecting…" :
+                                    (creation != nil || model.snapshot?.selectedProfileId == nil
+                                        ? model.snapshot?.deviceName : nil),
+                                isProcessing: Binding(
+                                    get: { model.snapshot?.processingEnabled ?? true },
+                                    set: { model.enqueue(.setProcessingEnabled(enabled: $0)) }
+                                ))
+                    .disabled(model.snapshot == nil)
+                Spacer()
+                SettingsMenu(quit: quit)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
         }
         .padding(.bottom, 12)
         .frame(width: 320)
