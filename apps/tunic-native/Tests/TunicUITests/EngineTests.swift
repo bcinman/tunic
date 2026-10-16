@@ -22,7 +22,8 @@ private struct Timeout: Error { let condition: String }
 func profilePickerOpensFromPaddedSurface() async throws {
     _ = NSApplication.shared
     let host = NSHostingView(rootView: ProfilePicker(
-        profileName: "Test profile", profiles: [], device: "system-output", send: { _ in })
+        deviceName: "External Headphones", profileName: "Test profile",
+        profiles: [], device: "system-output", send: { _ in })
         .fixedSize())
     let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 100),
                           styleMask: [.titled], backing: .buffered, defer: false)

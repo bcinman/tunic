@@ -14,7 +14,8 @@ struct ProfileEditorView<Levels: View>: View {
         Group {
             HStack(spacing: 8) {
                 levels(.left)
-                ProfilePicker(profileName: state.profileName, profiles: state.profiles, device: state.deviceId,
+                ProfilePicker(deviceName: state.deviceName, profileName: state.profileName,
+                              profiles: state.profiles, device: state.deviceId,
                               addPreset: addPreset, addFlat: addFlat, send: { _ = send($0) })
                 levels(.right)
             }

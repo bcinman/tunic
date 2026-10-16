@@ -627,12 +627,16 @@ private func renderGainHoverStates(directory: String) async throws {
     let snapshot = try #require(model.snapshot)
     let shelf = try #require(snapshot.controls.first)
     let peak = try #require(snapshot.controls.dropFirst().first)
-    for (name, filter) in [("Resting", nil), ("Processing-Off", nil),
+    for (name, filter) in [("Resting", nil), ("Long-Names", nil), ("Processing-Off", nil),
                            ("Shelf", shelf.filter), ("Peak", peak.filter), ] {
+        var display = snapshot
+        display.deviceName = name == "Long-Names"
+            ? "External Headphones through USB Audio Interface" : "External Headphones"
+        display.profileName = name == "Long-Names" ? "Sennheiser HD6XX with custom bass adjustment" : "Sennheiser HD6XX"
         let host = NSHostingView(rootView: VStack(spacing: 16) {
-            AudioStatusView(deviceName: "Headphones", isProcessing: .constant(name != "Processing-Off"))
+            AudioStatusView(deviceName: nil, isProcessing: .constant(name != "Processing-Off"))
             VisualizerView(model: model, maximumFrequency: 20_000, hoveredFilter: filter)
-            ProfileEditorView(state: snapshot, send: model.enqueue) { channel in
+            ProfileEditorView(state: display, send: model.enqueue) { channel in
                 CircularLevelMeter(rms: 0, channel: channel)
             }
         }.padding(.bottom, 16).frame(width: 320)

@@ -6,10 +6,13 @@ struct AudioStatusView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "headphones")
-                .foregroundStyle(.secondary)
-            Text(deviceName ?? "Connecting…")
-                .lineLimit(1)
+            if let deviceName {
+                Label(deviceName, systemImage: "headphones")
+                    .lineLimit(1)
+            } else {
+                Text("Processing")
+                    .foregroundStyle(.secondary)
+            }
             Spacer()
             Toggle("Processing", isOn: $isProcessing)
                 .labelsHidden()

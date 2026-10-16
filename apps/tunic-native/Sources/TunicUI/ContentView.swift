@@ -15,7 +15,9 @@ public struct ContentView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            AudioStatusView(deviceName: model.snapshot?.deviceName,
+            AudioStatusView(deviceName: model.snapshot == nil ? "Connecting…" :
+                                (creation != nil || model.snapshot?.selectedProfileId == nil
+                                    ? model.snapshot?.deviceName : nil),
                             isProcessing: Binding(
                                 get: { model.snapshot?.processingEnabled ?? true },
                                 set: { model.enqueue(.setProcessingEnabled(enabled: $0)) }

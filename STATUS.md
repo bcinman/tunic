@@ -101,7 +101,9 @@ This file is the source of truth for implemented product capabilities.
   editable profile names, and a secondary flat-EQ starting point. The normal picker
   lists only the current device's profiles and reuses that form for later additions.
   Browsing does not change audio; failed additions retain the form for correction.
-  The meters flank the profile picker. Translucent white rings fill with white
+  The meters flank a combined device/profile dropdown, with the current output above
+  the selected profile. Its menu selects profiles for that output; macOS owns device selection.
+  Translucent white rings fill with white
   arcs on a −60 to 0 dBFS scale, updating with ~30 Hz telemetry. Arc opacity rises
   linearly from 25% at empty to 100% at full.
   Meter rises are immediate; arc length and opacity decay together with a 100 ms
