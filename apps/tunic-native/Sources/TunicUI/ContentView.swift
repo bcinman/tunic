@@ -62,7 +62,7 @@ public struct ContentView: View {
             }
         }
         .padding(.bottom, 20)
-        .frame(width: 320)
+        .frame(width: 310)
         .preferredColorScheme(.dark)
         .task { await model.measureWhileVisible() }
         .onChange(of: model.snapshot?.deviceId) {

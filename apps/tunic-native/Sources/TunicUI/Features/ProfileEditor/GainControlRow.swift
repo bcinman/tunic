@@ -26,7 +26,7 @@ struct GainControlRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
-                Text(control.name).lineLimit(1)
+                Text(control.name.capitalized).lineLimit(1)
                 Spacer()
                 Text("\(gain > 0 ? "+" : "")\(gain.formatted(.number.precision(.fractionLength(0...1)))) dB")
                     .font(.system(size: 11))
@@ -35,7 +35,7 @@ struct GainControlRow: View {
             }
             .font(.system(size: 12))
             Slider(value: Binding(get: { gain }, set: changeGain),
-                   in: -12...12, neutralValue: 0, label: { Text(control.name) },
+                   in: -12...12, neutralValue: 0, label: { Text(control.name.capitalized) },
                    onEditingChanged: editingChanged)
             .labelsHidden()
             .accessibilityValue("\(gain.formatted()) decibels")
