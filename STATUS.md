@@ -93,21 +93,18 @@ This file is the source of truth for implemented product capabilities.
   native resources, retries route failures, and tears down on explicit shutdown
   or handle drop. No audio buffers or real-time callbacks cross into Swift.
 - A SwiftUI menu-bar app linked to generated BoltFFI bindings, with real device
-  status, device-scoped profile selection, automatically saved named gain controls, and live circular RMS
-  meters. A bottom-left gear menu offers Quit Tunic and Open at Login through macOS
+  status, device-scoped profile selection, and automatically saved named gain controls.
+  An unboxed top-left device/profile picker places its chevron beside the profile name.
+  Top-right unboxed icons brighten on hover, with 24 pt hit areas for a disabled equalizer-editor placeholder and
+  a gear menu offering Quit Tunic and Open at Login through macOS
   ServiceManagement; login startup requires a signed app bundle and is disabled
   in the `swift run` development build. The app currently has no bundle packaging task.
   Devices without profiles open headphone search with live, variant-aware results,
   editable profile names, and a secondary flat-EQ starting point. The normal picker
   lists only the current device's profiles and reuses that form for later additions.
   Browsing does not change audio; failed additions retain the form for correction.
-  The meters flank a combined device/profile dropdown, with the current output above
-  the selected profile. Its menu selects profiles for that output; macOS owns device selection.
-  Translucent white rings fill with white
-  arcs on a −60 to 0 dBFS scale, updating with ~30 Hz telemetry. Arc opacity rises
-  linearly from 25% at empty to 100% at full.
-  Meter rises are immediate; arc length and opacity decay together with a 100 ms
-  exponential release. Animation stops when settled and resets when hidden.
+  The picker shows the current output above the selected profile. Its menu selects
+  profiles for that output; macOS owns device selection. Level meters are not shown.
   A transparent Metal `MTKView` visualizer renders the spectrum. Hovering a gain
   control keeps the affected spectrum at full opacity, fading unaffected frequencies
   to 25% using the filter's gain sensitivity, and fades in the combined EQ response: a subtle white

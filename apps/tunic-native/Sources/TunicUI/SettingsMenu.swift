@@ -1,6 +1,40 @@
 import ServiceManagement
 import SwiftUI
 
+struct HeaderActions: View {
+    @Binding var isProcessing: Bool
+    var processingAvailable = true
+    let quit: () -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Button {} label: {
+                Image(systemName: "graph.2d")
+                    .font(.system(size: 14))
+                    .frame(width: 24, height: 24)
+            }
+            .buttonStyle(HeaderActionStyle())
+            .disabled(true)
+            .accessibilityLabel("Equalizer editor")
+            .help("Equalizer editor — coming soon")
+            SettingsMenu(isProcessing: $isProcessing, processingAvailable: processingAvailable, quit: quit)
+        }
+        .fixedSize()
+    }
+}
+
+private struct HeaderActionStyle: ButtonStyle {
+    @State private var hovered = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(.primary)
+            .opacity(hovered ? 1 : 0.6)
+            .contentShape(Rectangle())
+            .onHover { hovered = $0 }
+    }
+}
+
 struct SettingsMenu: View {
     @Binding var isProcessing: Bool
     var processingAvailable = true
@@ -26,12 +60,13 @@ struct SettingsMenu: View {
                 .keyboardShortcut("q")
         } label: {
             Image(systemName: "gearshape")
+                .font(.system(size: 14))
+                .frame(width: 24, height: 24)
                 .accessibilityLabel("Settings")
         }
         .menuIndicator(.hidden)
-        .menuStyle(.borderlessButton)
+        .buttonStyle(HeaderActionStyle())
         .fixedSize()
-        .opacity(0.5)
         .help("Settings")
         .onAppear { loginStatus = SMAppService.mainApp.status }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in

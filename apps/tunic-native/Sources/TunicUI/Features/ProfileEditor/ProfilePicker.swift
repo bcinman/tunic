@@ -31,27 +31,27 @@ struct ProfilePicker: View {
                 Image(systemName: "headphones")
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
-                VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 0) {
                     Text(deviceName)
-                    Text(profileName ?? "Choose a profile")
+                    HStack(spacing: 5) {
+                        Text(profileName ?? "Choose a profile")
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 9, weight: .semibold))
+                            .accessibilityHidden(true)
+                    }
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.primary.opacity(0.65))
                 }
                 .lineLimit(1)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption.weight(.semibold))
-                    .accessibilityHidden(true)
             }
-            .padding(.horizontal, 12)
             .frame(height: 36)
-            .contentShape(.interaction, Capsule())
+            .contentShape(Rectangle())
         }
         .menuIndicator(.hidden)
         .buttonStyle(.plain)
-        .glassEffect(.regular.interactive())
         .accessibilityLabel("Profile")
         .accessibilityValue("\(deviceName), \(profileName ?? "Choose a profile")")
         .help("Choose a profile for \(deviceName)")
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

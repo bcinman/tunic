@@ -15,12 +15,19 @@ public struct ContentView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                AudioStatusView(deviceName: model.snapshot == nil ? "Connecting…" :
-                                    (creation != nil || model.snapshot?.selectedProfileId == nil
-                                        ? model.snapshot?.deviceName : nil))
-                Spacer()
-                SettingsMenu(isProcessing: Binding(
+            HStack(spacing: 8) {
+                if let state = model.snapshot, creation == nil, state.selectedProfileId != nil {
+                    ProfileHeaderView(state: state, send: model.enqueue,
+                                      addPreset: { creation = ProfileCreationDraft(device: state.deviceId) },
+                                      addFlat: {
+                                          creation = ProfileCreationDraft(
+                                              device: state.deviceId, source: .flat, name: "Custom")
+                                      })
+                } else {
+                    AudioStatusView(deviceName: model.snapshot == nil ? "Connecting…" : model.snapshot?.deviceName)
+                    Spacer()
+                }
+                HeaderActions(isProcessing: Binding(
                     get: { model.snapshot?.processingEnabled ?? true },
                     set: { model.enqueue(.setProcessingEnabled(enabled: $0)) }
                 ), processingAvailable: model.snapshot != nil, quit: quit)
@@ -39,13 +46,6 @@ public struct ContentView: View {
                 } else {
                     VisualizerView(model: model, maximumFrequency: min(20_000, state.sampleRate * 0.499),
                                    hoveredFilter: draggedFilter ?? hoveredFilter)
-                    ProfileHeaderView(state: state, send: model.enqueue,
-                                      addPreset: { creation = ProfileCreationDraft(device: state.deviceId) },
-                                      addFlat: {
-                                          creation = ProfileCreationDraft(
-                                              device: state.deviceId, source: .flat, name: "Custom")
-                                      },
-                                      levels: { LiveLevels(model: model, channel: $0) })
                     ProfileEditorView(state: state, send: model.enqueue,
                                       hoverChanged: { hoveredFilter = $0 },
                                       dragChanged: { draggedFilter = $0 })
@@ -63,7 +63,6 @@ public struct ContentView: View {
         }
         .padding(.bottom, 20)
         .frame(width: 320)
-        .background(.black.opacity(0.1))
         .preferredColorScheme(.dark)
         .task { await model.measureWhileVisible() }
         .onChange(of: model.snapshot?.deviceId) {

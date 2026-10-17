@@ -33,8 +33,9 @@ func renderProfileMeterStates() async throws {
         let host = NSHostingView(rootView: VStack(spacing: 12) {
             SpectrumView(spectrum: demoSpectrum, maximumFrequency: 20_000, style: SpectrumStyle())
                 .frame(height: 160)
-            ProfileHeaderView(state: snapshot, send: model.enqueue) { channel in
-                CircularLevelMeter(rms: release.silent ? 0 : channel == .left ? left : right, channel: channel)
+            HStack {
+                CircularLevelMeter(rms: release.silent ? 0 : left, channel: .left)
+                CircularLevelMeter(rms: release.silent ? 0 : right, channel: .right)
             }
             ProfileEditorView(state: snapshot, send: model.enqueue)
         }
@@ -615,6 +616,8 @@ func renderVisualizerLab() async throws {
 
 @MainActor
 private func renderGainHoverStates(directory: String) async throws {
+    let actions = NSHostingView(rootView: HeaderActions(isProcessing: .constant(true), quit: {}))
+    #expect(actions.fittingSize == NSSize(width: 52, height: 24))
     let model = TunicModel(connectAudio: false)
     defer { model.shutdown() }
     for _ in 0..<100 where model.snapshot == nil {
@@ -639,17 +642,13 @@ private func renderGainHoverStates(directory: String) async throws {
             display.profileName = "Flat"
         }
         let host = NSHostingView(rootView: VStack(spacing: 0) {
-            HStack {
-                Spacer()
-                SettingsMenu(isProcessing: .constant(name != "Processing-Off"), quit: {})
-                    .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                ProfileHeaderView(state: display, send: model.enqueue)
+                HeaderActions(isProcessing: .constant(name != "Processing-Off"), quit: {})
             }
             .padding(.horizontal, 12)
             .padding(.top, 12)
             VisualizerView(model: model, maximumFrequency: 20_000, hoveredFilter: filter)
-            ProfileHeaderView(state: display, send: model.enqueue) { channel in
-                CircularLevelMeter(rms: 0, channel: channel)
-            }
             ProfileEditorView(state: display, send: model.enqueue)
         }.padding(.bottom, 20).frame(width: 320)
             .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, .dark))

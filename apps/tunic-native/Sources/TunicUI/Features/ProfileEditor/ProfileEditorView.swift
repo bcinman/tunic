@@ -1,23 +1,17 @@
 import SwiftUI
 import TunicEngine
 
-struct ProfileHeaderView<Levels: View>: View {
+struct ProfileHeaderView: View {
     let state: StateSnapshot
     let send: (EngineCommand) -> UInt64?
     var addPreset: () -> Void = {}
     var addFlat: () -> Void = {}
-    @ViewBuilder var levels: (LiveLevels.Channel) -> Levels
 
     var body: some View {
-        HStack(spacing: 8) {
-            levels(.left)
-            ProfilePicker(deviceName: state.deviceName, profileName: state.profileName,
-                          selectedProfileId: state.selectedProfileId,
-                          profiles: state.profiles, device: state.deviceId,
-                          addPreset: addPreset, addFlat: addFlat, send: { _ = send($0) })
-            levels(.right)
-        }
-        .padding(16)
+        ProfilePicker(deviceName: state.deviceName, profileName: state.profileName,
+                      selectedProfileId: state.selectedProfileId,
+                      profiles: state.profiles, device: state.deviceId,
+                      addPreset: addPreset, addFlat: addFlat, send: { _ = send($0) })
     }
 }
 
