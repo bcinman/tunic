@@ -58,6 +58,16 @@ description = "Build and launch the native Swift menu-bar app"
 depends = ["build-ffi"]
 run = "swift run --package-path apps/tunic-native Tunic"
 
+[tasks.build-native-bundle]
+description = "Build a locally signed Tunic.app with Automation permission metadata"
+depends = ["build-ffi"]
+run = "bash apps/tunic-native/build-bundle.sh"
+
+[tasks.run-native-bundle]
+description = "Build and open the native app bundle (supports Now Playing authorization)"
+depends = ["build-native-bundle"]
+run = "open target/native/Tunic.app"
+
 [tasks.run-native-release]
 description = "Build and launch the native Swift menu-bar app with Rust and Swift in release mode"
 run = [

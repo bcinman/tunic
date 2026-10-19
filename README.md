@@ -10,6 +10,15 @@ A native macOS menu-bar app lives in [`apps/tunic-native`](apps/tunic-native).
 It uses `tunic-ffi` for Rust-owned state and audio processing. Run it with
 `mise run run-native`; bindings are generated automatically.
 
+For Now Playing, use `mise run run-native-bundle` instead. Open Music or Spotify,
+then choose **Settings → Now Playing → Connect** for that player. macOS calls
+this Automation access even though Tunic only reads metadata. Denied access can
+be restored under **System Settings → Privacy & Security → Automation**.
+The development bundle is built at `target/native/Tunic.app`; it defaults to
+ad-hoc signing, which can require renewed consent after rebuilding. Set
+`CODE_SIGN_IDENTITY` to your signing identity for a consistent signed identity.
+This is a local development bundle, not a notarized distribution build.
+
 ## Crates
 
 | Crate | Provides |

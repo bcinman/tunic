@@ -4,6 +4,7 @@ import SwiftUI
 struct HeaderActions: View {
     @Binding var isProcessing: Bool
     var processingAvailable = true
+    var nowPlaying: NowPlayingModel?
     let quit: () -> Void
 
     var body: some View {
@@ -17,7 +18,8 @@ struct HeaderActions: View {
             .disabled(true)
             .accessibilityLabel("Equalizer editor")
             .help("Equalizer editor — coming soon")
-            SettingsMenu(isProcessing: $isProcessing, processingAvailable: processingAvailable, quit: quit)
+            SettingsMenu(isProcessing: $isProcessing, processingAvailable: processingAvailable,
+                         nowPlaying: nowPlaying, quit: quit)
         }
         .fixedSize()
     }
@@ -38,6 +40,7 @@ private struct HeaderActionStyle: ButtonStyle {
 struct SettingsMenu: View {
     @Binding var isProcessing: Bool
     var processingAvailable = true
+    var nowPlaying: NowPlayingModel?
     let quit: () -> Void
     @State private var loginStatus = SMAppService.mainApp.status
     @State private var loginError: String?
@@ -48,6 +51,7 @@ struct SettingsMenu: View {
         Menu {
             Toggle("Processing", isOn: $isProcessing)
                 .disabled(!processingAvailable)
+            if let nowPlaying { NowPlayingSettings(model: nowPlaying) }
             Divider()
             Toggle("Open at Login", isOn: Binding(
                 get: { loginStatus == .enabled },

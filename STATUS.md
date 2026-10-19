@@ -98,7 +98,8 @@ This file is the source of truth for implemented product capabilities.
   Top-right unboxed icons brighten on hover, with 24 pt hit areas for a disabled equalizer-editor placeholder and
   a gear menu offering Quit Tunic and Open at Login through macOS
   ServiceManagement; login startup requires a signed app bundle and is disabled
-  in the `swift run` development build. The app currently has no bundle packaging task.
+  in the `swift run` development build. `mise run build-native-bundle` produces a
+  locally signed development app at `target/native/Tunic.app` with permission metadata.
   Devices without profiles open headphone search with live, variant-aware results,
   editable profile names, and a secondary flat-EQ starting point. The normal picker
   lists only the current device's profiles and reuses that form for later additions.
@@ -151,6 +152,22 @@ This file is the source of truth for implemented product capabilities.
   Telemetry observation is isolated from profile controls. Closing the popup
   stops telemetry demand, not processing.
   Run it with `mise run run-native`.
+- Native-only Now Playing for the Music and Spotify desktop apps: a compact
+  title/artist/artwork row beneath the spectrum, retained with a Paused label and
+  hidden when neither player has a track. Swift owns this ephemeral state outside
+  the Rust engine. Distributed playback and workspace notifications trigger
+  permission-gated, read-only Apple Events addressed to running process IDs;
+  opening the popup and waking also reconcile state. Playing wins over paused,
+  a newly playing source takes selection, and existing selection wins other ties.
+  Initial ties prefer Music. Late reads and artwork cannot restore obsolete state.
+  Artwork loads only while the popup is visible, with a placeholder on failure;
+  Music supplies bytes and Spotify artwork downloads use an ephemeral URL session.
+  The gear menu's Now Playing submenu offers explicit per-player authorization
+  and links denied access to Automation settings. Use `mise run run-native-bundle`
+  for consent attributed to Tunic; command-line builds cannot initiate consent.
+  No transport controls, browser playback, private MediaRemote APIs, accounts,
+  or listening-history persistence. Live operation was confirmed by the user;
+  exhaustive coverage of both players' streaming metadata/artwork remains unverified.
 - Reproducible macOS arm64 XCFramework/Swift package generation under `target/`
   through `mise run build-ffi`, with matching pinned BoltFFI CLI/library versions.
 - Automated formatting, Clippy, Rust tests, binding generation, SwiftLint, and
@@ -169,7 +186,9 @@ This file is the source of truth for implemented product capabilities.
 - Filter types other than peaking, low-shelf, and high-shelf EQ.
 - Profile import/export.
 - Profile rename, delete, and copy workflows; independent concurrent editors.
-- Application packaging, signing, release automation, or end-user installation.
+- Distribution signing/notarization, release automation, or end-user installation.
+  The local native bundle defaults to ad-hoc signing; stable permission identity
+  across rebuilds requires a signing identity (`CODE_SIGN_IDENTITY`).
 
 ## Current Non-Goals
 

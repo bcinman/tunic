@@ -8,7 +8,7 @@ struct TunicApp: App {
 
     var body: some Scene {
         MenuBarExtra("Tunic", systemImage: "slider.horizontal.3") {
-            ContentView(model: delegate.model) {
+            ContentView(model: delegate.model, nowPlaying: delegate.nowPlaying) {
                 NSApplication.shared.terminate(nil)
             }
         }
@@ -19,12 +19,14 @@ struct TunicApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = TunicModel()
+    let nowPlaying = NowPlayingModel()
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        nowPlaying.shutdown()
         model.shutdown()
     }
 }

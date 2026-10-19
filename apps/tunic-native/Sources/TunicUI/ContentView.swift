@@ -3,13 +3,15 @@ import TunicEngine
 
 public struct ContentView: View {
     private let model: TunicModel
+    private let nowPlaying: NowPlayingModel?
     private let quit: () -> Void
     @State private var hoveredFilter: UInt32?
     @State private var draggedFilter: UInt32?
     @State private var creation: ProfileCreationDraft?
 
-    public init(model: TunicModel, quit: @escaping () -> Void = {}) {
+    public init(model: TunicModel, nowPlaying: NowPlayingModel? = nil, quit: @escaping () -> Void = {}) {
         self.model = model
+        self.nowPlaying = nowPlaying
         self.quit = quit
     }
 
@@ -30,7 +32,7 @@ public struct ContentView: View {
                 HeaderActions(isProcessing: Binding(
                     get: { model.snapshot?.processingEnabled ?? true },
                     set: { model.enqueue(.setProcessingEnabled(enabled: $0)) }
-                ), processingAvailable: model.snapshot != nil, quit: quit)
+                ), processingAvailable: model.snapshot != nil, nowPlaying: nowPlaying, quit: quit)
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 12)
@@ -46,6 +48,7 @@ public struct ContentView: View {
                 } else {
                     VisualizerView(model: model, maximumFrequency: min(20_000, state.sampleRate * 0.499),
                                    hoveredFilter: draggedFilter ?? hoveredFilter)
+                    if let nowPlaying { NowPlayingView(model: nowPlaying) }
                     ProfileEditorView(state: state, send: model.enqueue,
                                       hoverChanged: { hoveredFilter = $0 },
                                       dragChanged: { draggedFilter = $0 })
@@ -65,6 +68,7 @@ public struct ContentView: View {
         .frame(width: 320)
         .preferredColorScheme(.dark)
         .task { await model.measureWhileVisible() }
+        .onAppear { nowPlaying?.setVisible(true) }
         .onChange(of: model.snapshot?.deviceId) {
             creation = nil
         }
@@ -76,6 +80,7 @@ public struct ContentView: View {
             draggedFilter = nil
         }
         .onDisappear {
+            nowPlaying?.setVisible(false)
             hoveredFilter = nil
             draggedFilter = nil
         }

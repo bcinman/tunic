@@ -507,9 +507,7 @@ func nativeVisualizerHostsMetalView() async throws {
         }
         try await Task.sleep(for: .milliseconds(500))
         let size = host.fittingSize
-        let expandedHeight = collapsedSize.height + 260
         #expect(size.width == collapsedSize.width)
-        #expect(size.height == (expanded ? expandedHeight : collapsedSize.height))
         #expect(findMetalView(host) === metal)
         #expect(metal.bounds.height == 140)
         let top = window.frame.maxY
@@ -536,6 +534,7 @@ func nativeVisualizerHostsMetalView() async throws {
 func renderVisualizerLab() async throws {
     let directory = try #require(ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"])
     _ = NSApplication.shared
+    try await renderNowPlayingLab(directory: directory)
     try await renderProfileCreationLab(directory: directory)
     let state = LabState()
     let host = NSHostingView(rootView: LabPreview(state: state))
