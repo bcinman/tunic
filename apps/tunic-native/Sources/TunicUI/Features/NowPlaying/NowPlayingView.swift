@@ -5,6 +5,10 @@ struct NowPlayingView: View {
 
     var body: some View {
         if let player = model.playback.selected, let state = model.playback.players[player], let track = state.track {
+            Divider()
+                .padding(.horizontal, 12)
+                .padding(.top, 12)
+                .accessibilityHidden(true)
             HStack(spacing: 10) {
                 Group {
                     if let artwork = model.artwork {
@@ -16,14 +20,16 @@ struct NowPlayingView: View {
                             .background(.white.opacity(0.06))
                     }
                 }
-                .frame(width: 36, height: 36)
-                .clipShape(RoundedRectangle(cornerRadius: 5))
+                .frame(width: 32, height: 32)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
                 .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(track.title).font(.system(size: 12, weight: .medium)).lineLimit(1)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(track.title)
                     Text(track.artist.isEmpty ? player.name : track.artist)
-                        .font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+                        .foregroundStyle(.primary.opacity(0.65))
                 }
+                .font(.system(size: 13, weight: .medium))
+                .lineLimit(1)
                 Spacer(minLength: 0)
                 VStack(alignment: .trailing, spacing: 3) {
                     Text(player == .music ? "Music" : "Spotify")
@@ -32,7 +38,7 @@ struct NowPlayingView: View {
                 .font(.system(size: 9)).foregroundStyle(.secondary)
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.top, 12)
             .help([track.title, track.artist, track.album, player.name].filter { !$0.isEmpty }.joined(separator: " — "))
             .accessibilityElement(children: .combine)
         }

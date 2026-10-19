@@ -48,7 +48,6 @@ public struct ContentView: View {
                 } else {
                     VisualizerView(model: model, maximumFrequency: min(20_000, state.sampleRate * 0.499),
                                    hoveredFilter: draggedFilter ?? hoveredFilter)
-                    if let nowPlaying { NowPlayingView(model: nowPlaying) }
                     ProfileEditorView(state: state, send: model.enqueue,
                                       hoverChanged: { hoveredFilter = $0 },
                                       dragChanged: { draggedFilter = $0 })
@@ -63,8 +62,9 @@ public struct ContentView: View {
                 Text(error).font(.caption).foregroundStyle(.orange)
                     .padding(.horizontal, 12)
             }
+            if let nowPlaying { NowPlayingView(model: nowPlaying) }
         }
-        .padding(.bottom, 20)
+        .padding(.bottom, 12)
         .frame(width: 320)
         .preferredColorScheme(.dark)
         .task { await model.measureWhileVisible() }

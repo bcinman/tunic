@@ -153,7 +153,8 @@ This file is the source of truth for implemented product capabilities.
   stops telemetry demand, not processing.
   Run it with `mise run run-native`.
 - Native-only Now Playing for the Music and Spotify desktop apps: a compact
-  title/artist/artwork row beneath the spectrum, retained with a Paused label and
+  title/artist/artwork footer with 12 pt edge and divider padding, 32 pt artwork with 8 pt corners,
+  and 13 pt title/artist typography matching the profile picker, retained with a Paused label and
   hidden when neither player has a track. Swift owns this ephemeral state outside
   the Rust engine. Distributed playback and workspace notifications trigger
   permission-gated, read-only Apple Events addressed to running process IDs;
