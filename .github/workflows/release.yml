@@ -1,0 +1,94 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing main-branch tag to release (vX.Y.Z)
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-26
+    environment: release
+    permissions:
+      contents: write
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - name: Validate and select release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          git rev-parse --verify "refs/tags/$TAG"
+          git merge-base --is-ancestor "refs/tags/$TAG" origin/main
+          # Fail on API errors as well as existing releases; do not overwrite assets.
+          releases=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq '.[].tag_name')
+          if grep -Fxq "$TAG" <<< "$releases"; then
+            echo 'This tag already has a release' >&2
+            exit 1
+          fi
+          RELEASE_TAGS="$releases" python3 - <<'PY'
+          import os, re
+          def version(tag):
+              return tuple(map(int, tag[1:].split('.')))
+          current = version(os.environ['TAG'])
+          for tag in os.environ['RELEASE_TAGS'].splitlines():
+              if re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+', tag) and version(tag) >= current:
+                  raise SystemExit(f'Release version must be newer than {tag}')
+          PY
+          git checkout --detach "refs/tags/$TAG"
+          echo "RELEASE_VERSION=${TAG#v}" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2
+      - run: mise run check
+      - name: Build signed and notarized release
+        env:
+          CERTIFICATE_P12: ${{ secrets.CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+          CODE_SIGN_IDENTITY: ${{ vars.CODE_SIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          credentials=$(mktemp -d "$RUNNER_TEMP/tunic-signing.XXXXXX")
+          export NOTARY_KEYCHAIN="$credentials/release.keychain-db"
+          export SPARKLE_PRIVATE_KEY_FILE="$credentials/sparkle.key"
+          cleanup() {
+            security delete-keychain "$NOTARY_KEYCHAIN" || true
+            rm -rf "$credentials"
+          }
+          trap cleanup EXIT
+          password=$(openssl rand -hex 32)
+          security create-keychain -p "$password" "$NOTARY_KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$NOTARY_KEYCHAIN"
+          security unlock-keychain -p "$password" "$NOTARY_KEYCHAIN"
+          security list-keychains -d user -s "$NOTARY_KEYCHAIN" login.keychain-db
+          printf '%s' "$CERTIFICATE_P12" | base64 --decode > "$credentials/certificate.p12"
+          security import "$credentials/certificate.p12" -k "$NOTARY_KEYCHAIN" \
+            -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$NOTARY_KEYCHAIN"
+          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$SPARKLE_PRIVATE_KEY_FILE"
+          xcrun notarytool store-credentials tunic-notary --keychain "$NOTARY_KEYCHAIN" \
+            --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD"
+          mise run release-native
+      - name: Create draft release (publish manually after testing)
+        run: |
+          gh release create "$TAG" --verify-tag --draft --title "Tunic ${TAG#v}" \
+            --generate-notes target/release-native/Tunic.zip target/release-native/appcast.xml

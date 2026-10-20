@@ -13,6 +13,7 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "TunicEngine", path: "../../target/tunic-ffi/apple"),
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0"),
     ],
     targets: [
         .executableTarget(
@@ -21,8 +22,12 @@ let package = Package(
         ),
         .target(
             name: "TunicUI",
-            dependencies: [.product(name: "TunicEngine", package: "TunicEngine")],
-            resources: [.copy("Features/Visualizer/Spectrum.metal")]
+            dependencies: [
+                .product(name: "TunicEngine", package: "TunicEngine"),
+                .product(name: "Sparkle", package: "Sparkle"),
+            ],
+            resources: [.copy("Features/Visualizer/Spectrum.metal")],
+            linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]
         ),
         .testTarget(name: "TunicUITests", dependencies: ["TunicUI"]),
     ]

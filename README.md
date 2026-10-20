@@ -19,6 +19,73 @@ ad-hoc signing, which can require renewed consent after rebuilding. Set
 `CODE_SIGN_IDENTITY` to your signing identity for a consistent signed identity.
 This is a local development bundle, not a notarized distribution build.
 
+## Releases and updates
+
+Tunic ships directly for Apple Silicon on macOS 26+. Sparkle 2 provides the
+gear menu's update controls and standard update dialogs. Development builds
+cannot check for updates. Production uses the public GitHub latest-release
+`appcast.xml` asset; each feed points to its version-specific `Tunic.zip` asset.
+No separate update server is needed. Never replace a published ZIP or reuse a version.
+
+GitHub Actions **Check** runs `mise run check` and builds the development bundle
+on pull requests and main. Both workflows use macOS 26 ARM runners, Xcode 26.6,
+and the tools pinned in mise. Hardware/audio-permission tests remain opt-in.
+
+### One-time release setup
+
+Create a GitHub environment named **release**, restrict it to the main branch,
+and require your approval. Add these environment values through GitHub Settings
+(never put credentials in source control or chat):
+
+| Kind | Name | Value |
+| --- | --- | --- |
+| Secret | `CERTIFICATE_P12` | Base64-encoded Developer ID Application certificate **with its private key**, exported from Keychain Access |
+| Secret | `CERTIFICATE_PASSWORD` | Password used to protect that export |
+| Secret | `APPLE_ID` | Apple Developer account email |
+| Secret | `APPLE_APP_PASSWORD` | Apple app-specific password for notarization |
+| Secret | `SPARKLE_PRIVATE_KEY` | Contents of the exported Sparkle private-key file |
+| Variable | `CODE_SIGN_IDENTITY` | Full `Developer ID Application: … (TEAMID)` identity |
+| Variable | `APPLE_TEAM_ID` | Apple Developer team ID |
+| Variable | `SPARKLE_PUBLIC_KEY` | Sparkle's base64 public key |
+
+After `mise run build-native-bundle`, generate Sparkle keys once:
+
+```sh
+tools=apps/tunic-native/.build/artifacts/sparkle/Sparkle/bin
+"$tools/generate_keys" --account tunic
+"$tools/generate_keys" --account tunic -x "$HOME/tunic-sparkle-private.key"
+```
+
+The first command prints the public key and stores the private key in your login
+Keychain. Store an encrypted backup of the export, copy its contents into the
+GitHub secret, then remove the plaintext export. Keep the same public key across
+releases; do not casually regenerate it or change the app's bundle identifier.
+
+### Publish a version
+
+1. Push a new `vX.Y.Z` tag pointing at a tested commit on main.
+2. Run **Release** from main in GitHub Actions, supplying that tag, and approve
+   the protected environment. It rejects existing/older releases, reruns checks,
+   builds release-mode Rust and Swift, signs the app and Sparkle helpers,
+   notarizes and staples the app, then signs the final ZIP and generates the feed.
+   `CFBundleVersion` is the release workflow run number; do not reset that counter.
+3. Download the ZIP from the resulting **draft release**, install it in Applications,
+   and smoke-test audio, permissions, login startup, and the update menu. Edit the
+   generated GitHub release notes as needed.
+4. Publish the draft as the **latest release**. Publish in version/build order;
+   draft assets are not accessible to Sparkle. The same action exposes both assets.
+
+Before the first public launch, test an actual older → newer signed/notarized
+update using a temporary test feed URL. Draft creation alone does not verify
+installation or permission continuity. If a published version is bad, release
+a higher version containing the fix/revert; do not downgrade the feed. Keep the
+macOS minimum and architecture unchanged until the feed also retains updates
+for users on older supported systems.
+
+Signing and notarization use a temporary CI keychain, removed on exit.
+`mise run release-native` owns packaging; Actions only manages credentials and
+uploads the draft. CI needs no signing secrets, and merging does not publish.
+
 ## Crates
 
 | Crate | Provides |

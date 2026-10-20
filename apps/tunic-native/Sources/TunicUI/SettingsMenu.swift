@@ -5,11 +5,12 @@ struct HeaderActions: View {
     @Binding var isProcessing: Bool
     var processingAvailable = true
     var nowPlaying: NowPlayingModel?
+    var updates: AppUpdates?
     let quit: () -> Void
 
     var body: some View {
         SettingsMenu(isProcessing: $isProcessing, processingAvailable: processingAvailable,
-                     nowPlaying: nowPlaying, quit: quit)
+                     nowPlaying: nowPlaying, updates: updates, quit: quit)
     }
 }
 
@@ -29,6 +30,7 @@ struct SettingsMenu: View {
     @Binding var isProcessing: Bool
     var processingAvailable = true
     var nowPlaying: NowPlayingModel?
+    var updates: AppUpdates?
     let quit: () -> Void
     @State private var loginStatus = SMAppService.mainApp.status
     @State private var loginError: String?
@@ -48,6 +50,7 @@ struct SettingsMenu: View {
             .disabled(!isAppBundle)
             .help(isAppBundle ? "Launch Tunic when you log in" : "Requires a signed Tunic app bundle")
             Divider()
+            if let updates { UpdateSettings(updates: updates) }
             Button("Quit Tunic", action: quit)
                 .keyboardShortcut("q")
         } label: {
