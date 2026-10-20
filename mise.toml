@@ -84,9 +84,9 @@ description = "Build and open the native app bundle (supports Now Playing author
 depends = ["build-native-bundle"]
 run = "open target/native/Tunic.app"
 
-[tasks.release-native]
-description = "Build, sign, notarize, and package a native release (requires release credentials)"
-run = "bash apps/tunic-native/release.sh"
+[tasks.release]
+description = "Prepare a signed local release and optionally upload a GitHub draft: VERSION [--upload]"
+run = "bash script/release.sh"
 
 [tasks.run-native-release]
 description = "Build and launch the native Swift menu-bar app with Rust and Swift in release mode"

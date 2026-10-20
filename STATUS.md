@@ -10,9 +10,11 @@ This file is the source of truth for implemented product capabilities.
 
 - Sparkle 2 integration for native release bundles, with manual update checks and
   automatic-check preferences in the gear menu. Development updates are disabled.
-  GitHub Actions definitions run checks on PRs/main and prepare manually requested
-  draft releases with Developer ID signing, notarization, stapling, and signed
-  ZIP/appcast assets. Publishing remains manual; credentials require one-time setup.
+  `mise run release VERSION` prepares local builds with Keychain-backed Developer
+  ID signing, notarization, stapling, and signed ZIP/appcast assets, then asks before
+  creating a GitHub draft. It recognizes jj's empty working copy, requires source
+  on origin/main, and can retry uploads from verified artifacts. Publishing remains
+  manual. GitHub Actions is used only for PR/main checks, not release credentials.
 - A portable `tunic-core` containing pure profile, chain, and device-selection
   rules, with a GPUI-independent `Session` application boundary.
 - Session commands own profile selection, draft editing, save/reset, audio
@@ -217,7 +219,7 @@ This file is the source of truth for implemented product capabilities.
 - Filter types other than peaking, low-shelf, and high-shelf EQ.
 - Profile import/export.
 - Profile rename, delete, and copy workflows; independent concurrent editors.
-- Production credentials, hosted workflow verification, and a real signed/notarized
+- End-to-end local Keychain-backed release verification and a real signed/notarized
   old-to-new Sparkle installation test before first public distribution.
   The local native bundle defaults to ad-hoc signing; stable permission identity
   across rebuilds requires a signing identity (`CODE_SIGN_IDENTITY`).

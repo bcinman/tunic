@@ -21,6 +21,8 @@ This is a local development bundle, not a notarized distribution build.
 
 ## Releases and updates
 
+See [the release guide](docs/release.md) for setup, the release workflow, and failure recovery.
+
 Tunic ships directly for Apple Silicon on macOS 26+. Sparkle 2 provides the
 gear menu's update controls and standard update dialogs. Development builds
 cannot check for updates. Production uses the public GitHub latest-release
@@ -28,51 +30,60 @@ cannot check for updates. Production uses the public GitHub latest-release
 No separate update server is needed. Never replace a published ZIP or reuse a version.
 
 GitHub Actions **Check** runs `mise run check` and builds the development bundle
-on pull requests and main. Both workflows use macOS 26 ARM runners, Xcode 26.6,
-and the tools pinned in mise. Hardware/audio-permission tests remain opt-in.
+on pull requests and main; it does not prepare releases. Releases are built on
+your Mac using its Xcode and the tools pinned in mise. Hardware/audio-permission
+tests remain opt-in.
 
 ### One-time release setup
 
-Create a GitHub environment named **release**, restrict it to the main branch,
-and require your approval. Add these environment values through GitHub Settings
-(never put credentials in source control or chat):
+Use this colocated jj/Git checkout with `jj` and `gh` installed. Sign in with
+`gh auth login`. In Xcode → Settings → Accounts → Manage Certificates, create
+a **Developer ID Application** identity for your paid Apple Developer team.
+Its certificate and private key must be in your login Keychain. The script
+selects it automatically when there is exactly one; otherwise set
+`CODE_SIGN_IDENTITY` to the full identity name shown by
+`security find-identity -v -p codesigning`.
 
-| Kind | Name | Value |
-| --- | --- | --- |
-| Secret | `CERTIFICATE_P12` | Base64-encoded Developer ID Application certificate **with its private key**, exported from Keychain Access |
-| Secret | `CERTIFICATE_PASSWORD` | Password used to protect that export |
-| Secret | `APPLE_ID` | Apple Developer account email |
-| Secret | `APPLE_APP_PASSWORD` | Apple app-specific password for notarization |
-| Secret | `SPARKLE_PRIVATE_KEY` | Contents of the exported Sparkle private-key file |
-| Variable | `CODE_SIGN_IDENTITY` | Full `Developer ID Application: … (TEAMID)` identity |
-| Variable | `APPLE_TEAM_ID` | Apple Developer team ID |
-| Variable | `SPARKLE_PUBLIC_KEY` | Sparkle's base64 public key |
+Store notarization credentials once (the command prompts securely for your
+Apple Account email, team ID, and app-specific password):
 
-After `mise run build-native-bundle`, generate Sparkle keys once:
+```sh
+xcrun notarytool store-credentials tunic-notary
+```
+
+After `mise run build-native-bundle`, set up Sparkle's Keychain account once:
 
 ```sh
 tools=apps/tunic-native/.build/artifacts/sparkle/Sparkle/bin
 "$tools/generate_keys" --account tunic
-"$tools/generate_keys" --account tunic -x "$HOME/tunic-sparkle-private.key"
 ```
 
-The first command prints the public key and stores the private key in your login
-Keychain. Store an encrypted backup of the export, copy its contents into the
-GitHub secret, then remove the plaintext export. Keep the same public key across
-releases; do not casually regenerate it or change the app's bundle identifier.
+This reuses an existing key for `tunic`, or creates one if absent. The release
+script reads its public key and signs through Keychain without exporting the
+private key. Keep a secure backup of your signing keys, and keep the same Sparkle
+key and bundle identifier across releases. No GitHub environment, release
+secrets, certificate exports, or private-key files are needed. Any old GitHub
+`release` environment credentials can be removed separately.
 
 ### Publish a version
 
-1. Push a new `vX.Y.Z` tag pointing at a tested commit on main.
-2. Run **Release** from main in GitHub Actions, supplying that tag, and approve
-   the protected environment. It rejects existing/older releases, reruns checks,
-   builds release-mode Rust and Swift, signs the app and Sparkle helpers,
-   notarizes and staples the app, then signs the final ZIP and generates the feed.
-   `CFBundleVersion` is the release workflow run number; do not reset that counter.
-3. Download the ZIP from the resulting **draft release**, install it in Applications,
+1. Record and merge your changes to GitHub main. In jj, start an empty working-copy
+   commit above the source you want to release (`jj new main@origin` after fetching).
+   The task refuses uncommitted changes and source not already on `origin/main`.
+2. From the repository root, run **`mise run release 0.1.0`**. It rejects existing
+   or older versions (including drafts), runs checks, builds release-mode Rust
+   and Swift, signs, notarizes, staples, and generates the ZIP and signed appcast.
+   Both the displayed version and `CFBundleVersion` are `0.1.0`; increase the
+   three-part version for every release. No CI run number is involved.
+3. Artifacts and checksums are saved in `target/releases/0.1.0/`. Confirm `y` at
+   the prompt to push only the `v0.1.0` tag and create a **draft** GitHub Release.
+   The script never publishes or moves main. Answering no keeps the files local.
+   To upload completed artifacts later, run **`mise run release 0.1.0 --upload`**;
+   this verifies checksums/metadata and asks again without rebuilding or signing.
+4. Download the ZIP from the resulting **draft release**, install it in Applications,
    and smoke-test audio, permissions, login startup, and the update menu. Edit the
    generated GitHub release notes as needed.
-4. Publish the draft as the **latest release**. Publish in version/build order;
+5. Publish the draft as the **latest release**. Publish in version order;
    draft assets are not accessible to Sparkle. The same action exposes both assets.
 
 Before the first public launch, test an actual older → newer signed/notarized
@@ -82,9 +93,12 @@ a higher version containing the fix/revert; do not downgrade the feed. Keep the
 macOS minimum and architecture unchanged until the feed also retains updates
 for users on older supported systems.
 
-Signing and notarization use a temporary CI keychain, removed on exit.
-`mise run release-native` owns packaging; Actions only manages credentials and
-uploads the draft. CI needs no signing secrets, and merging does not publish.
+`script/release.sh` owns the local release process and reuses the native bundle
+builder. Do not edit the source or run another bundle build during a release.
+An incomplete build leaves its files for diagnosis; move that version's output
+directory aside before rebuilding. If GitHub created a draft but asset uploading
+failed, inspect that draft and complete its assets manually; the script refuses
+to overwrite existing releases. Merging does not publish.
 
 ## Crates
 
