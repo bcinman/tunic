@@ -1,5 +1,5 @@
 [tools]
-rust = "nightly-2026-09-20"
+rust = { version = "nightly-2026-09-20", components = ["clippy", "rustfmt"] }
 python = "3.14.7"
 "cargo:boltffi_cli" = "0.30.1"
 swiftlint = "0.65.1"
