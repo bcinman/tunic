@@ -88,7 +88,7 @@ struct GainControlRow: View {
                     .foregroundStyle(.opacity(0.5))
             }
             .font(.system(size: 12))
-            Slider(value: Binding(get: { gain }, set: changeGain),
+            Slider(value: Binding(get: { gain }, set: { changeGain($0) }),
                    in: -12...12, neutralValue: 0, label: { Text(displayedName) },
                    onEditingChanged: editingChanged)
             .labelsHidden()

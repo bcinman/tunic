@@ -45,7 +45,7 @@ struct SettingsMenu: View {
             Divider()
             Toggle("Open at Login", isOn: Binding(
                 get: { loginStatus == .enabled },
-                set: setOpenAtLogin
+                set: { setOpenAtLogin($0) }
             ))
             .disabled(!isAppBundle)
             .help(isAppBundle ? "Launch Tunic when you log in" : "Requires a signed Tunic app bundle")
