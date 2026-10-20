@@ -48,3 +48,49 @@ can leave the macOS Dock unable to reveal itself, requiring a Dock restart.
 To investigate explicitly, run `TUNIC_MENU_TESTS=1 mise exec -- swift test
 --package-path apps/tunic-native --filter profilePickerOpensFromPaddedSurface`.
 The cause is unresolved; other native window tests still run normally.
+
+## Audio fidelity checks
+
+`mise run check-audio-fidelity` exercises the public processor with impulses at
+44.1, 48, 96, and 192 kHz. It compares measured magnitude and phase with the W3C
+Audio EQ Cookbook's analog prototypes using frequency prewarping, independently
+of Tunic's coefficient and graph code. The matrix covers all three filter types,
+boosts/cuts, two Q values, bass/mid/near-Nyquist centers, and preamp gain. Acceptance
+limits are 0.05 dB magnitude error and 1% relative complex error. Separate checks
+require exact bypass nulling and identical output across callback block sizes.
+These tests also run in `mise run check`; they are not proof of end-to-end hardware fidelity.
+
+`mise run audit-audio-rate` creates an **unmuted**, private macOS tap/aggregate,
+checks its input/output virtual stream rates against the output rate used by DSP,
+then destroys it. It requires System Audio Recording permission, but does not
+play sound, change the default output, or write profiles. Route startup enforces
+the same agreement. This does not yet cover rate changes while a route is running.
+
+For a bypass loopback comparison:
+
+1. Use an audio interface's output-loopback input or a verified virtual loopback
+   device. Record **after Tunic's output**, not its input tap or a room microphone.
+   Keep the route, volume, sample rate, recorder gain, and all other effects fixed.
+2. Generate a six-second 24-bit stereo probe (peak below −20 dBFS; turn headphones
+   down before playing noise):
+   `mise run audio-null generate /tmp/tunic-probe.wav --rate 48000`.
+3. Record it with Tunic quit as `baseline.wav`. Then start Tunic, disable
+   **Processing**, and record the same file as `bypass.wav`. Play using an external
+   process such as `afplay /tmp/tunic-probe.wav`; Tunic excludes its own process.
+   Start recording before playback and retain the entire signal plus trailing silence.
+   Export both as stereo signed integer PCM WAV, preferably 24-bit, at the original
+   sample rate. Do not normalize, trim active audio, or resample the recordings.
+4. Run `mise run audio-null compare baseline.wav bypass.wav`.
+
+The comparator aligns fixed integer-frame latency, checks drift at the middle/end,
+and reports each channel's active-signal residual, gain, peak error, and clipping.
+It does **not** fit away gain changes, channel swaps, dropouts, or clock drift.
+Its strict digital acceptance is ≤−80 dB residual relative to signal, peak error
+≤0.0001 full scale, no clipping, and no measured integer-frame drift. JSON `null`
+for a residual means exact zero. Exit 0 passes, 1 fails, and 2 means invalid input.
+Use the generated broadband probe: correlation alignment is ambiguous for a pure tone.
+Analog loopbacks, fractional delays, or asynchronous resampling can fail these
+digital limits without establishing an audible defect; investigate the metrics.
+This is not a THD/noise-floor measurement, and a synthetic self-null is not a live
+loopback result. `mise run test-audio-null` verifies the analyzer against deliberate
+gain changes, channel swaps, and a dropped frame.

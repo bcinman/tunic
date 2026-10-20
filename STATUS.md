@@ -59,8 +59,18 @@ This file is the source of truth for implemented product capabilities.
   identities. Each control holds a relative gain adjustment; effective DSP chains
   add those adjustments without changing base values.
 - Sample-rate-specific stereo DSP with preamp gain, ordered peaking and shelf
-  filters, post-quantization stability validation, and allocation-free audio
-  processing.
+  filters, float64 coefficients/history, stability validation, float32 audio buffers,
+  and allocation-free processing. Independent impulse/FFT comparisons against
+  prewarped analog prototypes cover 144 filter configurations at 44.1–192 kHz;
+  block-size invariance and exact bypass nulling run in CI. This caught a float32
+  precision error of 2.51 dB in the tested bass case at 192 kHz; the same matrix
+  measures under 0.000003 dB worst error with float64 internals.
+- Audio verification commands: `check-audio-fidelity`, an opt-in unmuted
+  `audit-audio-rate`, and `audio-null` for generating a stereo probe and comparing
+  PCM WAV loopback captures without fitting away gain or drift. The comparator
+  is tested against latency, gain changes, channel swaps, and dropped samples.
+  The live aggregate stream-rate audit passed at 48 kHz on the development machine;
+  physical/virtual output loopback fidelity has not yet been measured.
 - A cloneable controller that publishes latest-value chain replacements and
   atomic bypass changes to the processor. Chain replacements use a
   five-millisecond crossfade.
@@ -74,7 +84,8 @@ This file is the source of truth for implemented product capabilities.
 - A `tunic-macos` route for the current default output using a Core Audio process
   tap, private aggregate device, callback-owned core `Processor`, native-buffer
   normalization, and ordered teardown. Profile clicks publish live chain changes
-  through the core `Controller`.
+  through the core `Controller`. Startup rejects aggregate virtual stream rates
+  that differ from the DSP rate, rather than silently processing at the wrong rate.
 - A Session-owned `Platform` contract with a shared `tunic-macos::MacosPlatform`
   that observes Core Audio default-output notifications and rebuilds the complete
   route using stable Core Audio device UIDs. Same-device reconnections retain the
@@ -174,9 +185,18 @@ This file is the source of truth for implemented product capabilities.
 - Automated formatting, Clippy, Rust tests, binding generation, SwiftLint, and
   Swift integration tests through `mise run check`. `mise run lint-native` runs
   strict SwiftLint checks on the native sources, tests, and package manifest.
+- Live software-output validation on External Headphones at 48 kHz passed on
+  2026-10-20: bypass and flat output matched tap input exactly; −6 dB preamp
+  residual was −144.1 dB relative to expected output. Temporary, allocation-free
+  callback instrumentation inspected final Core Audio output buffers during a
+  quiet stereo probe, then was removed. This does not measure the DAC/jack,
+  downstream resampling, or scheduling dropouts.
 
 ## Not In Yet
 
+- End-to-end loopback fidelity measurements, same-device sample-rate-change
+  observation/recovery, callback deadline/dropout telemetry, and an explicit
+  clipping/headroom policy. The new sample-rate guard applies at route startup.
 - Product-complete UI, explicit permission UX, recovery beyond retrying the
   current default output, and full equalizer controls; GPUI builds and
   platform integrations for Linux and Windows.

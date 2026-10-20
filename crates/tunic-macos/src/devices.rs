@@ -11,8 +11,9 @@ use objc2_core_audio::{
     kAudioDevicePropertyNominalSampleRate, kAudioDevicePropertyStreams,
     kAudioHardwarePropertyDefaultOutputDevice, kAudioObjectPropertyName,
     kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyScopeInput,
-    kAudioObjectPropertyScopeOutput, kAudioObjectSystemObject,
+    kAudioObjectPropertyScopeOutput, kAudioObjectSystemObject, kAudioStreamPropertyVirtualFormat,
 };
+use objc2_core_audio_types::AudioStreamBasicDescription;
 use objc2_core_foundation::{CFRetained, CFString};
 
 use crate::{Error, address, check_status};
@@ -95,6 +96,59 @@ pub(crate) fn input_stream_count(id: AudioObjectID) -> Result<usize, Error> {
     property_size(id, &property).map(|size| size as usize / size_of::<AudioObjectID>())
 }
 
+/// The IOProc receives virtual stream samples, potentially resampled by the aggregate.
+/// Checking the source tap rate alone would not establish the processor's actual rate.
+pub(crate) fn validate_callback_sample_rates(
+    id: AudioObjectID,
+    expected: f64,
+) -> Result<(), Error> {
+    for scope in [
+        kAudioObjectPropertyScopeInput,
+        kAudioObjectPropertyScopeOutput,
+    ] {
+        let property = address(kAudioDevicePropertyStreams, scope);
+        let mut bytes = property_size(id, &property)?;
+        let mut streams = vec![0; bytes as usize / size_of::<AudioObjectID>()];
+        if streams.is_empty() {
+            return Err(Error::new("aggregate has no input or output streams"));
+        }
+        // SAFETY: streams is initialized storage of the size reported by Core Audio.
+        let status = unsafe {
+            AudioObjectGetPropertyData(
+                id,
+                NonNull::from(&property),
+                0,
+                std::ptr::null(),
+                NonNull::from(&mut bytes),
+                NonNull::new_unchecked(streams.as_mut_ptr().cast::<c_void>()),
+            )
+        };
+        check_status("read aggregate streams", status)?;
+        streams.truncate(bytes as usize / size_of::<AudioObjectID>());
+        for stream in streams {
+            let format: AudioStreamBasicDescription = read_property(
+                stream,
+                &address(
+                    kAudioStreamPropertyVirtualFormat,
+                    kAudioObjectPropertyScopeGlobal,
+                ),
+            )?;
+            validate_sample_rate(format.mSampleRate, expected)?;
+        }
+    }
+    Ok(())
+}
+
+fn validate_sample_rate(actual: f64, expected: f64) -> Result<(), Error> {
+    if actual.is_finite() && actual > 0.0 && actual == expected {
+        Ok(())
+    } else {
+        Err(Error::new(format!(
+            "aggregate callback sample rate {actual} does not match DSP rate {expected}"
+        )))
+    }
+}
+
 fn string_property(id: AudioObjectID, selector: u32) -> Option<String> {
     let property = address(selector, kAudioObjectPropertyScopeGlobal);
     let mut value: *const CFString = std::ptr::null();
@@ -159,4 +213,18 @@ fn read_property<T: Copy>(
 
 const fn size_of<T>() -> usize {
     std::mem::size_of::<T>()
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn callback_rate_must_match_dsp_rate() {
+        for rate in [44_100.0, 48_000.0, 96_000.0, 192_000.0] {
+            assert!(super::validate_sample_rate(rate, rate).is_ok());
+            assert!(super::validate_sample_rate(rate, rate + 1.0).is_err());
+        }
+        for rate in [0.0, -48_000.0, f64::NAN, f64::INFINITY] {
+            assert!(super::validate_sample_rate(rate, 48_000.0).is_err());
+        }
+    }
 }

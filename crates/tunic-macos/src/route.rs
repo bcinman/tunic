@@ -33,7 +33,7 @@ use objc2_core_foundation::CFDictionary;
 use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSObject, NSString, NSUUID};
 use tunic_core::{AudioFormat, Chain, Controller, Processor, SampleRateHz};
 
-use crate::devices::{device_uid, input_stream_count};
+use crate::devices::{device_uid, input_stream_count, validate_callback_sample_rates};
 use crate::{Error, address, check_status, status_error, with_cleanup_error};
 
 const FRAME_CAPACITY: usize = 16_384;
@@ -143,6 +143,7 @@ impl Route {
         }
 
         let tap_buffers = match (|| {
+            validate_callback_sample_rates(aggregate_id, sample_rate_hz)?;
             let physical = input_stream_count(output_id)?;
             let aggregate = input_stream_count(aggregate_id)?;
             TapBufferRange::from_stream_counts(aggregate, physical)
@@ -631,6 +632,54 @@ mod tests {
         AudioBuffer, AudioStreamBasicDescription, kAudioFormatFlagIsFloat,
         kAudioFormatFlagIsNonInterleaved, kAudioFormatLinearPCM,
     };
+
+    /// Creates an unmuted private tap/aggregate, never starts playback or changes the default device.
+    /// Requires System Audio Recording permission. Run explicitly with `mise run audit-audio-rate`.
+    #[test]
+    #[ignore = "requires macOS audio hardware and recording permission"]
+    fn live_callback_sample_rates_match_output() {
+        use super::*;
+        use crate::devices::{default_output_id, sample_rate};
+        let output = default_output_id().unwrap();
+        let rate = sample_rate(output).unwrap();
+        let uid = NSString::from_str(&device_uid(output).unwrap());
+        let processes = NSArray::<NSNumber>::new();
+        // SAFETY: all arguments are live Objective-C objects; tap is explicitly unmuted.
+        let description = unsafe {
+            let description = CATapDescription::initExcludingProcesses_andDeviceUID_withStream(
+                CATapDescription::alloc(),
+                &processes,
+                &uid,
+                0,
+            );
+            description.setPrivate(true);
+            description.setMuteBehavior(CATapMuteBehavior::Unmuted);
+            description
+        };
+        let mut tap = 0;
+        // SAFETY: description and tap are valid for this call.
+        check_status("create audit tap", unsafe {
+            AudioHardwareCreateProcessTap(Some(&description), &mut tap)
+        })
+        .unwrap();
+        let result = (|| {
+            validate_tap_format(tap)?;
+            // SAFETY: description is still live.
+            let tap_uid = unsafe { description.UUID().UUIDString() };
+            let aggregate = create_aggregate(&uid, &tap_uid)?;
+            let validation = wait_until_alive(aggregate)
+                .and_then(|()| validate_callback_sample_rates(aggregate, rate));
+            let cleanup = destroy_aggregate_and_tap(aggregate, tap);
+            // The caller must not destroy the tap twice after aggregate creation.
+            tap = 0;
+            validation.and(cleanup)
+        })();
+        if tap != 0 {
+            destroy_tap(tap).unwrap();
+        }
+        result.unwrap();
+        eprintln!("Output and aggregate callback streams agree at {rate} Hz");
+    }
 
     #[test]
     fn normalizes_asymmetric_planar_input_to_interleaved_stereo() {

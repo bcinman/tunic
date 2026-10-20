@@ -26,7 +26,23 @@ run = "cargo test --workspace --all-targets --all-features"
 
 [tasks.check]
 description = "Run all repository checks"
-depends = ["fmt", "lint", "test", "test-preset-import", "check-native"]
+depends = ["fmt", "lint", "test", "test-preset-import", "test-audio-null", "check-native"]
+
+[tasks.check-audio-fidelity]
+description = "Compare processor output with independent EQ references and exact bypass"
+run = "cargo test -p tunic-core --test audio_fidelity -- --nocapture"
+
+[tasks.audit-audio-rate]
+description = "Check live macOS aggregate sample rates using an unmuted private tap"
+run = "cargo test -p tunic-macos live_callback_sample_rates_match_output -- --ignored --nocapture"
+
+[tasks.test-audio-null]
+description = "Verify loopback analysis detects gain changes, channel swaps, and dropped frames"
+run = "python -B -m unittest discover -s crates/tunic-macos -p 'test_*.py'"
+
+[tasks.audio-null]
+description = "Generate a stereo probe or compare two PCM WAV recordings"
+run = "python -B crates/tunic-macos/audio_null.py"
 
 [tasks.test-preset-import]
 description = "Test offline preset extraction without network access"
