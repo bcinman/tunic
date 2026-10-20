@@ -400,6 +400,7 @@ impl Session {
             self.finish_control_gain()?;
         }
         match edit {
+            ProfileEdit::RenameControl { filter, name } => self.rename_control(filter, name),
             ProfileEdit::EditFilter {
                 filter,
                 frequency,
@@ -589,6 +590,44 @@ impl Session {
         self.commit(next)?;
         self.draft = draft;
         self.publish_active_chain()
+    }
+
+    fn rename_control(
+        &mut self,
+        filter: FilterId,
+        name: FilterControlName,
+    ) -> Result<(), SessionError> {
+        let id = self
+            .selected_profile()
+            .ok_or(SessionError::NoSelectedProfile)?
+            .id();
+        let mut next = self.state.clone();
+        let saved = next
+            .device_mut(&self.device)
+            .expect("selected device exists")
+            .profiles
+            .iter_mut()
+            .find(|saved| saved.id() == id)
+            .expect("Selected profiles always belong to saved state");
+        saved
+            .rename_control(filter, name.clone())
+            .map_err(SessionError::InvalidProfile)?;
+        let mut draft = self.draft.clone();
+        let mut preview = self
+            .gain_preview
+            .as_ref()
+            .map(|preview| preview.profile.clone());
+        for profile in draft.iter_mut().chain(preview.iter_mut()) {
+            profile
+                .rename_control(filter, name.clone())
+                .map_err(SessionError::InvalidProfile)?;
+        }
+        self.commit(next)?;
+        self.draft = draft;
+        if let Some(gain_preview) = &mut self.gain_preview {
+            gain_preview.profile = preview.expect("preview was cloned above");
+        }
+        Ok(())
     }
 
     fn save_draft(&mut self) -> Result<(), SessionError> {

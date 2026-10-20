@@ -58,6 +58,9 @@ This file is the source of truth for implemented product capabilities.
 - Profiles own an editable base chain plus named controls targeting stable filter
   identities. Each control holds a relative gain adjustment; effective DSP chains
   add those adjustments without changing base values.
+  Native gain-row labels support double-click inline renaming (Return or clicking
+  outside saves; Escape cancels), preserving casing. Names persist immediately
+  without saving base drafts or changing audio; empty and duplicate names are rejected.
 - Sample-rate-specific stereo DSP with preamp gain, ordered peaking and shelf
   filters, float64 coefficients/history, stability validation, float32 audio buffers,
   and allocation-free processing. Independent impulse/FFT comparisons against

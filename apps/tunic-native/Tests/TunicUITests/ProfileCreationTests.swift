@@ -76,6 +76,7 @@ private func renderFlatEditor(directory: String) async throws {
 /// Real-window capture, shared with renderVisualizerLab. All engine data is in memory.
 @MainActor
 func renderProfileCreationLab(directory: String) async throws {
+    try await renderGainRename(directory: directory)
     try await renderFlatEditor(directory: directory)
     let engine = try Engine(connectAudio: false, databasePath: nil)
     defer { engine.shutdown() }
@@ -126,4 +127,81 @@ func renderProfileCreationLab(directory: String) async throws {
         capture.waitUntilExit()
         #expect(capture.terminationStatus == 0)
     }
+}
+
+@MainActor
+private func renderGainRename(directory: String) async throws {
+    var submitted: String?
+    let host = NSHostingView(rootView: VStack(spacing: 16) {
+        ProfilePicker(deviceName: "External Headphones", profileName: "Sennheiser HD6XX",
+                      selectedProfileId: "preview", profiles: [], device: "preview", send: { _ in })
+            .padding(.horizontal, 16)
+        GainControlRow(
+        profile: "preview", control: Control(filter: 1, name: "my EQ", gain: 2), processedCommand: 0,
+        send: { command in
+            if case .renameControl(_, _, let name) = command { submitted = name }
+            return 1
+        })
+    }.frame(width: 320).padding(.vertical, 16)
+        .background(Color(nsColor: .windowBackgroundColor)))
+    let window = NSPanel(contentRect: NSRect(x: 100, y: 100, width: 320, height: 70),
+                         styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    window.contentView = host
+    window.setContentSize(host.fittingSize)
+    window.makeKeyAndOrderFront(nil)
+    defer { window.close() }
+    for state in ["Label", "Editing", "Pending"] {
+        if state == "Pending" {
+            let editor = try #require(window.firstResponder as? NSTextView)
+            #expect(editor.selectedRange().length == 5)
+            editor.insertText("Low end", replacementRange: editor.selectedRange())
+            editor.doCommand(by: #selector(NSResponder.insertNewline(_:)))
+        }
+        if state == "Editing" {
+            for count in 1...2 {
+                for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+                    let event = try #require(NSEvent.mouseEvent(with: type,
+                        location: NSPoint(x: 32, y: host.frame.height - 75), modifierFlags: [],
+                        timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                        context: nil, eventNumber: 0, clickCount: count, pressure: 1))
+                    window.sendEvent(event)
+                }
+            }
+        }
+        try await Task.sleep(for: .milliseconds(350))
+        if state == "Pending" { #expect(window.firstResponder === window) }
+        let capture = Process()
+        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        capture.arguments = ["-x", "-o", "-l", String(window.windowNumber), directory + "/rename-\(state).png"]
+        try capture.run()
+        capture.waitUntilExit()
+        #expect(capture.terminationStatus == 0)
+    }
+    #expect(submitted == "Low end")
+    // The engine has not acknowledged receipt 1: reopening must use the submitted name.
+    for count in 1...2 {
+        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            let event = try #require(NSEvent.mouseEvent(with: type,
+                location: NSPoint(x: 32, y: host.frame.height - 75), modifierFlags: [],
+                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                context: nil, eventNumber: 0, clickCount: count, pressure: 1))
+            window.sendEvent(event)
+        }
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    let pendingEditor = try #require(window.firstResponder as? NSTextView)
+    #expect(pendingEditor.string == "Low end")
+    pendingEditor.insertText("Bass shelf", replacementRange: pendingEditor.selectedRange())
+    // Empty padding cannot take focus itself; the outside-click handler must commit.
+    for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+        let event = try #require(NSEvent.mouseEvent(with: type,
+            location: NSPoint(x: 8, y: 4), modifierFlags: [],
+            timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+            context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+        NSApplication.shared.sendEvent(event)
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    #expect(submitted == "Bass shelf")
+    #expect(window.firstResponder === window)
 }

@@ -369,6 +369,66 @@ fn failed_adjustment_save_preserves_saved_draft_and_audio_state() {
 }
 
 #[test]
+fn renaming_preserves_drafts_and_gain_previews_and_is_atomic() {
+    let store = TestPersistence::default();
+    let mut session = Session::new(store.clone(), vec![preset()]).unwrap();
+    session.execute(use_preset()).unwrap();
+    let base = session.selected_profile().unwrap().base().clone();
+    session.execute_edit(edit(800.0, 5.0)).unwrap();
+    session
+        .execute_edit(ProfileEdit::PreviewControlGain {
+            filter: FilterId::try_new(3).unwrap(),
+            gain: GainDb::try_new(-2.0).unwrap(),
+        })
+        .unwrap();
+    let chain = session.active_chain();
+    let rename = |name| ProfileEdit::RenameControl {
+        filter: FilterId::try_new(3).unwrap(),
+        name: FilterControlName::try_new(name).unwrap(),
+    };
+    session.execute_edit(rename("  my EQ  ")).unwrap();
+    assert_eq!(
+        session.editing_profile().unwrap().controls()[0]
+            .name()
+            .to_string(),
+        "my EQ"
+    );
+    assert_eq!(
+        session.draft().unwrap().controls()[0].name().to_string(),
+        "my EQ"
+    );
+    assert_eq!(session.selected_profile().unwrap().base(), &base);
+    assert_eq!(session.active_chain(), chain);
+    assert!(session.is_previewing_gain());
+    let restored = Session::new(store.clone(), vec![preset()]).unwrap();
+    assert_eq!(restored.selected_profile(), session.selected_profile());
+    store.fail.store(true, Ordering::Relaxed);
+    assert!(session.execute_edit(rename("Rejected")).is_err());
+    assert_eq!(
+        session.editing_profile().unwrap().controls()[0]
+            .name()
+            .to_string(),
+        "my EQ"
+    );
+    assert_eq!(
+        session.draft().unwrap().controls()[0].name().to_string(),
+        "my EQ"
+    );
+    assert_eq!(session.selected_profile(), restored.selected_profile());
+    store.fail.store(false, Ordering::Relaxed);
+    session
+        .execute_edit(ProfileEdit::CancelControlGain)
+        .unwrap();
+    session.execute_edit(ProfileEdit::SaveDraft).unwrap();
+    assert_eq!(
+        session.selected_profile().unwrap().controls()[0]
+            .name()
+            .to_string(),
+        "my EQ"
+    );
+}
+
+#[test]
 fn gain_drag_previews_without_saving_and_commits_only_the_adjustment() {
     let store = TestPersistence::default();
     let mut session = Session::new(store.clone(), vec![preset()])

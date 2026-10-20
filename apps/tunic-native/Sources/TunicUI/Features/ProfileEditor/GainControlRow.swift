@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import TunicEngine
 
@@ -16,6 +17,17 @@ struct GainControlRow: View {
     var dragChanged: (Bool) -> Void = { _ in }
     @State private var interaction = Interaction.idle
     @State private var hovered = false
+    @State private var editingName = false
+    @State private var name = ""
+    @State private var nameSelection: TextSelection?
+    @State private var pendingName: (value: String, receipt: UInt64)?
+    @State private var outsideClickMonitor: Any?
+    @FocusState private var nameFocused: Bool
+
+    private var displayedName: String {
+        if let pendingName, processedCommand < pendingName.receipt { return pendingName.value }
+        return control.name
+    }
 
     private var gain: Double {
         switch interaction {
@@ -27,7 +39,36 @@ struct GainControlRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
-                Text(control.name.capitalized).lineLimit(1)
+                if editingName {
+                    TextField("Filter name", text: $name, selection: $nameSelection)
+                        .textFieldStyle(.plain)
+                        .focused($nameFocused)
+                        .onSubmit(saveName)
+                        .onExitCommand(perform: endNameEditing)
+                        .onAppear {
+                            nameFocused = true
+                            nameSelection = TextSelection(range: name.startIndex..<name.endIndex)
+                            outsideClickMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
+                                if nameFocused, let editor = event.window?.firstResponder as? NSTextView,
+                                   !editor.bounds.contains(editor.convert(event.locationInWindow, from: nil)) {
+                                    saveName()
+                                }
+                                return event
+                            }
+                        }
+                        .onDisappear {
+                            if let outsideClickMonitor { NSEvent.removeMonitor(outsideClickMonitor) }
+                            outsideClickMonitor = nil
+                        }
+                        .onChange(of: nameFocused) { if !nameFocused { saveName() } }
+                } else {
+                    Text(displayedName).lineLimit(1)
+                        .onTapGesture(count: 2) {
+                            name = displayedName
+                            editingName = true
+                        }
+                        .help("Double-click to rename")
+                }
                 if gain != 0 {
                     Button { changeGain(0) } label: {
                         Image(systemName: "arrow.counterclockwise")
@@ -37,7 +78,7 @@ struct GainControlRow: View {
                     .buttonStyle(.plain)
                     .opacity(hovered ? 1 : 0)
                     .animation(.easeInOut(duration: 0.1), value: hovered)
-                    .accessibilityLabel("Reset \(control.name) to 0 decibels")
+                    .accessibilityLabel("Reset \(displayedName) to 0 decibels")
                     .help("Reset to 0 dB")
                 }
                 Spacer()
@@ -48,7 +89,7 @@ struct GainControlRow: View {
             }
             .font(.system(size: 12))
             Slider(value: Binding(get: { gain }, set: changeGain),
-                   in: -12...12, neutralValue: 0, label: { Text(control.name.capitalized) },
+                   in: -12...12, neutralValue: 0, label: { Text(displayedName) },
                    onEditingChanged: editingChanged)
             .labelsHidden()
             .accessibilityValue("\(gain.formatted()) decibels")
@@ -67,6 +108,25 @@ struct GainControlRow: View {
             _ = send(.cancelControlGain(profile: profile))
         }
         .onDisappear { editingChanged(false) }
+    }
+
+    private func saveName() {
+        guard editingName else { return }
+        if let receipt = send(.renameControl(profile: profile, filter: control.filter, name: name)) {
+            pendingName = (name.trimmingCharacters(in: .whitespacesAndNewlines), receipt)
+        }
+        endNameEditing()
+    }
+
+    private func endNameEditing() {
+        let ownedFocus = nameFocused
+        editingName = false
+        nameFocused = false
+        // Resign the field editor before removing it so AppKit need not choose
+        // another control. Leave intentional focus moves (e.g. Tab) alone.
+        if ownedFocus, let window = NSApp.keyWindow, window.firstResponder is NSTextView {
+            window.makeFirstResponder(nil)
+        }
     }
 
     private func changeGain(_ value: Double) {
