@@ -15,6 +15,7 @@ struct GainControlRow: View {
     let send: (EngineCommand) -> UInt64?
     var dragChanged: (Bool) -> Void = { _ in }
     @State private var interaction = Interaction.idle
+    @State private var hovered = false
 
     private var gain: Double {
         switch interaction {
@@ -27,6 +28,18 @@ struct GainControlRow: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Text(control.name.capitalized).lineLimit(1)
+                if gain != 0 {
+                    Button { changeGain(0) } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .opacity(hovered ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.1), value: hovered)
+                    .accessibilityLabel("Reset \(control.name) to 0 decibels")
+                    .help("Reset to 0 dB")
+                }
                 Spacer()
                 Text("\(gain > 0 ? "+" : "")\(gain.formatted(.number.precision(.fractionLength(0...1)))) dB")
                     .font(.system(size: 11))
@@ -40,6 +53,8 @@ struct GainControlRow: View {
             .labelsHidden()
             .accessibilityValue("\(gain.formatted()) decibels")
         }.padding(.horizontal, 16)
+        .contentShape(Rectangle())
+        .onHover { hovered = $0 }
         .onChange(of: processedCommand) {
             guard case .awaitingFinish(_, let receipt) = interaction,
                   processedCommand >= receipt else { return }

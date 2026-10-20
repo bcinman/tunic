@@ -616,7 +616,7 @@ func renderVisualizerLab() async throws {
 @MainActor
 private func renderGainHoverStates(directory: String) async throws {
     let actions = NSHostingView(rootView: HeaderActions(isProcessing: .constant(true), quit: {}))
-    #expect(actions.fittingSize == NSSize(width: 52, height: 24))
+    #expect(actions.fittingSize == NSSize(width: 24, height: 24))
     let model = TunicModel(connectAudio: false)
     defer { model.shutdown() }
     for _ in 0..<100 where model.snapshot == nil {

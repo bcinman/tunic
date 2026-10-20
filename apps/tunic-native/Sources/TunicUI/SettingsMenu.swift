@@ -8,20 +8,8 @@ struct HeaderActions: View {
     let quit: () -> Void
 
     var body: some View {
-        HStack(spacing: 4) {
-            Button {} label: {
-                Image(systemName: "graph.2d")
-                    .font(.system(size: 14))
-                    .frame(width: 24, height: 24)
-            }
-            .buttonStyle(HeaderActionStyle())
-            .disabled(true)
-            .accessibilityLabel("Equalizer editor")
-            .help("Equalizer editor — coming soon")
-            SettingsMenu(isProcessing: $isProcessing, processingAvailable: processingAvailable,
-                         nowPlaying: nowPlaying, quit: quit)
-        }
-        .fixedSize()
+        SettingsMenu(isProcessing: $isProcessing, processingAvailable: processingAvailable,
+                     nowPlaying: nowPlaying, quit: quit)
     }
 }
 

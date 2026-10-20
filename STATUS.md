@@ -105,9 +105,11 @@ This file is the source of truth for implemented product capabilities.
   or handle drop. No audio buffers or real-time callbacks cross into Swift.
 - A SwiftUI menu-bar app linked to generated BoltFFI bindings, with real device
   status, device-scoped profile selection, and automatically saved named gain controls.
+  Hovering a nonzero gain row shows a reset icon after its control name;
+  clicking it saves a return to 0 dB.
   An unboxed top-left device/profile picker places its chevron beside the profile name.
-  Top-right unboxed icons brighten on hover, with 24 pt hit areas for a disabled equalizer-editor placeholder and
-  a gear menu offering Quit Tunic and Open at Login through macOS
+  A top-right unboxed gear brightens on hover, with a 24 pt hit area and
+  a menu offering Quit Tunic and Open at Login through macOS
   ServiceManagement; login startup requires a signed app bundle and is disabled
   in the `swift run` development build. `mise run build-native-bundle` produces a
   locally signed development app at `target/native/Tunic.app` with permission metadata.
@@ -200,7 +202,7 @@ This file is the source of truth for implemented product capabilities.
 - Product-complete UI, explicit permission UX, recovery beyond retrying the
   current default output, and full equalizer controls; GPUI builds and
   platform integrations for Linux and Windows.
-- Production-ready native menu-bar UI and editable graph gestures.
+- Production-ready native menu-bar UI. A native equalizer-curve editor is out of scope for v1.
   Non-Swift bindings and non-macOS audio
   adapters are not yet integrated or verified.
 - Bulk preset ingestion, AutoEq data, and catalog updates independent of app releases.
