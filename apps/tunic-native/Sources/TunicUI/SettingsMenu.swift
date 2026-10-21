@@ -4,22 +4,13 @@ import SwiftUI
 struct HeaderActions: View {
     @Binding var isProcessing: Bool
     var processingAvailable = true
+    var nowPlaying: NowPlayingModel?
+    var updates: AppUpdates?
     let quit: () -> Void
 
     var body: some View {
-        HStack(spacing: 4) {
-            Button {} label: {
-                Image(systemName: "graph.2d")
-                    .font(.system(size: 14))
-                    .frame(width: 24, height: 24)
-            }
-            .buttonStyle(HeaderActionStyle())
-            .disabled(true)
-            .accessibilityLabel("Equalizer editor")
-            .help("Equalizer editor — coming soon")
-            SettingsMenu(isProcessing: $isProcessing, processingAvailable: processingAvailable, quit: quit)
-        }
-        .fixedSize()
+        SettingsMenu(isProcessing: $isProcessing, processingAvailable: processingAvailable,
+                     nowPlaying: nowPlaying, updates: updates, quit: quit)
     }
 }
 
@@ -38,6 +29,8 @@ private struct HeaderActionStyle: ButtonStyle {
 struct SettingsMenu: View {
     @Binding var isProcessing: Bool
     var processingAvailable = true
+    var nowPlaying: NowPlayingModel?
+    var updates: AppUpdates?
     let quit: () -> Void
     @State private var loginStatus = SMAppService.mainApp.status
     @State private var loginError: String?
@@ -48,14 +41,16 @@ struct SettingsMenu: View {
         Menu {
             Toggle("Processing", isOn: $isProcessing)
                 .disabled(!processingAvailable)
+            if let nowPlaying { NowPlayingSettings(model: nowPlaying) }
             Divider()
             Toggle("Open at Login", isOn: Binding(
                 get: { loginStatus == .enabled },
-                set: setOpenAtLogin
+                set: { setOpenAtLogin($0) }
             ))
             .disabled(!isAppBundle)
             .help(isAppBundle ? "Launch Tunic when you log in" : "Requires a signed Tunic app bundle")
             Divider()
+            if let updates { UpdateSettings(updates: updates) }
             Button("Quit Tunic", action: quit)
                 .keyboardShortcut("q")
         } label: {

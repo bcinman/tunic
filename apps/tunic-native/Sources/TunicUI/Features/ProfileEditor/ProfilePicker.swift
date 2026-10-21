@@ -28,10 +28,7 @@ struct ProfilePicker: View {
             Button("Start flat…", systemImage: "line.3.horizontal", action: addFlat)
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: "headphones")
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(deviceName)
                     HStack(spacing: 5) {
                         Text(profileName ?? "Choose a profile")
@@ -39,9 +36,9 @@ struct ProfilePicker: View {
                             .font(.system(size: 9, weight: .semibold))
                             .accessibilityHidden(true)
                     }
-                        .font(.system(size: 12))
                         .foregroundStyle(.primary.opacity(0.65))
                 }
+                .font(.system(size: 13, weight: .medium))
                 .lineLimit(1)
             }
             .frame(height: 36)

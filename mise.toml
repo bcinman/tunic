@@ -1,5 +1,5 @@
 [tools]
-rust = "nightly-2026-09-20"
+rust = { version = "nightly-2026-09-20", components = ["clippy", "rustfmt"] }
 python = "3.14.7"
 "cargo:boltffi_cli" = "0.30.1"
 swiftlint = "0.65.1"
@@ -26,7 +26,23 @@ run = "cargo test --workspace --all-targets --all-features"
 
 [tasks.check]
 description = "Run all repository checks"
-depends = ["fmt", "lint", "test", "test-preset-import", "check-native"]
+depends = ["fmt", "lint", "test", "test-preset-import", "test-audio-null", "check-native"]
+
+[tasks.check-audio-fidelity]
+description = "Compare processor output with independent EQ references and exact bypass"
+run = "cargo test -p tunic-core --test audio_fidelity -- --nocapture"
+
+[tasks.audit-audio-rate]
+description = "Check live macOS aggregate sample rates using an unmuted private tap"
+run = "cargo test -p tunic-macos live_callback_sample_rates_match_output -- --ignored --nocapture"
+
+[tasks.test-audio-null]
+description = "Verify loopback analysis detects gain changes, channel swaps, and dropped frames"
+run = "python -B -m unittest discover -s crates/tunic-macos -p 'test_*.py'"
+
+[tasks.audio-null]
+description = "Generate a stereo probe or compare two PCM WAV recordings"
+run = "python -B crates/tunic-macos/audio_null.py"
 
 [tasks.test-preset-import]
 description = "Test offline preset extraction without network access"
@@ -57,6 +73,20 @@ run = "cargo run -p tunic-app"
 description = "Build and launch the native Swift menu-bar app"
 depends = ["build-ffi"]
 run = "swift run --package-path apps/tunic-native Tunic"
+
+[tasks.build-native-bundle]
+description = "Build a locally signed Tunic.app with Automation permission metadata"
+depends = ["build-ffi"]
+run = "bash apps/tunic-native/build-bundle.sh"
+
+[tasks.run-native-bundle]
+description = "Build and open the native app bundle (supports Now Playing authorization)"
+depends = ["build-native-bundle"]
+run = "open target/native/Tunic.app"
+
+[tasks.release]
+description = "Prepare a signed local release and optionally upload a GitHub draft: VERSION [--upload]"
+run = "bash script/release.sh"
 
 [tasks.run-native-release]
 description = "Build and launch the native Swift menu-bar app with Rust and Swift in release mode"

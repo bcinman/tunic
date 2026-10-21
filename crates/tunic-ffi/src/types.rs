@@ -27,6 +27,11 @@ pub enum ProfileSource {
 #[data]
 #[derive(Clone, Debug)]
 pub enum EngineCommand {
+    RenameControl {
+        profile: String,
+        filter: u32,
+        name: String,
+    },
     SetProcessingEnabled {
         enabled: bool,
     },
@@ -74,6 +79,17 @@ impl TryFrom<EngineCommand> for core::Command {
 
     fn try_from(command: EngineCommand) -> Result<Self, Self::Error> {
         Ok(match command {
+            EngineCommand::RenameControl {
+                profile,
+                filter,
+                name,
+            } => Self::EditProfile {
+                profile: core::ProfileId::try_new(profile).map_err(EngineError::invalid)?,
+                edit: core::ProfileEdit::RenameControl {
+                    filter: core::FilterId::try_new(filter).map_err(EngineError::invalid)?,
+                    name: core::FilterControlName::try_new(name).map_err(EngineError::invalid)?,
+                },
+            },
             EngineCommand::SetProcessingEnabled { enabled } => Self::SetProcessingEnabled(enabled),
             EngineCommand::CreateProfile {
                 device,

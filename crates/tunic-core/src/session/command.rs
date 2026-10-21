@@ -3,7 +3,7 @@
 //! Commands describe requested state changes without performing persistence,
 //! device I/O, or real-time processor control.
 
-use super::{DeviceId, PresetId, ProfileId, ProfileName};
+use super::{DeviceId, FilterControlName, PresetId, ProfileId, ProfileName};
 use crate::{FilterId, FrequencyHz, GainDb};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -35,6 +35,10 @@ pub enum Command {
 /// An edit addressed to the profile that originated the interaction.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ProfileEdit {
+    RenameControl {
+        filter: FilterId,
+        name: FilterControlName,
+    },
     EditFilter {
         filter: FilterId,
         frequency: FrequencyHz,

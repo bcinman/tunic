@@ -139,11 +139,11 @@ fn coefficients(
 
 #[derive(Clone, Copy)]
 struct Coefficients {
-    b0: f32,
-    b1: f32,
-    b2: f32,
-    a1: f32,
-    a2: f32,
+    b0: f64,
+    b1: f64,
+    b2: f64,
+    a1: f64,
+    a2: f64,
 }
 
 impl Coefficients {
@@ -162,11 +162,11 @@ impl Coefficients {
         let cosine = angular_frequency.cos();
         let a0 = 1.0 + alpha / amplitude;
         Self {
-            b0: ((1.0 + alpha * amplitude) / a0) as f32,
-            b1: (-2.0 * cosine / a0) as f32,
-            b2: ((1.0 - alpha * amplitude) / a0) as f32,
-            a1: (-2.0 * cosine / a0) as f32,
-            a2: ((1.0 - alpha / amplitude) / a0) as f32,
+            b0: (1.0 + alpha * amplitude) / a0,
+            b1: -2.0 * cosine / a0,
+            b2: (1.0 - alpha * amplitude) / a0,
+            a1: -2.0 * cosine / a0,
+            a2: (1.0 - alpha / amplitude) / a0,
         }
     }
 
@@ -179,12 +179,12 @@ impl Coefficients {
         let a0 = (amplitude + 1.0) + (amplitude - 1.0) * cosine + two_sqrt_a_alpha;
         Self {
             b0: (amplitude * ((amplitude + 1.0) - (amplitude - 1.0) * cosine + two_sqrt_a_alpha)
-                / a0) as f32,
-            b1: (2.0 * amplitude * ((amplitude - 1.0) - (amplitude + 1.0) * cosine) / a0) as f32,
+                / a0),
+            b1: 2.0 * amplitude * ((amplitude - 1.0) - (amplitude + 1.0) * cosine) / a0,
             b2: (amplitude * ((amplitude + 1.0) - (amplitude - 1.0) * cosine - two_sqrt_a_alpha)
-                / a0) as f32,
-            a1: (-2.0 * ((amplitude - 1.0) + (amplitude + 1.0) * cosine) / a0) as f32,
-            a2: (((amplitude + 1.0) + (amplitude - 1.0) * cosine - two_sqrt_a_alpha) / a0) as f32,
+                / a0),
+            a1: -2.0 * ((amplitude - 1.0) + (amplitude + 1.0) * cosine) / a0,
+            a2: ((amplitude + 1.0) + (amplitude - 1.0) * cosine - two_sqrt_a_alpha) / a0,
         }
     }
 
@@ -197,24 +197,24 @@ impl Coefficients {
         let a0 = (amplitude + 1.0) - (amplitude - 1.0) * cosine + two_sqrt_a_alpha;
         Self {
             b0: (amplitude * ((amplitude + 1.0) + (amplitude - 1.0) * cosine + two_sqrt_a_alpha)
-                / a0) as f32,
-            b1: (-2.0 * amplitude * ((amplitude - 1.0) + (amplitude + 1.0) * cosine) / a0) as f32,
+                / a0),
+            b1: -2.0 * amplitude * ((amplitude - 1.0) + (amplitude + 1.0) * cosine) / a0,
             b2: (amplitude * ((amplitude + 1.0) + (amplitude - 1.0) * cosine - two_sqrt_a_alpha)
-                / a0) as f32,
-            a1: (2.0 * ((amplitude - 1.0) - (amplitude + 1.0) * cosine) / a0) as f32,
-            a2: (((amplitude + 1.0) - (amplitude - 1.0) * cosine - two_sqrt_a_alpha) / a0) as f32,
+                / a0),
+            a1: 2.0 * ((amplitude - 1.0) - (amplitude + 1.0) * cosine) / a0,
+            a2: ((amplitude + 1.0) - (amplitude - 1.0) * cosine - two_sqrt_a_alpha) / a0,
         }
     }
 
     fn is_finite(self) -> bool {
         [self.b0, self.b1, self.b2, self.a1, self.a2]
             .into_iter()
-            .all(f32::is_finite)
+            .all(f64::is_finite)
     }
 
     fn is_stable(self) -> bool {
-        let a1 = f64::from(self.a1);
-        let a2 = f64::from(self.a2);
+        let a1 = self.a1;
+        let a2 = self.a2;
         a2.abs() < 1.0 && 1.0 + a1 + a2 > 0.0 && 1.0 - a1 + a2 > 0.0
     }
 
@@ -223,12 +223,10 @@ impl Coefficients {
         let sine = angular_frequency.sin();
         let cosine_double = (2.0 * angular_frequency).cos();
         let sine_double = (2.0 * angular_frequency).sin();
-        let numerator_real =
-            f64::from(self.b0) + f64::from(self.b1) * cosine + f64::from(self.b2) * cosine_double;
-        let numerator_imag = -f64::from(self.b1) * sine - f64::from(self.b2) * sine_double;
-        let denominator_real =
-            1.0 + f64::from(self.a1) * cosine + f64::from(self.a2) * cosine_double;
-        let denominator_imag = -f64::from(self.a1) * sine - f64::from(self.a2) * sine_double;
+        let numerator_real = self.b0 + self.b1 * cosine + self.b2 * cosine_double;
+        let numerator_imag = -self.b1 * sine - self.b2 * sine_double;
+        let denominator_real = 1.0 + self.a1 * cosine + self.a2 * cosine_double;
+        let denominator_imag = -self.a1 * sine - self.a2 * sine_double;
         let numerator_power = numerator_real.mul_add(numerator_real, numerator_imag.powi(2));
         let denominator_power =
             denominator_real.mul_add(denominator_real, denominator_imag.powi(2));
@@ -238,8 +236,10 @@ impl Coefficients {
 
 struct Biquad {
     coefficients: Coefficients,
-    z1: f32,
-    z2: f32,
+    // Low-frequency poles approach one; f32 coefficients/history lose significant
+    // precision, especially at high sample rates. Audio buffers remain float32.
+    z1: f64,
+    z2: f64,
 }
 
 impl Biquad {
@@ -252,10 +252,11 @@ impl Biquad {
     }
 
     fn process(&mut self, input: f32) -> f32 {
+        let input = f64::from(input);
         let output = self.coefficients.b0 * input + self.z1;
         self.z1 = self.coefficients.b1 * input - self.coefficients.a1 * output + self.z2;
         self.z2 = self.coefficients.b2 * input - self.coefficients.a2 * output;
-        output
+        output as f32
     }
 
     fn reset(&mut self) {
@@ -378,7 +379,7 @@ mod tests {
             FilterKind::HighShelf,
         ] {
             assert!(matches!(
-                prepare(vec![filter(kind, 1.0, 6.0)]),
+                prepare(vec![filter(kind, 1e-6, 6.0)]),
                 Err(ProcessorError::UnstableFilter { filter: 0 })
             ));
         }

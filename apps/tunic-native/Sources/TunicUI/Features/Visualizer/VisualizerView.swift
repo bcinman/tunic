@@ -38,25 +38,32 @@ struct VisualizerView: View {
                 }
                 .contentShape(Rectangle())
                 .onHover { spectrumHovered = $0 }
-            VisualizationSettingsView(style: $style, demo: $demo)
-                .fixedSize(horizontal: false, vertical: true)
-                .background(.white.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding(.horizontal, 8)
-                .padding(.top, 8)
-                .onGeometryChange(for: CGFloat.self) { proxy in
-                    proxy.size.height
-                } action: { height in
-                    settingsHeight = height
-                }
-                .opacity(labPresented ? 1 : 0)
-                .animation(reduceMotion ? .easeOut(duration: 0.15)
-                           : (labPresented ? SettingsMotion.spring : SettingsMotion.exitSpring), value: labPresented)
-                // Animate occupied space independently of the mounted panel's entrance.
-                .frame(height: labPresented ? settingsHeight : 0, alignment: .top)
-                .disabled(!labPresented)
-                .allowsHitTesting(labPresented)
-                .accessibilityHidden(!labPresented)
+            // Measure and retain settings only after their first presentation.
+            // A zero-height, transparent panel still builds all its controls.
+            if labPresented || settingsHeight > 0 {
+                VisualizationSettingsView(style: $style, demo: $demo)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .background(.white.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal, 8)
+                    .padding(.top, 8)
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.size.height
+                    } action: { height in
+                        withAnimation(reduceMotion ? nil : SettingsMotion.layoutSpring) {
+                            settingsHeight = height
+                        }
+                    }
+                    .opacity(labPresented ? 1 : 0)
+                    .animation(reduceMotion ? .easeOut(duration: 0.15)
+                               : (labPresented ? SettingsMotion.spring : SettingsMotion.exitSpring),
+                               value: labPresented)
+                    // Animate occupied space independently of the mounted panel's entrance.
+                    .frame(height: labPresented ? settingsHeight : 0, alignment: .top)
+                    .disabled(!labPresented)
+                    .allowsHitTesting(labPresented)
+                    .accessibilityHidden(!labPresented)
+            }
         }
     }
 

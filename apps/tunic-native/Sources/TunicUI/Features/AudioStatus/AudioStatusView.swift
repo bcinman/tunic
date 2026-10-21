@@ -5,7 +5,8 @@ struct AudioStatusView: View {
 
     var body: some View {
         if let deviceName {
-            Label(deviceName, systemImage: "headphones")
+            Text(deviceName)
+                .font(.system(size: 13, weight: .medium))
                 .lineLimit(1)
         }
     }

@@ -8,6 +8,13 @@ This file is the source of truth for implemented product capabilities.
 
 ## In
 
+- Sparkle 2 integration for native release bundles, with manual update checks and
+  automatic-check preferences in the gear menu. Development updates are disabled.
+  `mise run release VERSION` prepares local builds with Keychain-backed Developer
+  ID signing, notarization, stapling, and signed ZIP/appcast assets, then asks before
+  creating a GitHub draft. It recognizes jj's empty working copy, requires source
+  on origin/main, and can retry uploads from verified artifacts. Publishing remains
+  manual. GitHub Actions is used only for PR/main checks, not release credentials.
 - A portable `tunic-core` containing pure profile, chain, and device-selection
   rules, with a GPUI-independent `Session` application boundary.
 - Session commands own profile selection, draft editing, save/reset, audio
@@ -58,9 +65,22 @@ This file is the source of truth for implemented product capabilities.
 - Profiles own an editable base chain plus named controls targeting stable filter
   identities. Each control holds a relative gain adjustment; effective DSP chains
   add those adjustments without changing base values.
+  Native gain-row labels support double-click inline renaming (Return or clicking
+  outside saves; Escape cancels), preserving casing. Names persist immediately
+  without saving base drafts or changing audio; empty and duplicate names are rejected.
 - Sample-rate-specific stereo DSP with preamp gain, ordered peaking and shelf
-  filters, post-quantization stability validation, and allocation-free audio
-  processing.
+  filters, float64 coefficients/history, stability validation, float32 audio buffers,
+  and allocation-free processing. Independent impulse/FFT comparisons against
+  prewarped analog prototypes cover 144 filter configurations at 44.1–192 kHz;
+  block-size invariance and exact bypass nulling run in CI. This caught a float32
+  precision error of 2.51 dB in the tested bass case at 192 kHz; the same matrix
+  measures under 0.000003 dB worst error with float64 internals.
+- Audio verification commands: `check-audio-fidelity`, an opt-in unmuted
+  `audit-audio-rate`, and `audio-null` for generating a stereo probe and comparing
+  PCM WAV loopback captures without fitting away gain or drift. The comparator
+  is tested against latency, gain changes, channel swaps, and dropped samples.
+  The live aggregate stream-rate audit passed at 48 kHz on the development machine;
+  physical/virtual output loopback fidelity has not yet been measured.
 - A cloneable controller that publishes latest-value chain replacements and
   atomic bypass changes to the processor. Chain replacements use a
   five-millisecond crossfade.
@@ -74,7 +94,8 @@ This file is the source of truth for implemented product capabilities.
 - A `tunic-macos` route for the current default output using a Core Audio process
   tap, private aggregate device, callback-owned core `Processor`, native-buffer
   normalization, and ordered teardown. Profile clicks publish live chain changes
-  through the core `Controller`.
+  through the core `Controller`. Startup rejects aggregate virtual stream rates
+  that differ from the DSP rate, rather than silently processing at the wrong rate.
 - A Session-owned `Platform` contract with a shared `tunic-macos::MacosPlatform`
   that observes Core Audio default-output notifications and rebuilds the complete
   route using stable Core Audio device UIDs. Same-device reconnections retain the
@@ -94,11 +115,14 @@ This file is the source of truth for implemented product capabilities.
   or handle drop. No audio buffers or real-time callbacks cross into Swift.
 - A SwiftUI menu-bar app linked to generated BoltFFI bindings, with real device
   status, device-scoped profile selection, and automatically saved named gain controls.
+  Hovering a nonzero gain row shows a reset icon after its control name;
+  clicking it saves a return to 0 dB.
   An unboxed top-left device/profile picker places its chevron beside the profile name.
-  Top-right unboxed icons brighten on hover, with 24 pt hit areas for a disabled equalizer-editor placeholder and
-  a gear menu offering Quit Tunic and Open at Login through macOS
+  A top-right unboxed gear brightens on hover, with a 24 pt hit area and
+  a menu offering Quit Tunic and Open at Login through macOS
   ServiceManagement; login startup requires a signed app bundle and is disabled
-  in the `swift run` development build. The app currently has no bundle packaging task.
+  in the `swift run` development build. `mise run build-native-bundle` produces a
+  locally signed development app at `target/native/Tunic.app` with permission metadata.
   Devices without profiles open headphone search with live, variant-aware results,
   editable profile names, and a secondary flat-EQ starting point. The normal picker
   lists only the current device's profiles and reuses that form for later additions.
@@ -151,25 +175,54 @@ This file is the source of truth for implemented product capabilities.
   Telemetry observation is isolated from profile controls. Closing the popup
   stops telemetry demand, not processing.
   Run it with `mise run run-native`.
+- Native-only Now Playing for the Music and Spotify desktop apps: a compact
+  title/artist/artwork footer with 12 pt edge and divider padding, 32 pt artwork with 8 pt corners,
+  and 13 pt title/artist typography matching the profile picker, retained with a Paused label and
+  hidden when neither player has a track. Swift owns this ephemeral state outside
+  the Rust engine. Distributed playback and workspace notifications trigger
+  permission-gated, read-only Apple Events addressed to running process IDs;
+  opening the popup and waking also reconcile state. Playing wins over paused,
+  a newly playing source takes selection, and existing selection wins other ties.
+  Initial ties prefer Music. Late reads and artwork cannot restore obsolete state.
+  Artwork loads only while the popup is visible, with a placeholder on failure;
+  Music supplies bytes and Spotify artwork downloads use an ephemeral URL session.
+  The gear menu's Now Playing submenu offers explicit per-player authorization
+  and links denied access to Automation settings. Use `mise run run-native-bundle`
+  for consent attributed to Tunic; command-line builds cannot initiate consent.
+  No transport controls, browser playback, private MediaRemote APIs, accounts,
+  or listening-history persistence. Live operation was confirmed by the user;
+  exhaustive coverage of both players' streaming metadata/artwork remains unverified.
 - Reproducible macOS arm64 XCFramework/Swift package generation under `target/`
   through `mise run build-ffi`, with matching pinned BoltFFI CLI/library versions.
 - Automated formatting, Clippy, Rust tests, binding generation, SwiftLint, and
   Swift integration tests through `mise run check`. `mise run lint-native` runs
   strict SwiftLint checks on the native sources, tests, and package manifest.
+- Live software-output validation on External Headphones at 48 kHz passed on
+  2026-10-20: bypass and flat output matched tap input exactly; −6 dB preamp
+  residual was −144.1 dB relative to expected output. Temporary, allocation-free
+  callback instrumentation inspected final Core Audio output buffers during a
+  quiet stereo probe, then was removed. This does not measure the DAC/jack,
+  downstream resampling, or scheduling dropouts.
 
 ## Not In Yet
 
+- End-to-end loopback fidelity measurements, same-device sample-rate-change
+  observation/recovery, callback deadline/dropout telemetry, and an explicit
+  clipping/headroom policy. The new sample-rate guard applies at route startup.
 - Product-complete UI, explicit permission UX, recovery beyond retrying the
   current default output, and full equalizer controls; GPUI builds and
   platform integrations for Linux and Windows.
-- Production-ready native menu-bar UI and editable graph gestures.
+- Production-ready native menu-bar UI. A native equalizer-curve editor is out of scope for v1.
   Non-Swift bindings and non-macOS audio
   adapters are not yet integrated or verified.
 - Bulk preset ingestion, AutoEq data, and catalog updates independent of app releases.
 - Filter types other than peaking, low-shelf, and high-shelf EQ.
 - Profile import/export.
 - Profile rename, delete, and copy workflows; independent concurrent editors.
-- Application packaging, signing, release automation, or end-user installation.
+- End-to-end local Keychain-backed release verification and a real signed/notarized
+  old-to-new Sparkle installation test before first public distribution.
+  The local native bundle defaults to ad-hoc signing; stable permission identity
+  across rebuilds requires a signing identity (`CODE_SIGN_IDENTITY`).
 
 ## Current Non-Goals
 

@@ -16,6 +16,17 @@ private func waitUntil(_ condition: String = "expected state", _ predicate: () -
 
 private struct Timeout: Error { let condition: String }
 
+@Test @MainActor
+func unbundledAppCannotUpdateItself() {
+    let updates = AppUpdates()
+    #expect(!updates.isEnabled)
+    #expect(!updates.canCheckForUpdates)
+    updates.automaticallyChecksForUpdates = true
+    updates.checkForUpdates()
+    #expect(!updates.automaticallyChecksForUpdates)
+    #expect(!updates.canCheckForUpdates)
+}
+
 // This synthetic menu interaction can leave the Dock unable to reveal itself.
 // Keep it opt-in until the cause is understood.
 @Test(.enabled(if: ProcessInfo.processInfo.environment["TUNIC_MENU_TESTS"] == "1")) @MainActor
