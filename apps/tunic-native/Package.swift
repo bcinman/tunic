@@ -27,7 +27,11 @@ let package = Package(
                 .product(name: "Sparkle", package: "Sparkle"),
             ],
             resources: [.copy("Features/Visualizer/Spectrum.metal")],
-            linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]
+            linkerSettings: [
+                // The Rust static library calls Core Audio; SwiftPM must link it explicitly.
+                .linkedFramework("CoreAudio"),
+                .unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"]),
+            ]
         ),
         .testTarget(name: "TunicUITests", dependencies: ["TunicUI"]),
     ]
