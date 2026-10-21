@@ -10,8 +10,6 @@
     <key>CFBundleVersion</key><string>1</string>
     <key>LSMinimumSystemVersion</key><string>26.0</string>
     <key>LSUIElement</key><true/>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Tunic reads the current song and artwork from Music or Spotify to display alongside your equalizer. It does not control playback.</string>
     <key>NSAudioCaptureUsageDescription</key>
     <string>Tunic captures system audio to apply your headphone equalizer.</string>
 </dict>

@@ -534,7 +534,6 @@ func nativeVisualizerHostsMetalView() async throws {
 func renderVisualizerLab() async throws {
     let directory = try #require(ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"])
     _ = NSApplication.shared
-    try await renderNowPlayingLab(directory: directory)
     try await renderProfileCreationLab(directory: directory)
     let state = LabState()
     let host = NSHostingView(rootView: LabPreview(state: state))

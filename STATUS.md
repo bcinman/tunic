@@ -175,23 +175,6 @@ This file is the source of truth for implemented product capabilities.
   Telemetry observation is isolated from profile controls. Closing the popup
   stops telemetry demand, not processing.
   Run it with `mise run run-native`.
-- Native-only Now Playing for the Music and Spotify desktop apps: a compact
-  title/artist/artwork footer with 12 pt edge and divider padding, 32 pt artwork with 8 pt corners,
-  and 13 pt title/artist typography matching the profile picker, retained with a Paused label and
-  hidden when neither player has a track. Swift owns this ephemeral state outside
-  the Rust engine. Distributed playback and workspace notifications trigger
-  permission-gated, read-only Apple Events addressed to running process IDs;
-  opening the popup and waking also reconcile state. Playing wins over paused,
-  a newly playing source takes selection, and existing selection wins other ties.
-  Initial ties prefer Music. Late reads and artwork cannot restore obsolete state.
-  Artwork loads only while the popup is visible, with a placeholder on failure;
-  Music supplies bytes and Spotify artwork downloads use an ephemeral URL session.
-  The gear menu's Now Playing submenu offers explicit per-player authorization
-  and links denied access to Automation settings. Use `mise run run-native-bundle`
-  for consent attributed to Tunic; command-line builds cannot initiate consent.
-  No transport controls, browser playback, private MediaRemote APIs, accounts,
-  or listening-history persistence. Live operation was confirmed by the user;
-  exhaustive coverage of both players' streaming metadata/artwork remains unverified.
 - Reproducible macOS arm64 XCFramework/Swift package generation under `target/`
   through `mise run build-ffi`, with matching pinned BoltFFI CLI/library versions.
 - Automated formatting, Clippy, Rust tests, binding generation, SwiftLint, and

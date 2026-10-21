@@ -176,7 +176,7 @@ install Tunic in Applications. Test:
 
 - Launch and macOS permission prompts.
 - Audio processing, bypass, and saved profiles.
-- Now Playing and Open at Login.
+- Open at Login.
 - The update controls in the gear menu.
 
 Review and edit the generated release notes. A draft is not public, and Sparkle
