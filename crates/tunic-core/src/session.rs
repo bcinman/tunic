@@ -143,7 +143,6 @@ pub struct Session {
     audio_retry_needed: bool,
     audio_generation: u64,
     applied_chain: Option<Chain>,
-    processing_enabled: bool,
 }
 
 impl Session {
@@ -175,7 +174,6 @@ impl Session {
             audio_retry_needed: false,
             audio_generation: 0,
             applied_chain: None,
-            processing_enabled: true,
         })
     }
 
@@ -322,7 +320,9 @@ impl Session {
 
     #[must_use]
     pub fn processing_enabled(&self) -> bool {
-        self.processing_enabled
+        self.state
+            .device(&self.device)
+            .is_none_or(|device| device.selected.is_some())
     }
 
     #[must_use]
@@ -356,10 +356,14 @@ impl Session {
 
     fn execute_command(&mut self, command: Command) -> Result<(), SessionError> {
         match &command {
-            Command::CreateProfile { .. } if !self.can_create_profile() => {
+            Command::CreateProfile { .. } | Command::DisableProcessing { .. }
+                if !self.can_create_profile() =>
+            {
                 return Err(SessionError::DeviceUnavailable);
             }
-            Command::CreateProfile { device, .. } | Command::SelectProfile { device, .. }
+            Command::CreateProfile { device, .. }
+            | Command::SelectProfile { device, .. }
+            | Command::DisableProcessing { device }
                 if device != &self.device =>
             {
                 return Err(SessionError::StaleDevice(device.clone()));
@@ -373,21 +377,17 @@ impl Session {
         }
         if matches!(
             command,
-            Command::CreateProfile { .. } | Command::SelectProfile { .. }
+            Command::CreateProfile { .. }
+                | Command::SelectProfile { .. }
+                | Command::DisableProcessing { .. }
         ) {
             self.finish_control_gain()?;
         }
         match command {
-            Command::SetProcessingEnabled(enabled) => {
-                self.processing_enabled = enabled;
-                if let Some(controller) = &self.controller {
-                    controller.set_bypassed(!enabled);
-                }
-                Ok(())
-            }
+            Command::DisableProcessing { .. } => self.select_profile(None),
             Command::RefreshAudio => self.refresh_audio(),
             Command::CreateProfile { name, source, .. } => self.create_profile(name, source),
-            Command::SelectProfile { profile, .. } => self.select_profile(profile),
+            Command::SelectProfile { profile, .. } => self.select_profile(Some(profile)),
             Command::EditProfile { edit, .. } => self.edit_profile(edit),
         }
     }
@@ -467,20 +467,26 @@ impl Session {
         .map_err(SessionError::InvalidProfile)?;
         if let Some(device) = next.device_mut(&self.device) {
             device.profiles.push(profile);
-            device.selected = id;
+            device.selected = Some(id);
         } else {
-            next.insert(DeviceProfiles::new(self.device.clone(), vec![profile], id)?);
+            next.insert(DeviceProfiles::new(
+                self.device.clone(),
+                vec![profile],
+                Some(id),
+            )?);
         }
         self.commit(next)?;
         self.draft = None;
         self.publish_active_chain()
     }
 
-    fn select_profile(&mut self, id: ProfileId) -> Result<(), SessionError> {
+    fn select_profile(&mut self, id: Option<ProfileId>) -> Result<(), SessionError> {
         let mut next = self.state.clone();
-        next.device_mut(&self.device)
-            .ok_or(SessionError::NoSelectedProfile)?
-            .selected = id;
+        if let Some(device) = next.device_mut(&self.device) {
+            device.selected = id;
+        } else {
+            next.insert(DeviceProfiles::new(self.device.clone(), vec![], id)?);
+        }
         self.commit(next)?;
         self.draft = None;
         self.publish_active_chain()
@@ -664,6 +670,9 @@ impl Session {
 
     fn publish_active_chain(&mut self) -> Result<(), SessionError> {
         let result = self.publish(self.active_chain());
+        if let Some(controller) = &self.controller {
+            controller.set_bypassed(!self.processing_enabled());
+        }
         self.publication_error = match &result {
             Err(SessionError::Audio(message)) => Some(message.clone()),
             _ => None,
@@ -718,7 +727,9 @@ impl Session {
                     self.draft = None;
                 }
                 self.device = connection.device_id;
-                connection.controller.set_bypassed(!self.processing_enabled);
+                connection
+                    .controller
+                    .set_bypassed(!self.processing_enabled());
                 self.device_name = connection.device_name;
                 self.controller = Some(connection.controller);
                 self.audio_error = None;

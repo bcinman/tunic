@@ -76,7 +76,8 @@ impl State {
 
     #[must_use]
     pub fn selected_profile(&self, device: &DeviceId) -> Option<&Profile> {
-        self.device(device).map(DeviceProfiles::selected_profile)
+        self.device(device)
+            .and_then(DeviceProfiles::selected_profile)
     }
 }
 
@@ -84,14 +85,15 @@ impl State {
 pub struct DeviceProfiles {
     device: DeviceId,
     pub(super) profiles: Vec<Profile>,
-    pub(super) selected: ProfileId,
+    // None is an explicit, saved Disabled selection.
+    pub(super) selected: Option<ProfileId>,
 }
 
 impl DeviceProfiles {
     pub fn new(
         device: DeviceId,
         profiles: Vec<Profile>,
-        selected: ProfileId,
+        selected: Option<ProfileId>,
     ) -> Result<Self, SessionError> {
         let mut ids = std::collections::HashSet::new();
         let mut names = std::collections::HashSet::new();
@@ -103,7 +105,7 @@ impl DeviceProfiles {
                 return Err(corrupt("duplicate profile ID or name".into()));
             }
         }
-        if !ids.contains(&selected) {
+        if selected.as_ref().is_some_and(|id| !ids.contains(id)) {
             return Err(corrupt("missing selected profile".into()));
         }
         Ok(Self {
@@ -119,14 +121,14 @@ impl DeviceProfiles {
     pub fn profiles(&self) -> &[Profile] {
         &self.profiles
     }
-    pub fn selected_profile_id(&self) -> &ProfileId {
-        &self.selected
+    pub fn selected_profile_id(&self) -> Option<&ProfileId> {
+        self.selected.as_ref()
     }
-    pub fn selected_profile(&self) -> &Profile {
+    pub fn selected_profile(&self) -> Option<&Profile> {
+        let selected = self.selected.as_ref()?;
         self.profiles
             .iter()
-            .find(|profile| profile.id() == &self.selected)
-            .expect("validated selection")
+            .find(|profile| profile.id() == selected)
     }
 }
 

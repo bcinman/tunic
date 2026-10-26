@@ -18,7 +18,7 @@ public struct ContentView: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
-                if let state = model.snapshot, creation == nil, state.selectedProfileId != nil {
+                if let state = model.snapshot, creation == nil {
                     ProfileHeaderView(state: state, send: model.enqueue,
                                       addPreset: { creation = ProfileCreationDraft(device: state.deviceId) },
                                       addFlat: {
@@ -29,20 +29,17 @@ public struct ContentView: View {
                     AudioStatusView(deviceName: model.snapshot == nil ? "Connecting…" : model.snapshot?.deviceName)
                     Spacer()
                 }
-                HeaderActions(isProcessing: Binding(
-                    get: { model.snapshot?.processingEnabled ?? true },
-                    set: { model.enqueue(.setProcessingEnabled(enabled: $0)) }
-                ), processingAvailable: model.snapshot != nil, updates: updates, quit: quit)
+                HeaderActions(updates: updates, quit: quit)
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 12)
             .padding(.top, 12)
             if let state = model.snapshot {
-                if creation != nil || state.selectedProfileId == nil {
+                if creation != nil || (state.selectedProfileId == nil && state.processingEnabled) {
                     ProfileCreationView(state: state, draft: Binding(
                         get: { creation ?? ProfileCreationDraft(device: state.deviceId) },
                         set: { if model.snapshot?.deviceId == state.deviceId { creation = $0 } }),
-                        cancel: state.selectedProfileId == nil ? nil : { creation = nil },
+                        cancel: state.selectedProfileId == nil && state.processingEnabled ? nil : { creation = nil },
                         submit: { submit(device: state.deviceId) })
                     .id(state.deviceId)
                 } else {
@@ -63,7 +60,7 @@ public struct ContentView: View {
                     .padding(.horizontal, 12)
             }
         }
-        .padding(.bottom, 12)
+        .padding(.bottom, 20)
         .frame(width: 320)
         .preferredColorScheme(.dark)
         .task { await model.measureWhileVisible() }

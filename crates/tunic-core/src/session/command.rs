@@ -15,7 +15,9 @@ pub enum ProfileSource {
 /// An intended change to Tunic's product state.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Command {
-    SetProcessingEnabled(bool),
+    DisableProcessing {
+        device: DeviceId,
+    },
     CreateProfile {
         device: DeviceId,
         name: ProfileName,

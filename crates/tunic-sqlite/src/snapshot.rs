@@ -14,7 +14,7 @@ struct Snapshot {
 struct DeviceProfiles {
     device: String,
     profiles: Vec<Profile>,
-    selected: String,
+    selected: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -71,7 +71,7 @@ pub(super) fn encode(state: &core::State) -> Result<String, core::PersistenceErr
             .iter()
             .map(|device| DeviceProfiles {
                 device: device.device_id().to_string(),
-                selected: device.selected_profile_id().to_string(),
+                selected: device.selected_profile_id().map(ToString::to_string),
                 profiles: device
                     .profiles()
                     .iter()
@@ -134,7 +134,11 @@ pub(super) fn decode(payload: &str) -> Result<core::State, core::PersistenceErro
                         .into_iter()
                         .map(Profile::restore)
                         .collect::<Result<_, _>>()?,
-                    core::ProfileId::try_new(device.selected).map_err(corrupt)?,
+                    device
+                        .selected
+                        .map(core::ProfileId::try_new)
+                        .transpose()
+                        .map_err(corrupt)?,
                 )
                 .map_err(corrupt)
             })

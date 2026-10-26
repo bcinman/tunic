@@ -2,14 +2,11 @@ import ServiceManagement
 import SwiftUI
 
 struct HeaderActions: View {
-    @Binding var isProcessing: Bool
-    var processingAvailable = true
     var updates: AppUpdates?
     let quit: () -> Void
 
     var body: some View {
-        SettingsMenu(isProcessing: $isProcessing, processingAvailable: processingAvailable,
-                     updates: updates, quit: quit)
+        SettingsMenu(updates: updates, quit: quit)
     }
 }
 
@@ -26,8 +23,6 @@ private struct HeaderActionStyle: ButtonStyle {
 }
 
 struct SettingsMenu: View {
-    @Binding var isProcessing: Bool
-    var processingAvailable = true
     var updates: AppUpdates?
     let quit: () -> Void
     @State private var loginStatus = SMAppService.mainApp.status
@@ -37,9 +32,6 @@ struct SettingsMenu: View {
 
     var body: some View {
         Menu {
-            Toggle("Processing", isOn: $isProcessing)
-                .disabled(!processingAvailable)
-            Divider()
             Toggle("Open at Login", isOn: Binding(
                 get: { loginStatus == .enabled },
                 set: { setOpenAtLogin($0) }

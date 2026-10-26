@@ -88,13 +88,13 @@ fn saved_state() -> State {
         DeviceProfiles::new(
             DeviceId::try_new("system-output").unwrap(),
             vec![profile.clone()],
-            profile.id().clone(),
+            Some(profile.id().clone()),
         )
         .unwrap(),
         DeviceProfiles::new(
             DeviceId::try_new("headphones").unwrap(),
             vec![flat.clone()],
-            flat.id().clone(),
+            Some(flat.id().clone()),
         )
         .unwrap(),
     ])
@@ -156,7 +156,7 @@ fn session_restores_saved_adjustments_but_not_unsaved_drafts() {
         })
         .unwrap();
     drop(session);
-    let restored = Session::new(
+    let mut restored = Session::new(
         SqlitePersistence::open(&database.0).unwrap(),
         BundledCatalog,
     )
@@ -167,6 +167,31 @@ fn session_restores_saved_adjustments_but_not_unsaved_drafts() {
             .gain_adjustment()
             .into_inner(),
         -4.5
+    );
+    restored
+        .execute(Command::DisableProcessing {
+            device: restored.device_id().clone(),
+        })
+        .unwrap();
+    drop(restored);
+    let restored = Session::new(
+        SqlitePersistence::open(&database.0).unwrap(),
+        BundledCatalog,
+    )
+    .unwrap();
+    assert!(!restored.processing_enabled());
+    assert!(restored.selected_profile().is_none());
+    assert_eq!(
+        restored.profiles()[0].controls()[0]
+            .gain_adjustment()
+            .into_inner(),
+        -4.5
+    );
+    assert!(
+        restored
+            .state()
+            .selected_profile(&DeviceId::try_new("headphones").unwrap())
+            .is_some()
     );
 }
 

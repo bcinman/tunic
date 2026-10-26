@@ -7,12 +7,22 @@ struct ProfilePicker: View {
     let selectedProfileId: String?
     let profiles: [ProfileSummary]
     let device: String
+    var processingEnabled = true
+    var available = true
     var addPreset: () -> Void = {}
     var addFlat: () -> Void = {}
     let send: (EngineCommand) -> Void
 
     var body: some View {
         Menu {
+            Toggle("Disabled", isOn: Binding(
+                get: { !processingEnabled },
+                set: { selected in
+                    if selected { send(.disableProcessing(device: device)) }
+                }
+            ))
+            .disabled(!available)
+            Divider()
             ForEach(profiles, id: \.id) { profile in
                 Toggle(profile.name, isOn: Binding(
                     get: { profile.id == selectedProfileId },
@@ -31,7 +41,7 @@ struct ProfilePicker: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(deviceName)
                     HStack(spacing: 5) {
-                        Text(profileName ?? "Choose a profile")
+                        Text(processingEnabled ? profileName ?? "Choose a profile" : "Disabled")
                         Image(systemName: "chevron.up.chevron.down")
                             .font(.system(size: 9, weight: .semibold))
                             .accessibilityHidden(true)
@@ -47,7 +57,7 @@ struct ProfilePicker: View {
         .menuIndicator(.hidden)
         .buttonStyle(.plain)
         .accessibilityLabel("Profile")
-        .accessibilityValue("\(deviceName), \(profileName ?? "Choose a profile")")
+        .accessibilityValue("\(deviceName), \(processingEnabled ? profileName ?? "Choose a profile" : "Disabled")")
         .help("Choose a profile for \(deviceName)")
         .frame(maxWidth: .infinity, alignment: .leading)
     }

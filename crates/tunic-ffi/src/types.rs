@@ -32,8 +32,8 @@ pub enum EngineCommand {
         filter: u32,
         name: String,
     },
-    SetProcessingEnabled {
-        enabled: bool,
+    DisableProcessing {
+        device: String,
     },
     CreateProfile {
         device: String,
@@ -90,7 +90,9 @@ impl TryFrom<EngineCommand> for core::Command {
                     name: core::FilterControlName::try_new(name).map_err(EngineError::invalid)?,
                 },
             },
-            EngineCommand::SetProcessingEnabled { enabled } => Self::SetProcessingEnabled(enabled),
+            EngineCommand::DisableProcessing { device } => Self::DisableProcessing {
+                device: core::DeviceId::try_new(device).map_err(EngineError::invalid)?,
+            },
             EngineCommand::CreateProfile {
                 device,
                 name,

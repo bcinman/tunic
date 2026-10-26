@@ -179,12 +179,14 @@ func swiftModelUsesRustDraftsAndReceivesFailedCommands() async throws {
     let profile = try #require(model.snapshot?.selectedProfileId)
     let originalResponse = model.response
     #expect(model.snapshot?.processingEnabled == true)
-    model.enqueue(.setProcessingEnabled(enabled: false))
+    model.enqueue(.disableProcessing(device: "system-output"))
     try await waitUntil { model.snapshot?.processingEnabled == false }
-    #expect(model.snapshot?.presetId == preset.id)
-    #expect(model.response == originalResponse)
-    model.enqueue(.setProcessingEnabled(enabled: true))
+    #expect(model.snapshot?.selectedProfileId == nil)
+    #expect(model.snapshot?.controls.isEmpty == true)
+    #expect(model.snapshot?.profiles.contains { $0.id == profile } == true)
+    model.enqueue(.selectProfile(device: "system-output", profile: profile))
     try await waitUntil { model.snapshot?.processingEnabled == true }
+    #expect(model.response == originalResponse)
     model.enqueue(.previewControlGain(profile: profile, filter: control.filter, gain: -3.5))
     try await waitUntil { model.snapshot?.controls.first?.gain == -3.5 }
     #expect(model.snapshot?.isPreviewingGain == true)

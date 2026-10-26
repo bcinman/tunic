@@ -222,21 +222,21 @@ fn processing_switch_bypasses_audio_and_survives_route_replacement() {
     session.execute(use_preset()).unwrap();
     assert!(session.processing_enabled());
     let mut session = session.with_audio(Routes([controller, replacement].into()), Arc::new(|| {}));
+    session.execute_edit(adjust(5.0)).unwrap();
+    let desired = session.active_chain();
     session
-        .execute(Command::SetProcessingEnabled(false))
+        .execute(Command::DisableProcessing {
+            device: session.device_id().clone(),
+        })
         .unwrap();
     assert!(!session.processing_enabled());
     let mut samples = [0.25, -0.5];
     first.process(&mut samples);
     assert_eq!(samples, [0.25, -0.5]);
-    session.execute_edit(adjust(5.0)).unwrap();
-    let desired = session.active_chain();
     session.execute(Command::RefreshAudio).unwrap();
     second.process(&mut samples);
     assert_eq!(samples, [0.25, -0.5]);
-    session
-        .execute(Command::SetProcessingEnabled(true))
-        .unwrap();
+    session.execute(select_first(&session)).unwrap();
     assert!(session.processing_enabled());
     assert_eq!(session.active_chain(), desired);
     second.process(&mut samples);
@@ -618,7 +618,7 @@ fn corrupt_restored_state_is_rejected() {
             DeviceProfiles::new(
                 DeviceId::try_new(SYSTEM_OUTPUT).unwrap(),
                 profiles,
-                profile.id().clone()
+                Some(profile.id().clone())
             )
             .is_err()
         );
@@ -873,6 +873,110 @@ fn create_on(session: &Session, name: &str, source: ProfileSource) -> Command {
         name: ProfileName::try_new(name).unwrap(),
         source,
     }
+}
+
+#[test]
+fn disabled_selection_is_device_scoped_durable_and_transactional() {
+    let store = TestPersistence::default();
+    let routes = DeviceRoutes::new(&["headphones", "speakers", "headphones", "speakers"]);
+    let chains = routes.initial_chains.clone();
+    let mut session = Session::new(store.clone(), vec![preset()])
+        .unwrap()
+        .with_audio(routes, Arc::new(|| {}));
+    session
+        .execute(create_on(
+            &session,
+            "Reference",
+            ProfileSource::Preset(preset().summary.id),
+        ))
+        .unwrap();
+    let profile = session.selected_profile().unwrap().id().clone();
+    session
+        .execute_edit(ProfileEdit::PreviewControlGain {
+            filter: FilterId::try_new(3).unwrap(),
+            gain: GainDb::try_new(4.0).unwrap(),
+        })
+        .unwrap();
+    let disable = Command::DisableProcessing {
+        device: session.device_id().clone(),
+    };
+    store.fail.store(true, Ordering::Relaxed);
+    assert!(session.execute(disable.clone()).is_err());
+    assert!(session.processing_enabled());
+    store.fail.store(false, Ordering::Relaxed);
+    session
+        .execute_edit(ProfileEdit::PreviewControlGain {
+            filter: FilterId::try_new(3).unwrap(),
+            gain: GainDb::try_new(4.0).unwrap(),
+        })
+        .unwrap();
+    session.execute(disable.clone()).unwrap();
+    assert!(!session.processing_enabled());
+    assert!(session.editing_profile().is_none());
+    assert_eq!(
+        session.profiles()[0].controls()[0]
+            .gain_adjustment()
+            .into_inner(),
+        4.0
+    );
+    assert!(
+        session
+            .execute(Command::EditProfile {
+                profile: profile.clone(),
+                edit: adjust(1.0)
+            })
+            .is_err()
+    );
+    session.execute(Command::RefreshAudio).unwrap();
+    assert!(session.processing_enabled());
+    session
+        .execute(create_on(&session, "Speakers", ProfileSource::Flat))
+        .unwrap();
+    assert!(matches!(
+        session.execute(disable),
+        Err(SessionError::StaleDevice(_))
+    ));
+    session.execute(Command::RefreshAudio).unwrap();
+    assert!(!session.processing_enabled());
+    assert_eq!(chains.lock().unwrap().last().unwrap().1, Chain::default());
+    session.execute(Command::RefreshAudio).unwrap();
+    assert!(session.processing_enabled());
+    drop(session);
+    let mut restored = Session::new(store.clone(), vec![preset()])
+        .unwrap()
+        .with_audio(
+            DeviceRoutes::new(&["headphones", "new-device"]),
+            Arc::new(|| {}),
+        );
+    assert!(!restored.processing_enabled());
+    let select = Command::SelectProfile {
+        device: restored.device_id().clone(),
+        profile,
+    };
+    store.fail.store(true, Ordering::Relaxed);
+    assert!(restored.execute(select.clone()).is_err());
+    assert!(!restored.processing_enabled());
+    store.fail.store(false, Ordering::Relaxed);
+    restored.execute(select).unwrap();
+    assert!(restored.processing_enabled());
+    assert_eq!(
+        restored.selected_profile().unwrap().controls()[0]
+            .gain_adjustment()
+            .into_inner(),
+        4.0
+    );
+    restored.execute(Command::RefreshAudio).unwrap();
+    restored
+        .execute(Command::DisableProcessing {
+            device: restored.device_id().clone(),
+        })
+        .unwrap();
+    assert!(!restored.processing_enabled());
+    assert!(restored.profiles().is_empty());
+    restored
+        .execute(create_on(&restored, "New", ProfileSource::Flat))
+        .unwrap();
+    assert!(restored.processing_enabled());
 }
 
 #[test]

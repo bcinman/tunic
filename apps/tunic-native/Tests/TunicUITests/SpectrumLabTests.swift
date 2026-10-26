@@ -528,6 +528,25 @@ func nativeVisualizerHostsMetalView() async throws {
             #expect(capture.terminationStatus == 0)
         }
     }
+    model.enqueue(.disableProcessing(device: "system-output"))
+    for _ in 0..<100 where model.snapshot?.processingEnabled != false {
+        try await Task.sleep(for: .milliseconds(10))
+    }
+    #expect(model.snapshot?.processingEnabled == false)
+    #expect(model.snapshot?.controls.isEmpty == true)
+    try await Task.sleep(for: .milliseconds(250))
+    window.setContentSize(host.fittingSize)
+    #expect(host.fittingSize.height < collapsedSize.height)
+    if let directory = ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] {
+        try await Task.sleep(for: .milliseconds(250))
+        let capture = Process()
+        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        capture.arguments = ["-x", "-o", "-l", String(window.windowNumber),
+                             directory + "/profile-disabled.png", ]
+        try capture.run()
+        capture.waitUntilExit()
+        #expect(capture.terminationStatus == 0)
+    }
 }
 
 @Test(.enabled(if: ProcessInfo.processInfo.environment["TUNIC_SCREENSHOTS"] != nil)) @MainActor
@@ -614,7 +633,7 @@ func renderVisualizerLab() async throws {
 
 @MainActor
 private func renderGainHoverStates(directory: String) async throws {
-    let actions = NSHostingView(rootView: HeaderActions(isProcessing: .constant(true), quit: {}))
+    let actions = NSHostingView(rootView: HeaderActions(quit: {}))
     #expect(actions.fittingSize == NSSize(width: 24, height: 24))
     let model = TunicModel(connectAudio: false)
     defer { model.shutdown() }
@@ -629,7 +648,7 @@ private func renderGainHoverStates(directory: String) async throws {
     let snapshot = try #require(model.snapshot)
     let shelf = try #require(snapshot.controls.first)
     let peak = try #require(snapshot.controls.dropFirst().first)
-    for (name, filter) in [("Resting", nil), ("Short-Names", nil), ("Long-Names", nil), ("Processing-Off", nil),
+    for (name, filter) in [("Resting", nil), ("Short-Names", nil), ("Long-Names", nil),
                            ("Shelf", shelf.filter), ("Peak", peak.filter), ] {
         var display = snapshot
         display.deviceName = name == "Long-Names"
@@ -642,7 +661,7 @@ private func renderGainHoverStates(directory: String) async throws {
         let host = NSHostingView(rootView: VStack(spacing: 0) {
             HStack(spacing: 8) {
                 ProfileHeaderView(state: display, send: model.enqueue)
-                HeaderActions(isProcessing: .constant(name != "Processing-Off"), quit: {})
+                HeaderActions(quit: {})
             }
             .padding(.horizontal, 12)
             .padding(.top, 12)

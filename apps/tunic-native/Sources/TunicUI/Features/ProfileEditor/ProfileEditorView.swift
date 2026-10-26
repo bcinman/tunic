@@ -11,6 +11,7 @@ struct ProfileHeaderView: View {
         ProfilePicker(deviceName: state.deviceName, profileName: state.profileName,
                       selectedProfileId: state.selectedProfileId,
                       profiles: state.profiles, device: state.deviceId,
+                      processingEnabled: state.processingEnabled, available: state.canCreateProfile,
                       addPreset: addPreset, addFlat: addFlat, send: { _ = send($0) })
     }
 }
